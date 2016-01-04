@@ -53,20 +53,6 @@ class DummyVideoApp(AppProxyThread):
         return result
 
 
-class DummyAccApp(AppProxyThread):
-    def chunks(self, l, n):
-        for i in xrange(0, len(l), n):
-            yield l[i:i + n]
-
-    def handle(self, header, acc_data):
-        ACC_SEGMENT_SIZE = 16# (int, float, float, float)
-        for chunk in self.chunks(acc_data, ACC_SEGMENT_SIZE):
-            (acc_time, acc_x, acc_y, acc_z) = struct.unpack("!ifff", chunk)
-            print "time: %d, acc_x: %f, acc_y: %f, acc_x: %f" % \
-                    (acc_time, acc_x, acc_y, acc_z)
-        return None
-
-
 if __name__ == "__main__":
     result_queue = list()
 #    result_queue = [Queue.Queue(1000)]
