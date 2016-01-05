@@ -6,8 +6,8 @@ import pdb
 import numpy as np
 import time
 
-MIN_WIDTH_THRESHOLD=10
-MIN_HEIGHT_THRESHOLD=10
+MIN_WIDTH_THRESHOLD=3
+MIN_HEIGHT_THRESHOLD=3
 
 class FaceTransformation():
 
@@ -43,44 +43,76 @@ class FaceTransformation():
                     new_roi = tracker.get_position()
                     end = time.time()
                     print 'tracker run: {}'.format(end-start)
-                    
-                    if (new_roi.is_empty()):
-                        # lost obj
-                        trackers_to_remove.append(idx)
-                    else:
-                        x1,y1,x2,y2 = int(new_roi.left()), int(new_roi.top()), int(new_roi.right()), int(new_roi.bottom())
-                        self.rois[idx]= (x1,y1,x2,y2)
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (255,0,0), 1)
-                        
+
+                    x1,y1,x2,y2 = int(new_roi.left()), int(new_roi.top()), int(new_roi.right()), int(new_roi.bottom())
+                    self.rois[idx]= (x1,y1,x2,y2)
+
+                # remove failed trackers
+                small_face_idx=self.find_small_face_idx(self.rois)
+                if ( len(small_face_idx) > 0):
+                    for del_idx in small_face_idx:
+                        del self.trackers[del_idx]
+                        del self.rois[del_idx]
+                
+                for roi in self.rois:
+                    (x1,y1,x2,y2) = roi
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (255,0,0))
+
                 frame=self.shuffle_roi(self.rois, frame)
-                        
-            if ( len(trackers_to_remove) > 0):
-                for del_idx in trackers_to_remove:
-                    del self.rois[idx]
-                    del self.trackers[idx]
                     
         self.cnt+=1
-        
         return frame
         
     # shuffle rois
     def shuffle_roi(self, rois, frame):
-        # for cropping roi, y is given first
-        # http://stackoverflow.com/questions/15589517/how-to-crop-an-image-in-opencv-using-python
-        # manipulate frames
-        faces = [np.copy(frame[y1:y2, x1:x2]) for (x1,y1,x2,y2) in rois]                 
+        faces = [np.copy(frame[y1:y2+1, x1:x2+1]) for (x1,y1,x2,y2) in rois]                 
         for idx, _ in enumerate(faces):
             display_idx = (idx+1) % len(faces)
             (roi_x1, roi_y1, roi_x2, roi_y2) = rois[idx]
             nxt_face = faces[display_idx]
-            cur_face = frame[roi_y1:roi_y2, roi_x1:roi_x2]
+            cur_face = frame[roi_y1:roi_y2+1, roi_x1:roi_x2+1]
             dim = (cur_face.shape[1],cur_face.shape[0])
+            
+            print 'roi: {}'.format(rois[idx])                
+            print 'dimension: {}'.format(dim)
+            nxt_dim = (nxt_face.shape[1],nxt_face.shape[0])
+            print 'nxt face dimension: {}'.format(nxt_dim)
 
-            nxt_face_resized = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
-            frame[roi_y1:roi_y2, roi_x1:roi_x2] = nxt_face_resized
+            try:
+                nxt_face_resized = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
+            except:
+                pdb.set_trace()
+            frame[roi_y1:roi_y2+1, roi_x1:roi_x2+1] = nxt_face_resized
         return frame
 
-            
+
+    def is_small_face(self, roi):
+        (x1,y1,x2,y2) = roi
+        # has negative number
+        if ( x1<0 or y1<0 or x2<0 or y2<0):
+            return True
+        
+        # region too small
+        if ( abs(x2-x1) < MIN_WIDTH_THRESHOLD or abs(y2-y1) < MIN_HEIGHT_THRESHOLD):
+            return True
+
+        
+        
+    def find_small_face_idx(self, dets):
+        idx=[]
+        for i, d in enumerate(dets):
+            if ( self.is_small_face(d) ):
+                idx.append(i)
+        return idx
+
+    def rm_small_face(self, dets):
+        filtered_dets=[]
+        for i, d in enumerate(dets):
+            if not self.is_small_face(d):
+                filtered_dets.append(d)
+        return filtered_dets
+        
+        
     def detect_swap_face(self, frame):
         # The 1 in the second argument indicates that we should upsample the image
         # 1 time.  This will make everything bigger and allow us to detect more
@@ -91,40 +123,44 @@ class FaceTransformation():
         end = time.time()
         print 'detector run: {}'.format(end-start)
         
-        filtered_dets=[]
-        for i, d in enumerate(dets):
-            # print("Detection {}, score: {}, face_type:{}".format(
-            #     d, scores[i], idx[i]))
-            x1,y1,x2,y2 = int(d.left()), int(d.top()), int(d.right()), int(d.bottom())
-            if ( abs(x2-x1) >= MIN_WIDTH_THRESHOLD and abs(y2-y1) >=MIN_HEIGHT_THRESHOLD):
-                filtered_dets.append(d)
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (255,0,0), 1)
-                
-        dets=filtered_dets
+        # filtered_dets=[]
+        # for i, d in enumerate(dets):
+        #     x1,y1,x2,y2 = int(d.left()), int(d.top()), int(d.right()), int(d.bottom())
+        #     if ( abs(x2-x1) >= MIN_WIDTH_THRESHOLD and abs(y2-y1) >=MIN_HEIGHT_THRESHOLD):
+        #         filtered_dets.append(d)
+        #         cv2.rectangle(frame, (x1+1, y1+1), (x2+1, y2+1), (255,0,0))
+        # dets=filtered_dets
 
-        rois=[]                
-        if (len(dets) > 0):
+        # changed dets format here
+        dets = map(lambda d: (int(d.left()), int(d.top()), int(d.right()), int(d.bottom())), dets)
+        rois=self.rm_small_face(dets)
+        
+        if (len(rois) > 0):
             # swap faces:
-            faces=[]
+#            faces=[]
 
-            for i,d in enumerate(dets):
+            for i,d in enumerate(rois):
                 # fixed size
-                x1,y1,x2,y2 =int(d.left()), int(d.top()), int(d.right()), int(d.bottom())
-                faces.append(np.copy(frame[y1:y2, x1:x2]))
-                rois.append((x1,y1,x2,y2))
+#                x1,y1,x2,y2 =int(d.left()), int(d.top()), int(d.right()), int(d.bottom())
+                (x1,y1,x2,y2) = d
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (255,0,0))
+#                faces.append(np.copy(frame[y1:y2+1, x1:x2+1]))
 
-            # for cropping roi, y is given first
-            # http://stackoverflow.com/questions/15589517/how-to-crop-an-image-in-opencv-using-python
-            # manipulate frames
-            for idx, _ in enumerate(faces):
-                display_idx = (idx+1) % len(faces)
-                (roi_x1, roi_y1, roi_x2, roi_y2) = rois[idx]
-                nxt_face = faces[display_idx]
-                cur_face = frame[roi_y1:roi_y2, roi_x1:roi_x2]
-                dim = (cur_face.shape[1],cur_face.shape[0])
+            self.shuffle_roi(rois, frame)
+            # # for cropping roi, y is given first
+            # # http://stackoverflow.com/questions/15589517/how-to-crop-an-image-in-opencv-using-python
+            # # manipulate frames
+            # for idx, _ in enumerate(faces):
+            #     display_idx = (idx+1) % len(faces)
+            #     (roi_x1, roi_y1, roi_x2, roi_y2) = rois[idx]
+            #     nxt_face = faces[display_idx]
+            #     cur_face = frame[roi_y1:roi_y2+1, roi_x1:roi_x2+1]
+            #     dim = (cur_face.shape[1],cur_face.shape[0])
 
-                nxt_face_resized = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
-                frame[roi_y1:roi_y2, roi_x1:roi_x2] = nxt_face_resized
+            #     print 'roi: {}'.format(rois[idx])                
+            #     print 'dimension: {}'.format(dim)
+            #     nxt_face_resized = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
+            #     frame[roi_y1:roi_y2+1, roi_x1:roi_x2+1] = nxt_face_resized
 
         self.rois =rois
             

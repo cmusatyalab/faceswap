@@ -93,9 +93,5 @@ if __name__ == "__main__":
             video_client.terminate()
         if dummy_video_app is not None:
             dummy_video_app.terminate()
-        if acc_client is not None:
-            acc_client.terminate()
-        if acc_app is not None:
-            acc_app.terminate()
         result_pub.terminate()
 

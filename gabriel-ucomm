@@ -243,7 +243,7 @@ class ResultForwardingClient(threading.Thread):
             self.sock.sendall(packet)
             self.previous_sent_time_dict[engine_name] = time.time()
             self.previous_sent_dict[engine_name] = result_str
-            LOG.info("forward the result: %s" % output)
+            LOG.info("forward the result: %s" % output[:20])
         except Queue.Empty as e:
             pass
 
