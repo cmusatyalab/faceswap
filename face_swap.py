@@ -134,7 +134,7 @@ class FaceTransformation():
         # changed dets format here
         dets = map(lambda d: (int(d.left()), int(d.top()), int(d.right()), int(d.bottom())), dets)
         rois=self.rm_small_face(dets)
-        
+        rois=sorted(rois)
         if (len(rois) > 0):
             # swap faces:
 #            faces=[]
