@@ -41,6 +41,10 @@ import io, StringIO
 import base64
 import numpy as np
 
+import cProfile, pstats, StringIO
+
+transformer = FaceTransformation()
+
 # bad idea to transfer image back using json
 class DummyVideoApp(AppProxyThread):
     
@@ -48,11 +52,19 @@ class DummyVideoApp(AppProxyThread):
         # PERFORM Cognitive Assistant Processing
         sys.stdout.write("processing: ")
         sys.stdout.write("%s\n" % header)
+        
+        # pr = cProfile.Profile()
+        # pr.enable()
 
-#        pdb.set_trace()
         image = np.array(Image.open(io.BytesIO(data)))
-        transformer = FaceTransformation()
         processed_img = Image.fromarray(transformer.swap_face(image))
+
+        # pr.disable()
+        # s = StringIO.StringIO()
+        # sortby = 'cumulative'
+        # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        # ps.print_stats()
+        # print s.getvalue()
         
         processed_output = StringIO.StringIO()
         processed_img.save(processed_output, 'JPEG')
@@ -61,7 +73,7 @@ class DummyVideoApp(AppProxyThread):
         jpeg_image = processed_output.getvalue()
         result = base64.b64encode(jpeg_image)
         processed_output.close()
-#        exit()
+#        exit(1)
         
         return result
 
