@@ -65,6 +65,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
         catch (Exception e){
             // Camera is not available (in use or does not exist)
+			Log.e(LOG_TAG,e.toString());
             Log.e(LOG_TAG, "failed to open camera");
             System.exit(1);
         }

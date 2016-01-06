@@ -45,7 +45,12 @@
             android:layout_width="1dp"
             android:layout_height="1dp"
             android:layout_weight="0" />
-            
+
+        <edu.cmu.cs.gabriel.DisplaySurface
+            android:id="@+id/display_surface"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"/>
     <!--
 
         <Button

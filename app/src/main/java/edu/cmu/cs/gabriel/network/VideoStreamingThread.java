@@ -81,7 +81,7 @@ public class VideoStreamingThread extends Thread {
 		if (imageDir == null){
 			return null;
 		}
-	    File[] files = imageDir.listFiles(new FilenameFilter() {			
+	    File[] files = imageDir.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String filename) {
 				if (filename.toLowerCase().endsWith("jpg") == true)
@@ -166,11 +166,11 @@ public class VideoStreamingThread extends Thread {
 		        packet_currentUpdateTime = System.currentTimeMillis();
 		        packet_count++;
 		        packet_totalsize += data.length;
-		        if (packet_count % 10 == 0) {
-		        	Log.d(LOG_TAG, "(NET)\t" + "BW: " + 8.0*packet_totalsize / (packet_currentUpdateTime-packet_firstUpdateTime)/1000 + 
-		        			" Mbps\tCurrent FPS: " + 8.0*data.length/(packet_currentUpdateTime - packet_prevUpdateTime)/1000 + " Mbps\t" +
-		        			"FPS: " + 1000.0*packet_count/(packet_currentUpdateTime-packet_firstUpdateTime));
-				}
+//		        if (packet_count % 10 == 0) {
+//		        	Log.d(LOG_TAG, "(NET)\t" + "BW: " + 8.0*packet_totalsize / (packet_currentUpdateTime-packet_firstUpdateTime)/1000 +
+//		        			" Mbps\tCurrent FPS: " + 8.0*data.length/(packet_currentUpdateTime - packet_prevUpdateTime)/1000 + " Mbps\t" +
+//		        			"FPS: " + 1000.0*packet_count/(packet_currentUpdateTime-packet_firstUpdateTime));
+//				}
 		        packet_prevUpdateTime = packet_currentUpdateTime;
 			} catch (IOException e) {
 				Log.e(LOG_TAG, e.getMessage());
@@ -266,7 +266,7 @@ public class VideoStreamingThread extends Thread {
         frame_totalsize += datasize;
         if (frame_count % 50 == 0) {
         	Log.d(LOG_TAG, "(IMG)\t" +
-        			"BW: " + 8.0*frame_totalsize / (frame_currentUpdateTime-frame_firstUpdateTime)/1000 + 
+        			"BW: " + 8.0*frame_totalsize / (frame_currentUpdateTime-frame_firstUpdateTime)/1000 +
         			" Mbps\tCurrent FPS: " + 8.0*datasize/(frame_currentUpdateTime - frame_prevUpdateTime)/1000 + " Mbps\t" +
         			"FPS: " + 1000.0*frame_count/(frame_currentUpdateTime-frame_firstUpdateTime));
 		}

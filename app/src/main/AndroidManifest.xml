@@ -7,37 +7,41 @@
     <uses-sdk
         android:minSdkVersion="15"
         android:targetSdkVersion="15" />
-    
-    <uses-feature android:name="android.hardware.camera" />
 
+    <uses-feature android:name="android.hardware.camera" />
     <uses-permission android:name="android.permission.CAMERA" />
-	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-	<uses-permission android:name="android.permission.INTERNET"/>
-	<uses-permission android:name="android.permission.WAKE_LOCK" />
-	<uses-permission android:name="android.permission.RECORD_AUDIO" />
-    
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
-        <service 
-            android:name="BatteryRecordingService" />        
+        android:theme="@style/MyMaterialTheme"
+        >
         <activity
-            android:name="edu.cmu.cs.gabriel.GabrielClientActivity"  
-            android:screenOrientation="landscape"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-            android:label="@string/title_activity_main" >
-            
-            <!-- Enable this intent-filter for regular Android Application        
-             -->                 
+            android:name="edu.cmu.cs.cloudletdemo.CloudletDemoActivity"
+            android:label="@string/title_activity_cloudlet_demo"
+            android:theme="@style/MyMaterialTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            
-             
-            <!-- Enable below for Google Glass
+        </activity>
+
+        <!--<service android:name=".BatteryRecordingService" />-->
+
+        <activity
+            android:name=".GabrielClientActivity"
+            android:label="@string/title_activity_main"
+            android:screenOrientation="landscape">
+            <!--
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
+            Enable below for Google Glass
 
             <intent-filter>
                 <action android:name="com.google.android.glass.action.VOICE_TRIGGER" />
@@ -45,23 +49,23 @@
             <meta-data
                 android:name="com.google.android.glass.VoiceTrigger"
                 android:resource="@xml/gabriel_start" />
-             -->
+            -->
         </activity>
         <activity
-            android:name="edu.cmu.cs.gabriel.test.GabrielBatteryActivity"  
-            android:screenOrientation="landscape"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
-            android:label="@string/title_activity_main" >
-            <!-- 
+            android:name=".test.GabrielBatteryActivity"
+            android:label="@string/title_activity_main"
+            android:screenOrientation="landscape">
+            <!--
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             -->
         </activity>
-        <activity
-            android:name="edu.cmu.cs.gabriel.SettingsActivity">
+        <activity android:name=".SettingsActivity" >
         </activity>
+
     </application>
 
 </manifest>

@@ -33,6 +33,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
+import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -46,7 +47,7 @@ import android.widget.Toast;
 public class GabrielClientActivity extends Activity implements TextToSpeech.OnInitListener,
         SensorEventListener {
 	
-	private static final String LOG_TAG = "krha";
+    private static final String LOG_TAG = "GabrielClientActivity";
 	private static final String DEBUG_TAG = "krha_debug";
 
 	private static final int SETTINGS_ID = Menu.FIRST;
@@ -68,15 +69,19 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 
 	private SharedPreferences sharedPref;
 	private boolean hasStarted;
-	private CameraPreview mPreview;
+    private CameraPreview mPreview;
+
 	private BufferedOutputStream localOutputStream;
 	AlertDialog errorAlertDialog;
 
 	private SensorManager mSensorManager = null;
 	private Sensor mAccelerometer = null;
 	protected TextToSpeech mTTS = null;
-	
-	@Override
+
+
+    private DisplaySurface mDisplay;
+
+    @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.d(DEBUG_TAG, "on onCreate");
 		super.onCreate(savedInstanceState);
@@ -106,7 +111,7 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 	protected void runExperiements(){
 		final Timer startTimer = new Timer();
 		TimerTask autoStart = new TimerTask(){
-			String[] ipList = {"128.2.213.107"};	//"54.203.73.67"
+			String[] ipList = {"128.2.213.15"};	//"54.203.73.67"
 //			int[] tokenSize = {1};
 			int[] tokenSize = {10000};
 			int ipIndex = 0;
@@ -158,7 +163,11 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 
 	private void init_once() {
 		Log.d(DEBUG_TAG, "on init once");
-		mPreview = (CameraPreview) findViewById(R.id.camera_preview);
+        mPreview = (CameraPreview) findViewById(R.id.camera_preview);
+
+        mDisplay = (DisplaySurface) findViewById(R.id.display_surface);
+        mDisplay.setZOrderMediaOverlay(true);
+
         //jj: preview callback in addition?
 		mPreview.setPreviewCallback(previewCallback);
 
@@ -168,22 +177,26 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 		Const.LATENCY_DIR.mkdirs();
 		// TextToSpeech.OnInitListener
 		if (mTTS == null) {
-			mTTS = new TextToSpeech(this, this);
+//			mTTS = new TextToSpeech(this, this);
 		}
-		if (mSensorManager == null) {
-			mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-			mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-			mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-		}
+
+//		if (mSensorManager == null) {
+//			mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+//			mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+//			mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+//		}
+
 		if (this.errorAlertDialog == null) {
 			this.errorAlertDialog = new AlertDialog.Builder(GabrielClientActivity.this).create();
 			this.errorAlertDialog.setTitle("Error");
 			this.errorAlertDialog.setIcon(R.drawable.ic_launcher);
 		}
+
 		if (cameraRecorder != null) {
 			cameraRecorder.close();
 			cameraRecorder = null;
 		}
+
 		if (localOutputStream != null){
 			try {
 				localOutputStream.close();
@@ -211,15 +224,16 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 		if (tokenController != null){
 			tokenController.close();
 		}
-
 		if ((videoStreamingThread != null) && (videoStreamingThread.isAlive())) {
 			videoStreamingThread.stopStreaming();
 			videoStreamingThread = null;
 		}
+
 		if ((accStreamingThread != null) && (accStreamingThread.isAlive())) {
 			accStreamingThread.stopStreaming();
 			accStreamingThread = null;
 		}
+
 		if ((resultThread != null) && (resultThread.isAlive())) {
 			resultThread.close();
 			resultThread = null;
@@ -230,7 +244,8 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 		} catch (InterruptedException e) {}
 		
 		tokenController = new TokenController(Const.LATENCY_FILE);
-		resultThread = new ResultReceivingThread(Const.GABRIEL_IP, RESULT_RECEIVING_PORT, returnMsgHandler, tokenController);
+		resultThread = new ResultReceivingThread(Const.GABRIEL_IP,
+                RESULT_RECEIVING_PORT, returnMsgHandler, tokenController);
 		resultThread.start();
 		
 		FileDescriptor fd = cameraRecorder.getOutputFileDescriptor();
@@ -238,27 +253,27 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 				Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController);
 		videoStreamingThread.start();
 		
-		accStreamingThread = new AccStreamingThread(Const.GABRIEL_IP, ACC_STREAM_PORT, returnMsgHandler, tokenController);
-		accStreamingThread.start();
+//		accStreamingThread = new AccStreamingThread(Const.GABRIEL_IP, ACC_STREAM_PORT, returnMsgHandler, tokenController);
+//		accStreamingThread.start();
 
-		stopBatteryRecording();
-		startBatteryRecording();
+//		stopBatteryRecording();
+//		startBatteryRecording();
 	}
 	
 	// Implements TextToSpeech.OnInitListener
 	public void onInit(int status) {
-		if (status == TextToSpeech.SUCCESS) {
-			if (mTTS == null){
-				mTTS = new TextToSpeech(this, this);
-			}
-			int result = mTTS.setLanguage(Locale.US);
-			if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-				Log.e("krha_app", "Language is not available.");
-			}
-		} else {
-			// Initialization failed.
-			Log.e("krha_app", "Could not initialize TextToSpeech.");
-		}
+//		if (status == TextToSpeech.SUCCESS) {
+//			if (mTTS == null){
+//				mTTS = new TextToSpeech(this, this);
+//			}
+//			int result = mTTS.setLanguage(Locale.US);
+//			if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+//				Log.e("krha_app", "Language is not available.");
+//			}
+//		} else {
+//			// Initialization failed.
+//			Log.e("krha_app", "Could not initialize TextToSpeech.");
+//		}
 	}
 
 	@Override
@@ -300,7 +315,7 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
      */
 	private PreviewCallback previewCallback = new PreviewCallback() {
 		public void onPreviewFrame(byte[] frame, Camera mCamera) {
-			Log.d(LOG_TAG, "onpreviewframe called. data transmitting");
+//			Log.d(LOG_TAG, "onpreviewframe called. data transmitting");
 			if (hasStarted && (localOutputStream != null)) {
 				Camera.Parameters parameters = mCamera.getParameters();
 				if (videoStreamingThread != null){
@@ -314,20 +329,33 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 		public void handleMessage(Message msg) {
 			if (msg.what == NetworkProtocol.NETWORK_RET_FAILED) {
 				Bundle data = msg.getData();
-				String message = data.getString("message");
+//				String message = data.getString("message");
 //				stopStreaming();
 //				new AlertDialog.Builder(GabrielClientActivity.this).setTitle("INFO").setMessage(message)
 //						.setIcon(R.drawable.ic_launcher).setNegativeButton("Confirm", null).show();
 			}
+			//handled by resultReceivingThread!!!
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
-				if (mTTS != null){
-					String ttsMessage = (String) msg.obj;
+                String response= (String) msg.obj;
+//                Log.d(LOG_TAG, "received response");
+                if (Const.RESPONSE_ENCODED_IMG){
+                    byte[] img = Base64.decode(response, Base64.DEFAULT);
+                    if (mDisplay!=null) {
+                        mDisplay.push(img);
+                    }
+                }
 
-					// Select a random hello.
-					Log.d(LOG_TAG, "tts string origin: " + ttsMessage);
-					mTTS.setSpeechRate(1f);
-					mTTS.speak(ttsMessage, TextToSpeech.QUEUE_FLUSH, null);					
-				}
+
+
+//				if (mTTS != null){
+//					String ttsMessage = (String) msg.obj;
+//
+//					// Select a random hello.
+//					Log.d(LOG_TAG, "tts string origin: " + ttsMessage);
+//					mTTS.setSpeechRate(1f);
+//					mTTS.speak(ttsMessage, TextToSpeech.QUEUE_FLUSH, null);
+//				}
+
 			}
 		}
 	};
@@ -461,7 +489,7 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 	private void terminate() {
 		Log.d(DEBUG_TAG, "on terminate");
 		// change only soft state
-		stopBatteryRecording();
+//		stopBatteryRecording();
 		
 		if (cameraRecorder != null) {
 			cameraRecorder.close();
@@ -500,6 +528,10 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 			mSensorManager.unregisterListener(this);
 			mSensorManager = null;
 			mAccelerometer = null;
+		}
+
+		if (mDisplay !=null){
+			mDisplay =null;
 		}
 	}
 

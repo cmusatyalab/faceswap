@@ -1,0 +1,58 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="edu.cmu.cs.cloudletdemo.CloudletFragment"
+    android:weightSum="1">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="cloudlet ip:"
+        android:textStyle="bold"
+        android:id="@+id/titleView"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Medium Text"
+        android:id="@+id/cloudletIPView"
+        android:layout_below="@+id/titleView"
+        android:layout_alignParentLeft="true" />
+
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Set IP"
+        android:id="@+id/resetIPButton"
+        android:layout_marginTop="28dp"
+        android:layout_below="@+id/cloudletIPView"
+        android:layout_toRightOf="@+id/cloudletIPEditTextView"
+        android:layout_marginLeft="27dp" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:id="@+id/cloudletIPEditTextView"
+        android:layout_marginLeft="22dp"
+        android:layout_alignBottom="@+id/resetIPButton"
+        android:layout_alignParentLeft="true"
+        android:hint="Enter Cloudlet IP" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Run Demo"
+        android:id="@+id/cloudletRunDemoButton"
+        android:layout_below="@+id/cloudletIPEditTextView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="94dp" />
+
+</RelativeLayout>
