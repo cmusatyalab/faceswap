@@ -43,7 +43,7 @@ class FaceTransformation():
                     new_roi = tracker.get_position()
                     end = time.time()
                     print 'tracker run: {}'.format(end-start)
-
+#                    print 'roi: {}'.format(new_roi)
                     x1,y1,x2,y2 = int(new_roi.left()), int(new_roi.top()), int(new_roi.right()), int(new_roi.bottom())
                     self.rois[idx]= (x1,y1,x2,y2)
 
@@ -54,11 +54,12 @@ class FaceTransformation():
                         del self.trackers[del_idx]
                         del self.rois[del_idx]
                 
+
+                frame=self.shuffle_roi(self.rois, frame)
+                
                 for roi in self.rois:
                     (x1,y1,x2,y2) = roi
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (255,0,0))
-
-                frame=self.shuffle_roi(self.rois, frame)
                     
         self.cnt+=1
         return frame
@@ -73,10 +74,10 @@ class FaceTransformation():
             cur_face = frame[roi_y1:roi_y2+1, roi_x1:roi_x2+1]
             dim = (cur_face.shape[1],cur_face.shape[0])
             
-            print 'roi: {}'.format(rois[idx])                
-            print 'dimension: {}'.format(dim)
+#            print 'roi: {}'.format(rois[idx])                
+#            print 'dimension: {}'.format(dim)
             nxt_dim = (nxt_face.shape[1],nxt_face.shape[0])
-            print 'nxt face dimension: {}'.format(nxt_dim)
+#            print 'nxt face dimension: {}'.format(nxt_dim)
 
             try:
                 nxt_face_resized = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
@@ -138,7 +139,7 @@ class FaceTransformation():
         if (len(rois) > 0):
             # swap faces:
 #            faces=[]
-
+            self.shuffle_roi(rois, frame)
             for i,d in enumerate(rois):
                 # fixed size
 #                x1,y1,x2,y2 =int(d.left()), int(d.top()), int(d.right()), int(d.bottom())
@@ -146,7 +147,7 @@ class FaceTransformation():
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (255,0,0))
 #                faces.append(np.copy(frame[y1:y2+1, x1:x2+1]))
 
-            self.shuffle_roi(rois, frame)
+
             # # for cropping roi, y is given first
             # # http://stackoverflow.com/questions/15589517/how-to-crop-an-image-in-opencv-using-python
             # # manipulate frames
