@@ -40,9 +40,11 @@ from PIL import Image, ImageOps
 import io, StringIO
 import base64
 import numpy as np
+import json
 
 import cProfile, pstats, StringIO
 
+DEBUG = True
 transformer = FaceTransformation()
 
 # bad idea to transfer image back using json
@@ -57,7 +59,31 @@ class DummyVideoApp(AppProxyThread):
         # pr.enable()
 
         image = np.array(Image.open(io.BytesIO(data)))
-        processed_img = Image.fromarray(transformer.swap_face(image))
+#        pdb.set_trace()
+        roi_face_pairs = transformer.swap_face(image)
+        roi_face_pairs_string = {}
+        roi_face_pairs_string['num'] = len(roi_face_pairs)
+        idx = 0
+        for roi, face in roi_face_pairs:
+            processed_img = Image.fromarray(face)            
+            processed_output = StringIO.StringIO()
+            processed_img.save(processed_output, 'JPEG')
+            if DEBUG:
+                processed_img.save('test.jpg')
+
+            jpeg_image = processed_output.getvalue()
+            face_string = base64.b64encode(jpeg_image)
+            processed_output.close()            
+
+            (roi_x1, roi_y1, roi_x2, roi_y2) = roi
+            roi_face_pairs_string['item_'+str(idx)+'_roi_x1'] = roi_x1
+            roi_face_pairs_string['item_'+str(idx)+'_roi_y1'] = roi_y1
+            roi_face_pairs_string['item_'+str(idx)+'_roi_x2'] = roi_x2
+            roi_face_pairs_string['item_'+str(idx)+'_roi_y2'] = roi_y2
+            roi_face_pairs_string['item_'+str(idx)+'_img'] = face_string
+            idx+=1
+#            roi_face_pairs_string.append((roi, face_string))
+
 
         # pr.disable()
         # s = StringIO.StringIO()
@@ -65,16 +91,20 @@ class DummyVideoApp(AppProxyThread):
         # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
         # ps.print_stats()
         # print s.getvalue()
-        
-        processed_output = StringIO.StringIO()
-        processed_img.save(processed_output, 'JPEG')
-#        processed_img.save('test.jpg')
 
-        jpeg_image = processed_output.getvalue()
-        result = base64.b64encode(jpeg_image)
-        processed_output.close()
-#        exit(1)
-        
+        # processed_img = Image.fromarray(transformer.swap_face(image))            
+        # processed_output = StringIO.StringIO()
+        # processed_img.save(processed_output, 'JPEG')
+        # if DEBUG:
+        #     processed_img.save('test.jpg')
+
+        # jpeg_image = processed_output.getvalue()
+        # result = base64.b64encode(jpeg_image)
+        # processed_output.close()
+
+        result = json.dumps(roi_face_pairs_string)
+
+        print result
         return result
 
 

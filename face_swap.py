@@ -8,6 +8,7 @@ import time
 
 MIN_WIDTH_THRESHOLD=3
 MIN_HEIGHT_THRESHOLD=3
+RATIO_DETECT_TRACK = 10
 
 class FaceTransformation():
 
@@ -19,8 +20,9 @@ class FaceTransformation():
         
     def swap_face(self,frame):
 #        pdb.set_trace()
-        if (self.cnt % 10 ==0):
-            frame = self.detect_swap_face(frame)
+        roi_face_pairs=[]
+        if (self.cnt % (RATIO_DETECT_TRACK+1) ==0):
+            roi_face_pairs = self.detect_swap_face(frame)
             # rois are reset in detect_swap_face
             self.trackers=[]
             # initialize trackers
@@ -55,17 +57,18 @@ class FaceTransformation():
                         del self.rois[del_idx]
                 
 
-                frame=self.shuffle_roi(self.rois, frame)
+                roi_face_pairs=self.shuffle_roi(self.rois, frame)
                 
-                for roi in self.rois:
-                    (x1,y1,x2,y2) = roi
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (255,0,0))
+                # for roi in self.rois:
+                #     (x1,y1,x2,y2) = roi
+                #     cv2.rectangle(frame, (x1, y1), (x2, y2), (255,0,0))
                     
         self.cnt+=1
-        return frame
+        return roi_face_pairs
         
     # shuffle rois
     def shuffle_roi(self, rois, frame):
+        roi_face_pairs = []
         faces = [np.copy(frame[y1:y2+1, x1:x2+1]) for (x1,y1,x2,y2) in rois]                 
         for idx, _ in enumerate(faces):
             display_idx = (idx+1) % len(faces)
@@ -82,9 +85,16 @@ class FaceTransformation():
             try:
                 nxt_face_resized = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
             except:
+                print 'error: face resize failed!'
                 pdb.set_trace()
-            frame[roi_y1:roi_y2+1, roi_x1:roi_x2+1] = nxt_face_resized
-        return frame
+# modifiying frames directly                
+#            frame[roi_y1:roi_y2+1, roi_x1:roi_x2+1] = nxt_face_resized
+# instead of modifying frames returns these face snippets back
+            roi_face = (rois[idx], nxt_face_resized)
+            roi_face_pairs.append(roi_face)
+
+#        return frame
+        return roi_face_pairs
 
 
     def is_small_face(self, roi):
@@ -124,28 +134,20 @@ class FaceTransformation():
         end = time.time()
         print 'detector run: {}'.format(end-start)
         
-        # filtered_dets=[]
-        # for i, d in enumerate(dets):
-        #     x1,y1,x2,y2 = int(d.left()), int(d.top()), int(d.right()), int(d.bottom())
-        #     if ( abs(x2-x1) >= MIN_WIDTH_THRESHOLD and abs(y2-y1) >=MIN_HEIGHT_THRESHOLD):
-        #         filtered_dets.append(d)
-        #         cv2.rectangle(frame, (x1+1, y1+1), (x2+1, y2+1), (255,0,0))
-        # dets=filtered_dets
-
         # changed dets format here
         dets = map(lambda d: (int(d.left()), int(d.top()), int(d.right()), int(d.bottom())), dets)
         rois=self.rm_small_face(dets)
         rois=sorted(rois)
+        
+        roi_face_pairs=[]
         if (len(rois) > 0):
             # swap faces:
 #            faces=[]
-            self.shuffle_roi(rois, frame)
-            for i,d in enumerate(rois):
-                # fixed size
-#                x1,y1,x2,y2 =int(d.left()), int(d.top()), int(d.right()), int(d.bottom())
-                (x1,y1,x2,y2) = d
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (255,0,0))
-#                faces.append(np.copy(frame[y1:y2+1, x1:x2+1]))
+            roi_face_pairs= self.shuffle_roi(rois, frame)
+            
+            # for i,d in enumerate(rois):
+            #     (x1,y1,x2,y2) = d
+            #     cv2.rectangle(frame, (x1, y1), (x2, y2), (255,0,0))
 
 
             # # for cropping roi, y is given first
@@ -165,4 +167,4 @@ class FaceTransformation():
 
         self.rois =rois
             
-        return frame
+        return roi_face_pairs
