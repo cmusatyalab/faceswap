@@ -104,7 +104,7 @@ class DummyVideoApp(AppProxyThread):
 
         result = json.dumps(roi_face_pairs_string)
 
-        print result
+#        print result
         return result
 
 
@@ -158,6 +158,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt as e:
         sys.stdout.write("user exits\n")
     finally:
+        if transformer is not None:
+            transformer.terminate()
         if video_client is not None:
             video_client.terminate()
         if dummy_video_app is not None:
