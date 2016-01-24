@@ -9,6 +9,9 @@ import threading
 import Queue
 import logging
 import multiprocessing
+import itertools
+import os
+import pdb
 
 MIN_WIDTH_THRESHOLD=3
 MIN_HEIGHT_THRESHOLD=3
@@ -16,7 +19,49 @@ RATIO_DETECT_TRACK = 10
 
 DEBUG = True
 
-class FaceTransformation():
+class TrackerInitializer(object):
+    def __init__(self, prev_frame, prev_roi, frame):
+        self.prev_frame=prev_frame
+        self.prev_roi = prev_roi
+        self.frame = frame
+    
+def create_and_track_star(a_b):
+    """Convert `f([1,2])` to `f(1,2)` call."""
+    return create_and_track(*a_b)
+
+def create_tracker(frame, roi):
+    tracker = dlib.correlation_tracker()
+    (roi_x1, roi_y1, roi_x2, roi_y2) = roi
+    print 'workerpool: start tracking! # face: {}'.format(roi)
+    tracker.start_track(frame,
+                        dlib.rectangle(roi_x1, roi_y1, roi_x2, roi_y2))
+    return tracker
+
+def drectangle_to_tuple(drectangle):
+    cur_roi = (int(drectangle.left()),
+                     int(drectangle.top()),
+                     int(drectangle.right()),
+                     int(drectangle.bottom()))
+    return cur_roi
+    
+def create_and_track(tracker_input):
+    print 'workerpool: create_and_track! process id: {}'.format(os.getpid())
+    sys.stdout.flush()
+    
+    prev_frame = tracker_input.prev_frame
+    prev_roi = tracker_input.prev_roi
+    frame = tracker_input.frame    
+    tracker=create_tracker(prev_frame, prev_roi)
+    tracker.update(frame)
+    new_roi = drectangle_to_tuple(tracker.get_position())
+    return new_roi
+
+def x_square(x):
+    print 'worker pool test called'
+    return x**2
+
+    
+class FaceTransformation(object):
 
     def __init__(self):
         logging.basicConfig(level=logging.DEBUG,
@@ -26,7 +71,7 @@ class FaceTransformation():
         )
         formatter = logging.Formatter('%(asctime)-15s %(levelname)-8s %(processName)s %(message)s')   
         self.logger=logging.getLogger(__name__)
-        ch = logging.StreamHandler()
+        ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(logging.DEBUG)
         ch.setFormatter(formatter)
         fh = logging.FileHandler('faceswap.log')
@@ -41,35 +86,31 @@ class FaceTransformation():
         self.trackers=[]
         self.trackers_lock=threading.Lock()
         self.img_queue = multiprocessing.Queue()
-        self.trackers_queue = multiprocessing.Queue()                
-#        self.img_queue = Queue.Queue()
-#        self.detection_thread = threading.Thread(target = self.detection_update_thread)
-#        self.detection_thread_running = threading.Event()
-        self.detection_thread = multiprocessing.Process(target = self.detection_update_thread, name='detection_process', args=(self.img_queue, self.trackers_queue, ) )
-#        self.detection_thread_running = threading.Event()
-        self.detection_thread.start()
+        self.trackers_queue = multiprocessing.Queue()
+        self.last_frame=None
+        self.worker_pool=multiprocessing.Pool()
+        self.detection_process = multiprocessing.Process(target = self.detection_update_thread, name='DetectionProcess', args=(self.img_queue, self.trackers_queue, ) )
+        self.detection_process.start()
 
     def terminate(self):
         self.logger.debug('detection thread terminate!')
-#        self.detection_thread_running.set()
 
     def detection_update_thread(self, img_queue, trackers_queue):
         self.logger.info('update thread created')
-#        while (not self.detection_thread_running.wait(0.0001)):
         while True:
             frame = img_queue.get()
             rois = self.detect_faces(frame, self.detector)
             trackers = self.create_trackers(frame, rois)
             frame_available = True
+            frame_cnt = 0 
             while frame_available:
                 try:
-                    self.logger.debug('detection_update update trackers...')                    
                     frame = img_queue.get_nowait()
                     self.update_trackers(trackers, frame)
+                    frame_cnt +=1
                 except Queue.Empty:
-                    self.logger.debug('no image available. update trackers')              
+                    self.logger.debug('all image processed! # images {}'.format(frame_cnt))    
                     frame_available = False
-#                    self.trackers_lock.acquire()
                     self.logger.debug('detection thread# trackers {}'.format(len(trackers)))
                     cur_poses = []
                     for tracker in trackers:
@@ -79,84 +120,96 @@ class FaceTransformation():
                                          int(new_roi.right()),
                                          int(new_roi.bottom()))
                         cur_poses.append(cur_roi)
-                    tracker_updates = {'frame':frame, 'rois':cur_poses}
-                    trackers_queue.put(tracker_updates)
-#                    self.trackers = trackers
-#                    self.trackers_lock.release()
+                    if (len(cur_poses)>0):
+                        self.logger.debug('update trackers!')
+                        tracker_updates = {'frame':frame, 'rois':cur_poses}
+                        trackers_queue.put(tracker_updates)
+
                     
     def update_trackers(self, trackers, frame):
         for idx, tracker in enumerate(trackers):
             tracker.update(frame)
-            end = time.time()
             
     def create_trackers(self, frame, rois):
+        self.logger.debug("detection_process:")
         trackers = []
         for roi in rois:
-            tracker = self.create_tracker(frame,roi)
+            tracker = create_tracker(frame,roi)
             trackers.append(tracker)
         return trackers
 
-    def create_tracker(self, frame, roi):
-        tracker = dlib.correlation_tracker()
-        (roi_x1, roi_y1, roi_x2, roi_y2) = roi
-        self.logger.debug('start tracking! # face: {}'.format(rois))
-        tracker.start_track(frame,
-                            dlib.rectangle(roi_x1, roi_y1, roi_x2, roi_y2))
-        return tracker
-        
     
     def track_faces(self, frame):
-        self.rois=[]
-#        self.trackers_lock.acquire()
-        self.logger.debug('main thread tracking. # trackers {} '.format(len(self.trackers)))
-        for idx, tracker in enumerate(self.trackers):
-            if DEBUG:
-                start = time.time()
-            tracker.update(frame)
-            new_roi = tracker.get_position()
-            if DEBUG:
-                end = time.time()
-                self.logger.debug('main-thread tracker run: {}'.format(end-start))
-            (x1,y1,x2,y2) = (int(new_roi.left()),
-                          int(new_roi.top()),
-                          int(new_roi.right()),
-                          int(new_roi.bottom()))
-            
-            self.rois.append((x1,y1,x2,y2))
-            
-        self.rois, self.trackers = self.get_large_faces(self.rois, self.trackers)
-#        self.trackers_lock.release()
-        roi_face_pairs=self.shuffle_roi(self.rois, frame)
+        if DEBUG:
+            start = time.time()
         
+        trackers_input = []
+        for roi in self.rois:
+            trackers_input.append(TrackerInitializer(self.last_frame, roi, frame) )
+        self.rois = self.worker_pool.map(create_and_track, trackers_input)
+        self.logger.debug('map result: {}'.format(self.rois))
+
+        if DEBUG:
+            end = time.time()
+            self.logger.debug('trackers run: {}'.format((end-start)*1000))
+            
+        self.rois, _ = self.get_large_faces(self.rois, [])
+        roi_face_pairs=self.shuffle_roi(self.rois, frame)
         return roi_face_pairs
+
+        # serialized version
+        # for idx, tracker in enumerate(self.trackers):
+        #     if DEBUG:
+        #         start = time.time()
+        #     tracker.update(frame)
+        #     new_roi = tracker.get_position()
+        #     if DEBUG:
+        #         end = time.time()
+        #         self.logger.debug('main-thread tracker run: {}'.format(end-start))
+        #     (x1,y1,x2,y2) = (int(new_roi.left()),
+        #                   int(new_roi.top()),
+        #                   int(new_roi.right()),
+        #                   int(new_roi.bottom()))
+            
+        #     self.rois.append((x1,y1,x2,y2))
+#        self.rois, self.trackers = self.get_large_faces(self.rois, self.trackers)            
 
     def get_large_faces(self, rois, trackers):
         # find small faces
         small_face_idx=self.find_small_face_idx(rois)
         large_rois = rois
         large_rois_trackers = trackers
-        # remove small faces
         if ( len(small_face_idx) > 0):
             large_rois = [ rois[i] for i in xrange(len(rois)) if i not in set(small_face_idx) ]
             large_rois_trackers = [ trackers[i] for i in xrange(len(trackers)) if i not in set(small_face_idx) ]
         return large_rois, large_rois_trackers
         
     def swap_face(self,frame):
+        if DEBUG:
+            start = time.time()
+        
         self.logger.debug('main-process received frame!')                                
-        # add frame to a queue
+        # forward img to DetectionProcess
         self.img_queue.put(frame)
         try:
             tracker_updates = self.trackers_queue.get_nowait()
             rois = tracker_updates['rois']
-            frame = tracker_updates['frame']
-            self.trackers=self.create_trackers(frame,rois)
-#            trackers = self.trackers_queue.get_nowait()
-#            self.trackers = trackers
-            self.logger.debug('main-process updated trackers!')                        
+            tracker_frame = tracker_updates['frame']
+            self.rois = rois
+            self.last_frame = tracker_frame
+#            self.trackers=self.create_trackers(frame,rois)
+            self.logger.debug('main-process Updated rois and frame based on detection!')
         except Queue.Empty:
             self.logger.debug('main-process no trackers update')            
+
+        results=self.track_faces(frame)            
+        self.last_frame = frame
+
+        if DEBUG:
+            end = time.time()
+            self.logger.debug('total processing time: {}'.format((end-start)*1000))
         
-        return self.track_faces(frame)
+        return results
 
 # #        pdb.set_trace()
 #         roi_face_pairs=[]
@@ -271,7 +324,7 @@ class FaceTransformation():
         dets = detector(frame, 1)
         if DEBUG:
             end = time.time()
-            self.logger.debug('detector run: {}'.format(end-start))
+            self.logger.debug('detector run: {}'.format((end-start)*1000))
         
         dets = map(lambda d: (int(d.left()), int(d.top()), int(d.right()), int(d.bottom())), dets)
         rois=self.rm_small_face(dets)
@@ -288,7 +341,7 @@ class FaceTransformation():
 #        dets, scores, idx = detector.run(frame, 1)
         dets = self.detector(frame, 1)
         end = time.time()
-        print 'detector run: {}'.format(end-start)
+        print 'detector run: {}'.format((end-start)*1000)
         
         # changed dets format here
         dets = map(lambda d: (int(d.left()), int(d.top()), int(d.right()), int(d.bottom())), dets)
