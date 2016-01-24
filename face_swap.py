@@ -32,7 +32,7 @@ def create_and_track_star(a_b):
 def create_tracker(frame, roi):
     tracker = dlib.correlation_tracker()
     (roi_x1, roi_y1, roi_x2, roi_y2) = roi
-    print 'workerpool: start tracking! # face: {}'.format(roi)
+#    print 'workerpool: start tracking! # face: {}'.format(roi)
     tracker.start_track(frame,
                         dlib.rectangle(roi_x1, roi_y1, roi_x2, roi_y2))
     return tracker
@@ -45,15 +45,23 @@ def drectangle_to_tuple(drectangle):
     return cur_roi
     
 def create_and_track(tracker_input):
-    print 'workerpool: create_and_track! process id: {}'.format(os.getpid())
-    sys.stdout.flush()
-    
+    if DEBUG:
+        start = time.time()
+
     prev_frame = tracker_input.prev_frame
     prev_roi = tracker_input.prev_roi
     frame = tracker_input.frame    
     tracker=create_tracker(prev_frame, prev_roi)
     tracker.update(frame)
     new_roi = drectangle_to_tuple(tracker.get_position())
+    
+    if DEBUG:
+        end = time.time()
+        print 'workerpool: process id: {} running time: {}'.format(os.getpid(),
+                                                                   (end-start)*1000)        
+
+    sys.stdout.flush()
+    
     return new_roi
 
 def x_square(x):
