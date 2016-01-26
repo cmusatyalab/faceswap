@@ -9,8 +9,10 @@ import threading
 import Queue
 import logging
 import multiprocessing
+
 import itertools
 import os
+import time
 import pdb
 
 MIN_WIDTH_THRESHOLD=3
@@ -29,6 +31,14 @@ def create_and_track_star(a_b):
     """Convert `f([1,2])` to `f(1,2)` call."""
     return create_and_track(*a_b)
 
+def create_trackers_parallel(tracker_input):
+    print "create_trackers. process id : {}".format(os.getpid())
+    frame=tracker_input.prev_frame
+    roi = tracker_input.prev_roi
+    tracker = create_tracker(frame,roi)
+    sys.stdout.flush()        
+    return tracker
+    
 def create_tracker(frame, roi):
     tracker = dlib.correlation_tracker()
     (roi_x1, roi_y1, roi_x2, roi_y2) = roi
@@ -37,6 +47,14 @@ def create_tracker(frame, roi):
                         dlib.rectangle(roi_x1, roi_y1, roi_x2, roi_y2))
     return tracker
 
+def create_trackers(frame, rois):
+#    self.logger.debug("detection_process:")
+    trackers = []
+    for roi in rois:
+        tracker = create_tracker(frame,roi)
+        trackers.append(tracker)
+    return trackers
+    
 def drectangle_to_tuple(drectangle):
     cur_roi = (int(drectangle.left()),
                      int(drectangle.top()),
@@ -92,7 +110,7 @@ class FaceTransformation(object):
         self.cnt=0
         self.detector = dlib.get_frontal_face_detector()
         self.trackers=[]
-        self.trackers_lock=threading.Lock()
+#        self.trackers_lock=threading.Lock()
         self.img_queue = multiprocessing.Queue()
         self.trackers_queue = multiprocessing.Queue()
         self.last_frame=None
@@ -108,7 +126,7 @@ class FaceTransformation(object):
         while True:
             frame = img_queue.get()
             rois = self.detect_faces(frame, self.detector)
-            trackers = self.create_trackers(frame, rois)
+            trackers = create_trackers(frame, rois)
             frame_available = True
             frame_cnt = 0 
             while frame_available:
@@ -138,49 +156,53 @@ class FaceTransformation(object):
         for idx, tracker in enumerate(trackers):
             tracker.update(frame)
             
-    def create_trackers(self, frame, rois):
-        self.logger.debug("detection_process:")
-        trackers = []
-        for roi in rois:
-            tracker = create_tracker(frame,roi)
-            trackers.append(tracker)
-        return trackers
 
-    
-    def track_faces(self, frame):
-        if DEBUG:
-            start = time.time()
+
         
-        trackers_input = []
-        for roi in self.rois:
-            trackers_input.append(TrackerInitializer(self.last_frame, roi, frame) )
-        self.rois = self.worker_pool.map(create_and_track, trackers_input)
-        self.logger.debug('map result: {}'.format(self.rois))
+    def track_faces(self, frame):
+        # parallelized version
+        # if DEBUG:
+        #     start = time.time()
+        
+        # trackers_input = []
+        # for roi in self.rois:
+        #     trackers_input.append(TrackerInitializer(self.last_frame, roi, frame) )
+        # self.rois = self.worker_pool.map(create_and_track, trackers_input)
+        # self.logger.debug('map result: {}'.format(self.rois))
 
-        if DEBUG:
-            end = time.time()
-            self.logger.debug('trackers run: {}'.format((end-start)*1000))
+        # if DEBUG:
+        #     end = time.time()
+        #     self.logger.debug('trackers run: {}'.format((end-start)*1000))
             
-        self.rois, _ = self.get_large_faces(self.rois, [])
+        # self.rois, _ = self.get_large_faces(self.rois, [])
+        # roi_face_pairs=self.shuffle_roi(self.rois, frame)
+        # return roi_face_pairs
+
+        self.rois=[]
+#        self.trackers_lock.acquire()
+        self.logger.debug('main thread tracking. # trackers {} '.format(len(self.trackers)))
+        for idx, tracker in enumerate(self.trackers):
+            if DEBUG:
+                start = time.time()
+            tracker.update(frame)
+            new_roi = tracker.get_position()
+            if DEBUG:
+                end = time.time()
+                self.logger.debug('main-thread tracker run: {}'.format(end-start))
+            (x1,y1,x2,y2) = (int(new_roi.left()),
+                          int(new_roi.top()),
+                          int(new_roi.right()),
+                          int(new_roi.bottom()))
+            
+            self.rois.append((x1,y1,x2,y2))
+            
+        self.rois, self.trackers = self.get_large_faces(self.rois, self.trackers)
+#        self.trackers_lock.release()
         roi_face_pairs=self.shuffle_roi(self.rois, frame)
+        
         return roi_face_pairs
-
-        # serialized version
-        # for idx, tracker in enumerate(self.trackers):
-        #     if DEBUG:
-        #         start = time.time()
-        #     tracker.update(frame)
-        #     new_roi = tracker.get_position()
-        #     if DEBUG:
-        #         end = time.time()
-        #         self.logger.debug('main-thread tracker run: {}'.format(end-start))
-        #     (x1,y1,x2,y2) = (int(new_roi.left()),
-        #                   int(new_roi.top()),
-        #                   int(new_roi.right()),
-        #                   int(new_roi.bottom()))
-            
-        #     self.rois.append((x1,y1,x2,y2))
-#        self.rois, self.trackers = self.get_large_faces(self.rois, self.trackers)            
+        
+        
 
     def get_large_faces(self, rois, trackers):
         # find small faces
@@ -199,13 +221,24 @@ class FaceTransformation(object):
         self.logger.debug('main-process received frame!')                                
         # forward img to DetectionProcess
         self.img_queue.put(frame)
+        if (None == self.trackers):
+            # initiliazation time reserve
+            time.sleep(0.020)
+        
         try:
             tracker_updates = self.trackers_queue.get_nowait()
             rois = tracker_updates['rois']
             tracker_frame = tracker_updates['frame']
             self.rois = rois
             self.last_frame = tracker_frame
-#            self.trackers=self.create_trackers(frame,rois)
+            self.logger.debug('main-process Received rois and frame based on detection!')            
+            # try to use parallel? 
+            trackers_input = []
+            for roi in rois:
+                trackers_input.append(TrackerInitializer(tracker_frame, roi, None))
+#            self.trackers = self.worker_pool.map(create_trackers_parallel, trackers_input) 
+            self.trackers= create_trackers(frame,rois)
+
             self.logger.debug('main-process Updated rois and frame based on detection!')
         except Queue.Empty:
             self.logger.debug('main-process no trackers update')            
