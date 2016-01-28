@@ -13,4 +13,11 @@ public class NetworkProtocol {
 	public static final String HEADER_MESSAGE_FRAME_ID = "id";
 	public static final String HEADER_MESSAGE_ENGINE_ID = "engine_id";
 
+	public static final String CUSTOM_DATA_MESSAGE_NUM = "num";
+	public static final String CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X1 = "item_%_roi_x1";
+	public static final String CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y1 = "item_%_roi_y1";
+	public static final String CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X2 = "item_%_roi_x2";
+	public static final String CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y2 = "item_%_roi_y2";
+	public static final String CUSTOM_DATA_MESSAGE_IMG_TEMPLATE = "item_%_img";
+
 }

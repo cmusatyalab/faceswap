@@ -18,6 +18,7 @@ import java.util.jar.Attributes;
  */
 
 public class DisplaySurface extends SurfaceView implements SurfaceHolder.Callback {
+    public static final String LOG_TAG = "junjuew";
     private DisplayThread drawingThread;
 
     public DisplaySurface(Context context, AttributeSet attrs) {
@@ -39,6 +40,7 @@ public class DisplaySurface extends SurfaceView implements SurfaceHolder.Callbac
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        Log.d(LOG_TAG, "display surface created!");
         this.drawingThread=new DisplayThread(getHolder(),this);
         this.drawingThread.setRunning(true);
         this.drawingThread.start();
@@ -57,5 +59,9 @@ public class DisplaySurface extends SurfaceView implements SurfaceHolder.Callbac
         if (this.drawingThread!=null && this.drawingThread.isAlive()){
             this.drawingThread.push(frame);
         }
+    }
+
+    public void drawRect(){
+        this.drawingThread.drawRect();
     }
 }

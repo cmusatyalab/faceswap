@@ -34,23 +34,24 @@
         android:text="Start"
         android:textSize="20sp" />
     
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:orientation="horizontal"
-        android:weightSum="1" >
+        >
 
         <edu.cmu.cs.gabriel.CameraPreview
             android:id="@+id/camera_preview"
-            android:layout_width="1dp"
-            android:layout_height="1dp"
-            android:layout_weight="0" />
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            />
 
-        <edu.cmu.cs.gabriel.DisplaySurface
+
+        <edu.cmu.cs.gabriel.CameraOverlay
             android:id="@+id/display_surface"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"/>
+            />
     <!--
 
         <Button
@@ -61,6 +62,6 @@
             android:onClick="startStreaming"
             android:text="@string/start_button" />         
     -->
-    </LinearLayout>
+    </RelativeLayout>
 
 </LinearLayout>

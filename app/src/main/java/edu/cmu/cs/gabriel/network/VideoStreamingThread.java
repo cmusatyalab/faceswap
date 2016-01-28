@@ -60,7 +60,14 @@ public class VideoStreamingThread extends Thread {
 
 	private TokenController tokenController;
 
-	public VideoStreamingThread(FileDescriptor fd, String IPString, int port, Handler handler, TokenController tokenController) {
+	//person's name for training face recognizers
+	private String name = null;
+
+	public VideoStreamingThread(FileDescriptor fd,
+								String IPString,
+								int port,
+								Handler handler,
+								TokenController tokenController) {
 		is_running = false;
 		this.networkHander = handler;
 		this.tokenController = tokenController;
@@ -75,6 +82,16 @@ public class VideoStreamingThread extends Thread {
 		
 		// check input data at image directory
 		imageFiles = this.getImageFiles(Const.TEST_IMAGE_DIR);
+	}
+
+	public VideoStreamingThread(FileDescriptor fd,
+								String IPString,
+								int port,
+								Handler handler,
+								TokenController tokenController,
+								String name) {
+		this(fd, IPString, port, handler, tokenController);
+		this.name = name;
 	}
 
 	private File[] getImageFiles(File imageDir) {
@@ -92,6 +109,28 @@ public class VideoStreamingThread extends Thread {
 			}
 		});
 		return files;
+	}
+
+	private void sendPacket(byte[] header, byte[] data){
+		try{
+			//send add person packet first
+			// make it as a single packet
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			DataOutputStream dos=new DataOutputStream(baos);
+
+			dos.writeInt(header.length);
+			dos.writeInt(data.length);
+			dos.write(header);
+			dos.write(data);
+
+			networkWriter.write(baos.toByteArray());
+			networkWriter.flush();
+		} catch (IOException e) {
+			Log.e(LOG_TAG, e.getMessage());
+			this.notifyError(e.getMessage());
+			this.is_running = false;
+			return;
+		}
 	}
 
 	public void run() {
@@ -119,6 +158,13 @@ public class VideoStreamingThread extends Thread {
 			this.is_running = false;
 			return;
 		}
+
+		if (null != this.name){
+			byte[] header_bytes = ("{\"id\": -1, \"add_person\":" + name + "}").getBytes();
+			byte[] data_bytes = ("null").getBytes();
+			this.sendPacket(header_bytes, data_bytes);
+		}
+
 
 		while (this.is_running) {
 			try {
@@ -148,7 +194,15 @@ public class VideoStreamingThread extends Thread {
 				// make it as a single packet
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		        DataOutputStream dos=new DataOutputStream(baos);
-				byte[] header = ("{\"id\":" + sendingFrameID + "}").getBytes();
+				byte[] header;
+				if (null == this.name){
+					header = ("{\"id\":" + sendingFrameID + "}").getBytes();
+				} else {
+					header = ("{\"id\":" + sendingFrameID + ","
+							+ "\"training\":" + this.name
+							+"}").getBytes();
+				}
+
 				dos.writeInt(header.length);
 				dos.writeInt(data.length);
 				dos.write(header);
@@ -158,6 +212,7 @@ public class VideoStreamingThread extends Thread {
 				networkWriter.write(baos.toByteArray());
 				networkWriter.flush();
 				this.tokenController.decreaseToken();
+				Log.d(LOG_TAG,"send frame ID: "+sendingFrameID);
 				
 				// measurement
 		        if (packet_firstUpdateTime == 0) {

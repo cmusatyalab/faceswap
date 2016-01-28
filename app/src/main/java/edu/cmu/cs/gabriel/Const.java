@@ -20,20 +20,24 @@ public class Const {
 	public static String GABRIEL_IP = "128.2.213.15";	// Cloudlet
 //	public static String GABRIEL_IP = "54.201.173.207";	// Amazon West
     public static String CLOUDLET_GABRIEL_IP = "128.2.213.107";	// Cloudlet
-	public static String CLOUD_GABRIEL_IP = "54.201.105.116";	// Amazon West
+	public static String CLOUD_GABRIEL_IP = "54.200.101.84";	// Amazon West
 	
 	// Token
-	public static int MAX_TOKEN_SIZE = 5;
+	public static int MAX_TOKEN_SIZE = 1;
 	
 	// image size and frame rate
 	public static int MIN_FPS = 10;
-	public static int IMAGE_WIDTH = 480;
+	public static int IMAGE_WIDTH = 1080;
 
 	// Result File
 	public static String LATENCY_FILE_NAME = "latency-" + GABRIEL_IP + "-" + MAX_TOKEN_SIZE + ".txt";
 	public static File LATENCY_DIR = new File(ROOT_DIR.getAbsolutePath() + File.separator + "exp");
 	public static File LATENCY_FILE = new File (LATENCY_DIR.getAbsolutePath() + File.separator + LATENCY_FILE_NAME);
 
-	//result type
-	public static boolean RESPONSE_ENCODED_IMG=true;
+	//result type: one-hot
+	public static boolean RESPONSE_ENCODED_IMG=false;
+	public static boolean RESPONSE_ROI_FACE_SNIPPET=true;
+
+	//display preview or img processed from gabriel server
+	public static boolean DISPLAY_PREVIEW_ONLY=false;
 }

@@ -6,11 +6,9 @@ import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import edu.cmu.cs.gabriel.R;
 import edu.cmu.cs.gabriel.network.AccStreamingThread;
 import edu.cmu.cs.gabriel.network.NetworkProtocol;
 import edu.cmu.cs.gabriel.network.ResultReceivingThread;
@@ -22,6 +20,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -37,12 +36,19 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class GabrielClientActivity extends Activity implements TextToSpeech.OnInitListener,
         SensorEventListener {
@@ -80,6 +86,7 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 
 
     private DisplaySurface mDisplay;
+    private CameraOverlay cameraOverlay;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -163,15 +170,28 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 
 	private void init_once() {
 		Log.d(DEBUG_TAG, "on init once");
+
+        //display surface on top of camera preview
+//        mDisplay = (DisplaySurface) findViewById(R.id.display_surface);
+//        mDisplay.setZOrderMediaOverlay(true);
+        cameraOverlay = (CameraOverlay) findViewById(R.id.display_surface);
+        cameraOverlay.bringToFront();
+//        mDisplay.bringToFront();
+
         mPreview = (CameraPreview) findViewById(R.id.camera_preview);
+        if (Const.DISPLAY_PREVIEW_ONLY){
+            RelativeLayout.LayoutParams invisibleLayout = new RelativeLayout.LayoutParams(0, 0);
+            mDisplay.setLayoutParams(invisibleLayout);
+            mDisplay.setVisibility(View.INVISIBLE);
+            mDisplay.setZOrderMediaOverlay(false);
+        } else {
 
-        mDisplay = (DisplaySurface) findViewById(R.id.display_surface);
-        mDisplay.setZOrderMediaOverlay(true);
+//            SurfaceHolder mDisplayHolder = mDisplay.getHolder();
+//            mDisplayHolder.setFormat(PixelFormat.TRANSPARENT);
+        }
 
-        //jj: preview callback in addition?
-		mPreview.setPreviewCallback(previewCallback);
-
-//        mPreview.setVisibility(View.INVISIBLE);
+        mPreview.setPreviewCallback(previewCallback);
+        cameraOverlay.setImageSize(mPreview.imageSize);
 
 		Const.ROOT_DIR.mkdirs();
 		Const.LATENCY_DIR.mkdirs();
@@ -315,7 +335,7 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
      */
 	private PreviewCallback previewCallback = new PreviewCallback() {
 		public void onPreviewFrame(byte[] frame, Camera mCamera) {
-//			Log.d(LOG_TAG, "onpreviewframe called. data transmitting");
+///			Log.d(LOG_TAG, "onpreviewframe called. data transmitting");
 			if (hasStarted && (localOutputStream != null)) {
 				Camera.Parameters parameters = mCamera.getParameters();
 				if (videoStreamingThread != null){
@@ -338,6 +358,46 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
                 String response= (String) msg.obj;
 //                Log.d(LOG_TAG, "received response");
+				Log.d(LOG_TAG, response);
+
+
+                if (Const.RESPONSE_ROI_FACE_SNIPPET){
+                    JSONObject obj;
+                    try {
+                        obj = new JSONObject(response);
+                        int roiFacePairNum = obj.getInt(NetworkProtocol.CUSTOM_DATA_MESSAGE_NUM);
+                        Face[] faces = new Face[roiFacePairNum];
+                        for (int idx=0;idx<roiFacePairNum;idx++){
+                            int roi_x1 = obj.getInt(
+                                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X1.replace("%", String.valueOf(idx)));
+                            int roi_y1 = obj.getInt(
+                                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y1.replace("%", String.valueOf(idx)));
+                            int roi_x2 = obj.getInt(
+                                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X2.replace("%", String.valueOf(idx)));
+                            int roi_y2 = obj.getInt(
+                                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y2.replace("%", String.valueOf(idx)));
+
+                            String img_string = obj.getString(NetworkProtocol.
+                                    CUSTOM_DATA_MESSAGE_IMG_TEMPLATE.replace("%", String.valueOf(idx)));
+//                            Log.d(LOG_TAG, "img string: " + img_string);
+
+                            int[] roi = new int[]{roi_x1,roi_y1,roi_x2,roi_y2};
+                            byte[] img = Base64.decode(img_string, Base64.DEFAULT);
+                            Face face = new Face(roi, img);
+                            faces[idx] = face;
+                        }
+
+                        // if not destroyed
+                        if(cameraOverlay != null && mPreview !=null){
+                            cameraOverlay.drawFaces(faces, mPreview.imageSize);
+                        }
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+
                 if (Const.RESPONSE_ENCODED_IMG){
                     byte[] img = Base64.decode(response, Base64.DEFAULT);
                     if (mDisplay!=null) {

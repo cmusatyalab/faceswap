@@ -6,6 +6,7 @@ import java.util.List;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Paint;
 import android.hardware.Camera;
@@ -30,6 +31,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 	public Camera mCamera = null;
 	public List<int[]> supportingFPS = null;
 	public List<Camera.Size> supportingSize = null;
+	public Size imageSize;
 
     private byte [] rgbbuffer = new byte[256 * 256];
     private int [] rgbints = new int[256 * 256];
@@ -114,7 +116,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 			parameters.setPreviewSize(imageSize.width, imageSize.height);
 			parameters.setPictureFormat(ImageFormat.JPEG);			
 		}
-		
+
+		this.imageSize=imageSize;
 		mCamera.setParameters(parameters);
 	}
 
@@ -122,6 +125,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
      * start camera preview automatically here
      * @param holder
      */
+	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
         Log.d(LOG_TAG, "surface created!");
 		if (mCamera == null) {
@@ -197,6 +201,40 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 	public Camera getCamera() {
 		return mCamera;
 	}
+
+	public void drawOnPreview(){
+		Log.d(LOG_TAG, "try to draw on camera preview");
+		Canvas c = null;
+
+		if(mHolder == null){
+			Log.e(LOG_TAG, "cameraPreview mholder is null");
+			return;
+		}
+
+		try {
+			synchronized (mHolder) {
+				c = mHolder.lockCanvas();
+				if (c==null){
+					Log.e(LOG_TAG, "failed to get surface view canvas");
+					return;
+				}
+
+				// Do your drawing here
+				// So this data value you're getting back is formatted in YUV format and you can't do much
+				// with it until you convert it to rgb
+				c.drawRect(100, 100, 200, 200, new Paint());
+				Log.d("SOMETHING", "Got Bitmap");
+				// do this in a finally so that if an exception is thrown
+				// during the above, we don't leave the Surface in an
+				// inconsistent state
+				if (c != null) {
+					mHolder.unlockCanvasAndPost(c);
+				}
+			}
+		} finally {
+		}
+	}
+
 
     public void onPreviewFrame(byte[] data, Camera camera) {
         Log.d(LOG_TAG, "Got a camera frame");
