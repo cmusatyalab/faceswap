@@ -57,8 +57,13 @@ class DummyVideoApp(AppProxyThread):
         
         # pr = cProfile.Profile()
         # pr.enable()
+        # rgb mode
+        image = Image.open(io.BytesIO(data))
+        image = np.array(image)
 
-        image = np.array(Image.open(io.BytesIO(data)))
+        # preprocessing techqniues : resize?
+#        image = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
+        
 #        pdb.set_trace()
         roi_face_pairs = transformer.swap_face(image)
         roi_face_pairs_string = {}

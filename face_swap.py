@@ -184,11 +184,15 @@ class FaceTransformation(object):
         for idx, tracker in enumerate(self.trackers):
             if DEBUG:
                 start = time.time()
-            tracker.update(frame)
+                
+            # preprocessing to grey scale can reduce run time
+            grey_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+                
+            tracker.update(grey_frame)
             new_roi = tracker.get_position()
             if DEBUG:
                 end = time.time()
-                self.logger.debug('main-thread tracker run: {}'.format(end-start))
+                self.logger.debug('main-thread tracker run: {}'.format((end-start)*1000))
             (x1,y1,x2,y2) = (int(new_roi.left()),
                           int(new_roi.top()),
                           int(new_roi.right()),
@@ -217,10 +221,16 @@ class FaceTransformation(object):
     def swap_face(self,frame):
         if DEBUG:
             start = time.time()
+
+        self.logger.debug('main-process received frame!')
+
+
         
-        self.logger.debug('main-process received frame!')                                
         # forward img to DetectionProcess
-        self.img_queue.put(frame)
+        # preprocessing to grey scale can reduce run time for detection process only handle greyscale
+        grey_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        self.img_queue.put(grey_frame)
+        
         if (None == self.trackers):
             # initiliazation time reserve
             time.sleep(0.020)
@@ -362,7 +372,10 @@ class FaceTransformation(object):
     def detect_faces(self, frame, detector):
         if DEBUG:
             start = time.time()
-        dets = detector(frame, 1)
+
+
+        # upsampling will take a lot of time
+        dets = detector(frame)
         if DEBUG:
             end = time.time()
             self.logger.debug('detector run: {}'.format((end-start)*1000))
