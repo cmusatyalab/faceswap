@@ -12,16 +12,28 @@ import time
 import os
 
 class OpenFaceClient(object):
-    def __init__(self, server_ip=u"ws://128.2.211.75", server_port=9000):
+    def __init__(self, server_ip=u"ws://128.2.211.75", server_port=9000, async=False):
         self.logger=MyUtils.getLogger(__name__)        
         server_ip_port = server_ip + ':' +str(server_port)
         self.ws = create_connection(server_ip_port)
+        self.async=async
 
-        self.receive_thread = threading.Thread(target=self.onReceive, name='receive_thread')
-        self.receive_thread_running = threading.Event()
-        self.receive_thread_running.set()
-        self.receive_thread.start()
+        if (self.async):
+            self.receive_thread = threading.Thread(target=self.onReceive, name='receive_thread')
+            self.receive_thread_running = threading.Event()
+            self.receive_thread_running.set()
+            self.receive_thread.start()
 
+    def recv(self):
+        if not self.async:
+            try:
+                resp = self.ws.recv()
+                self.logger.debug('server said: {}'.format(resp))
+                return resp
+            except WebSocketException as e:
+                self.logger.debug("web socket error: {0}".format(e))
+
+        
     def addPerson(self,person):
         msg = {
             'type': 'ADD_PERSON',
@@ -45,6 +57,7 @@ class OpenFaceClient(object):
         }
         msg = json.dumps(msg)
         self.ws.send(msg)
+        return self.recv()
 
     def setState(self,images, people, training_on):
         msg = {
@@ -65,7 +78,8 @@ class OpenFaceClient(object):
         }
         msg = json.dumps(msg)
         self.ws.send(msg)
-
+        return self.recv()
+        
     def terminate(self):
         self.receive_thread_running.clear()
         self.ws.close()

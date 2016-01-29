@@ -13,6 +13,13 @@ import multiprocessing
 import itertools
 import os
 import time
+from PIL import Image, ImageOps
+import io, StringIO
+import base64
+import numpy as np
+import json
+
+from openfaceClient import OpenFaceClient
 import pdb
 
 MIN_WIDTH_THRESHOLD=3
@@ -118,14 +125,22 @@ class FaceTransformation(object):
         self.detection_process = multiprocessing.Process(target = self.detection_update_thread, name='DetectionProcess', args=(self.img_queue, self.trackers_queue, ) )
         self.detection_process.start()
 
+        # openface related
+        self.training = False
+        self.training_cnt = 0
+        self.server_ip = u"ws://128.2.211.75"
+        self.server_port = 9000
+        self.openface_client = OpenFaceClient(self.server_ip, self.server_port)
+
     def terminate(self):
         self.logger.debug('detection thread terminate!')
 
     def detection_update_thread(self, img_queue, trackers_queue):
         self.logger.info('update thread created')
+        detector = dlib.get_frontal_face_detector()
         while True:
             frame = img_queue.get()
-            rois = self.detect_faces(frame, self.detector)
+            rois = self.detect_faces(frame, detector)
             trackers = create_trackers(frame, rois)
             frame_available = True
             frame_cnt = 0 
@@ -160,26 +175,7 @@ class FaceTransformation(object):
 
         
     def track_faces(self, frame):
-        # parallelized version
-        # if DEBUG:
-        #     start = time.time()
-        
-        # trackers_input = []
-        # for roi in self.rois:
-        #     trackers_input.append(TrackerInitializer(self.last_frame, roi, frame) )
-        # self.rois = self.worker_pool.map(create_and_track, trackers_input)
-        # self.logger.debug('map result: {}'.format(self.rois))
-
-        # if DEBUG:
-        #     end = time.time()
-        #     self.logger.debug('trackers run: {}'.format((end-start)*1000))
-            
-        # self.rois, _ = self.get_large_faces(self.rois, [])
-        # roi_face_pairs=self.shuffle_roi(self.rois, frame)
-        # return roi_face_pairs
-
         self.rois=[]
-#        self.trackers_lock.acquire()
         self.logger.debug('main thread tracking. # trackers {} '.format(len(self.trackers)))
         for idx, tracker in enumerate(self.trackers):
             if DEBUG:
@@ -201,7 +197,6 @@ class FaceTransformation(object):
             self.rois.append((x1,y1,x2,y2))
             
         self.rois, self.trackers = self.get_large_faces(self.rois, self.trackers)
-#        self.trackers_lock.release()
         roi_face_pairs=self.shuffle_roi(self.rois, frame)
         
         return roi_face_pairs
@@ -225,7 +220,6 @@ class FaceTransformation(object):
         self.logger.debug('main-process received frame!')
 
 
-        
         # forward img to DetectionProcess
         # preprocessing to grey scale can reduce run time for detection process only handle greyscale
         grey_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
@@ -369,19 +363,23 @@ class FaceTransformation(object):
                 filtered_dets.append(d)
         return filtered_dets
         
-    def detect_faces(self, frame, detector):
+    def detect_faces(self, frame, detector, largest_only=False):
         if DEBUG:
             start = time.time()
-
-
         # upsampling will take a lot of time
         dets = detector(frame)
         if DEBUG:
             end = time.time()
             self.logger.debug('detector run: {}'.format((end-start)*1000))
-        
-        dets = map(lambda d: (int(d.left()), int(d.top()), int(d.right()), int(d.bottom())), dets)
+
+        if largest_only:
+            if (len(dets) > 0):
+                max_det = max(dets, key=lambda rect: rect.width() * rect.height())
+                dets = [max_det]
+            
+        dets=map(lambda d: (int(d.left()), int(d.top()), int(d.right()), int(d.bottom())), dets)
         rois=self.rm_small_face(dets)
+        
         self.logger.debug('# detected : {}'.format(len(rois)))        
         rois=sorted(rois)
         return rois
@@ -431,3 +429,50 @@ class FaceTransformation(object):
         self.rois =rois
             
         return roi_face_pairs
+
+
+    def addPerson(self, name):
+        return self.openface_client.addPerson(name)
+
+    # frame is a numpy array
+    def train(self, frame, name):
+        # change training to true
+        if self.training == False:
+            self.training = True
+            self.training_cnt = 0
+            self.openface_client.setTraining(True)
+
+        # detect the largest face
+        rois = self.detect_faces(frame, self.detector, largest_only=True)
+
+        # only the largest face counts
+        if (len(rois) > 1):
+            self.logger.info("more than 1 faces detected in training frame. abandon frame")
+            return self.training_cnt
+
+        if (len(rois) == 0):
+            self.logger.info("No faces detected in training frame. abandon frame")
+            return self.training_cnt
+
+        self.logger.debug("training: sucesss - detected 1 face. add frame")            
+        face = None            
+        if 1 == len(rois) :
+            (x1,y1,x2,y2) = rois[0]
+            face = np.copy(frame[y1:y2+1, x1:x2+1]) 
+
+        face_img = Image.fromarray(face)                        
+        sio = StringIO.StringIO()
+        face_img.save(sio, 'JPEG')
+        jpeg_img = sio.getvalue()
+
+        if DEBUG:
+            face_img.save('training.jpg')            
+        
+        face_string = base64.b64encode(jpeg_img)
+        face_string = "data:image/jpeg;base64," + face_string
+            
+        self.openface_client.addFrame(face_string, name)
+        self.training_cnt +=1
+        return self.training_cnt
+            
+        

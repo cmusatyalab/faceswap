@@ -47,30 +47,40 @@ import cProfile, pstats, StringIO
 DEBUG = True
 transformer = FaceTransformation()
 
+
+class AppDataProtocol(object):
+    TYPE_add_person = "add_person"
+    TYPE_train = "train"    
+    TYPE_detect = "detect"
+    TYPE_img = "image"        
+    
+
 # bad idea to transfer image back using json
 class DummyVideoApp(AppProxyThread):
-    
-    def handle(self, header, data):
-        # PERFORM Cognitive Assistant Processing
-        sys.stdout.write("processing: ")
-        sys.stdout.write("%s\n" % header)
+
+    def gen_response(self, response_type, value):
+        msg = {
+            'type': response_type,
+            'value': value
+            }
+        return json.dumps(msg)
         
+    
+    def process(image):
         # pr = cProfile.Profile()
         # pr.enable()
         # rgb mode
-        image = Image.open(io.BytesIO(data))
-        image = np.array(image)
 
         # preprocessing techqniues : resize?
 #        image = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
-        
+
 #        pdb.set_trace()
         roi_face_pairs = transformer.swap_face(image)
         roi_face_pairs_string = {}
         roi_face_pairs_string['num'] = len(roi_face_pairs)
         idx = 0
         for roi, face in roi_face_pairs:
-            processed_img = Image.fromarray(face)            
+            processed_img = Image.fromarray(face)
             processed_output = StringIO.StringIO()
             processed_img.save(processed_output, 'JPEG')
             if DEBUG:
@@ -108,10 +118,43 @@ class DummyVideoApp(AppProxyThread):
         # processed_output.close()
 
         result = json.dumps(roi_face_pairs_string)
-
 #        print result
         return result
 
+    def handle(self, header, data):
+        # PERFORM Cognitive Assistant Processing
+        # header is a dict
+        sys.stdout.write("processing: ")
+        sys.stdout.write("%s\n" % header)
+        
+        header_dict = header
+
+        if 'add_person' in header_dict:
+            name = header_dict['add_person']
+            if isinstance(name, basestring):
+                transformer.addPerson(name)
+            else:
+                raise TypeError('unsupported type for name of a person')
+
+            return self.gen_response(AppDataProtocol.TYPE_add_person, name)
+        
+        training = False
+        if 'training' in header_dict:
+            training=True
+            name=header_dict['training']
+
+        # operate on client data
+        image_raw = Image.open(io.BytesIO(data))
+        image = np.array(image_raw)
+            
+        if training:
+#            pdb.set_trace()
+            cnt = transformer.train(image, name)        
+            return self.gen_response(AppDataProtocol.TYPE_train, str(cnt))
+        else:
+            # swap faces
+            snippets = self.process(image)
+            return self.gen_response(AppDataProtocol.TYPE_detect, snippets)
 
 class DummyAccApp(AppProxyThread):
     def chunks(self, l, n):
