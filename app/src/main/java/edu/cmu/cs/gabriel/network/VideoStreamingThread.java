@@ -125,6 +125,7 @@ public class VideoStreamingThread extends Thread {
 
 			networkWriter.write(baos.toByteArray());
 			networkWriter.flush();
+			Log.d(LOG_TAG, "header size: " + header.length+ " data size: " +data.length);
 		} catch (IOException e) {
 			Log.e(LOG_TAG, e.getMessage());
 			this.notifyError(e.getMessage());
@@ -160,7 +161,7 @@ public class VideoStreamingThread extends Thread {
 		}
 
 		if (null != this.name){
-			byte[] header_bytes = ("{\"id\": -1, \"add_person\":" + name + "}").getBytes();
+			byte[] header_bytes = ("{\"id\": -1, \"add_person\":" + "\"" + name + "\"" + "}").getBytes();
 			byte[] data_bytes = ("null").getBytes();
 			this.sendPacket(header_bytes, data_bytes);
 		}
@@ -198,8 +199,10 @@ public class VideoStreamingThread extends Thread {
 				if (null == this.name){
 					header = ("{\"id\":" + sendingFrameID + "}").getBytes();
 				} else {
+//					header = ("{\"id\":" + sendingFrameID + "}").getBytes();
+
 					header = ("{\"id\":" + sendingFrameID + ","
-							+ "\"training\":" + this.name
+							+ "\"training\":" + "\"" + this.name + "\""
 							+"}").getBytes();
 				}
 

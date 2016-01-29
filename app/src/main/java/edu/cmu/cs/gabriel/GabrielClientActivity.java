@@ -6,6 +6,7 @@ import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -20,6 +21,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.hardware.Camera;
 import android.hardware.Sensor;
@@ -34,6 +36,7 @@ import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.util.Base64;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SurfaceHolder;
@@ -49,6 +52,7 @@ import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 public class GabrielClientActivity extends Activity implements TextToSpeech.OnInitListener,
         SensorEventListener {
@@ -87,16 +91,43 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 
     private DisplaySurface mDisplay;
     private CameraOverlay cameraOverlay;
+    private RelativeLayout rly;
+    private TextView cnt_view;
+
+	private String name = null;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.d(DEBUG_TAG, "on onCreate");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED+
-                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON+
-                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);		
-	
+        rly = (RelativeLayout) findViewById(R.id.camera_relative_layout);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED +
+				WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON +
+				WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+		Intent intent = getIntent();
+		if (intent.hasExtra("name")){
+			this.name = String.valueOf(intent.getStringExtra("name"));
+            //add training overlay for count
+            cnt_view= new TextView(getApplicationContext());
+            cnt_view.setText("0");
+            cnt_view.setTextColor(Color.RED);
+            cnt_view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 25);
+            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.WRAP_CONTENT,
+                    RelativeLayout.LayoutParams.WRAP_CONTENT
+            );
+            lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            cnt_view.setLayoutParams(lp);
+            rly.addView(cnt_view);
+
+            Intent reply = new Intent();
+            reply.putExtra("name", name);
+            setResult(RESULT_OK, reply);
+		}
+
 		// Connect to Gabriel Server if it's not experiment
 		if (Const.IS_EXPERIMENT == false){
 			final Button expButton = (Button) findViewById(R.id.button_runexperiment);
@@ -104,6 +135,7 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 			init_once();
 			init_experiement();			
 		}
+
 	}
 
 	boolean experimentStarted = false;
@@ -132,9 +164,7 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 						if ((ipIndex == ipList.length) || (tokenIndex == tokenSize.length)) {
 							Log.d(LOG_TAG, "Finish all experiemets");
 							startTimer.cancel();
-							
 							terminate();
-							
 							return;
 						}
 						
@@ -239,7 +269,6 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 	}
 	
 	private void init_experiement() {
-
 		Log.d(DEBUG_TAG, "on init experiment");
 		if (tokenController != null){
 			tokenController.close();
@@ -269,8 +298,13 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 		resultThread.start();
 		
 		FileDescriptor fd = cameraRecorder.getOutputFileDescriptor();
-		videoStreamingThread = new VideoStreamingThread(fd,
-				Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController);
+		if (null == name){
+			videoStreamingThread = new VideoStreamingThread(fd,
+					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController);
+		} else {
+			videoStreamingThread = new VideoStreamingThread(fd,
+					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, name);
+		}
 		videoStreamingThread.start();
 		
 //		accStreamingThread = new AccStreamingThread(Const.GABRIEL_IP, ACC_STREAM_PORT, returnMsgHandler, tokenController);
@@ -307,13 +341,15 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 		super.onPause();
 		Log.d(DEBUG_TAG, "on pause");
 		this.terminate();
+		finish();
 		Log.d(DEBUG_TAG, "out pause");
 	}
 
 	@Override
 	protected void onDestroy() {
-		this.terminate();
 		super.onDestroy();
+		this.terminate();
+		finish();
 	}
 
 	@Override
@@ -345,56 +381,98 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 		}
 	};
 
-	private Handler returnMsgHandler = new Handler() {
+    private Face[] parseFaceSnippets(String response) {
+        try {
+            JSONObject obj;
+            obj = new JSONObject(response);
+            int roiFacePairNum = obj.getInt(NetworkProtocol.CUSTOM_DATA_MESSAGE_NUM);
+            Face[] faces = new Face[roiFacePairNum];
+            for (int idx = 0; idx < roiFacePairNum; idx++) {
+                int roi_x1 = obj.getInt(
+                        NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X1.replace("%", String.valueOf(idx)));
+                int roi_y1 = obj.getInt(
+                        NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y1.replace("%", String.valueOf(idx)));
+                int roi_x2 = obj.getInt(
+                        NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X2.replace("%", String.valueOf(idx)));
+                int roi_y2 = obj.getInt(
+                        NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y2.replace("%", String.valueOf(idx)));
+
+                String img_string = obj.getString(NetworkProtocol.
+                        CUSTOM_DATA_MESSAGE_IMG_TEMPLATE.replace("%", String.valueOf(idx)));
+//                            Log.d(LOG_TAG, "img string: " + img_string);
+
+                int[] roi = new int[]{roi_x1, roi_y1, roi_x2, roi_y2};
+                byte[] img = Base64.decode(img_string, Base64.DEFAULT);
+                Face face = new Face(roi, img);
+                faces[idx] = face;
+                return faces;
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+    private Handler returnMsgHandler = new Handler() {
 		public void handleMessage(Message msg) {
 			if (msg.what == NetworkProtocol.NETWORK_RET_FAILED) {
+
 				Bundle data = msg.getData();
 //				String message = data.getString("message");
 //				stopStreaming();
 //				new AlertDialog.Builder(GabrielClientActivity.this).setTitle("INFO").setMessage(message)
 //						.setIcon(R.drawable.ic_launcher).setNegativeButton("Confirm", null).show();
 			}
+
 			//handled by resultReceivingThread!!!
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
-                String response= (String) msg.obj;
-//                Log.d(LOG_TAG, "received response");
-				Log.d(LOG_TAG, response);
+                String response = (String) msg.obj;
+                Log.d(LOG_TAG, "received response");
+                Log.d(LOG_TAG, response);
 
-
-                if (Const.RESPONSE_ROI_FACE_SNIPPET){
-                    JSONObject obj;
+                if (Const.RESPONSE_JSON) {
                     try {
+                        JSONObject obj;
                         obj = new JSONObject(response);
-                        int roiFacePairNum = obj.getInt(NetworkProtocol.CUSTOM_DATA_MESSAGE_NUM);
-                        Face[] faces = new Face[roiFacePairNum];
-                        for (int idx=0;idx<roiFacePairNum;idx++){
-                            int roi_x1 = obj.getInt(
-                                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X1.replace("%", String.valueOf(idx)));
-                            int roi_y1 = obj.getInt(
-                                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y1.replace("%", String.valueOf(idx)));
-                            int roi_x2 = obj.getInt(
-                                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X2.replace("%", String.valueOf(idx)));
-                            int roi_y2 = obj.getInt(
-                                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y2.replace("%", String.valueOf(idx)));
-
-                            String img_string = obj.getString(NetworkProtocol.
-                                    CUSTOM_DATA_MESSAGE_IMG_TEMPLATE.replace("%", String.valueOf(idx)));
-//                            Log.d(LOG_TAG, "img string: " + img_string);
-
-                            int[] roi = new int[]{roi_x1,roi_y1,roi_x2,roi_y2};
-                            byte[] img = Base64.decode(img_string, Base64.DEFAULT);
-                            Face face = new Face(roi, img);
-                            faces[idx] = face;
+                        String type = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE);
+                        if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_ADD_PERSON)) {
+                            String name = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
+                            Log.d(LOG_TAG, "gabriel server added person: " + name);
                         }
 
-                        // if not destroyed
-                        if(cameraOverlay != null && mPreview !=null){
-                            cameraOverlay.drawFaces(faces, mPreview.imageSize);
+                        if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_TRAIN)) {
+                            String cnt = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
+                            Log.d(LOG_TAG, "gabriel server training cnt: " + cnt);
+                            cnt_view.setText(String.valueOf(cnt));
+                        }
+
+                        if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_DETECT)) {
+                            String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
+                            Log.d(LOG_TAG, "received detection result ");
+                            Face[] faces = parseFaceSnippets(response);
+                            // if not destroyed
+                            if(cameraOverlay != null && mPreview !=null){
+                                cameraOverlay.drawFaces(faces, mPreview.imageSize);
+                            }
+                        }
+
+                        if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_IMG)) {
+                            Log.w(LOG_TAG, "received encoded img. Do not support anymore ");
                         }
 
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
+                }
+
+                if (Const.RESPONSE_ROI_FACE_SNIPPET){
+                    Face[] faces = parseFaceSnippets(response);
+                    // if not destroyed
+                    if(cameraOverlay != null && mPreview !=null){
+                        cameraOverlay.drawFaces(faces, mPreview.imageSize);
+                    }
+
                 }
 
 
@@ -404,7 +482,6 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
                         mDisplay.push(img);
                     }
                 }
-
 
 
 //				if (mTTS != null){

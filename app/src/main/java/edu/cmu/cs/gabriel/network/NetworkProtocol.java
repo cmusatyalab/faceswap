@@ -13,6 +13,14 @@ public class NetworkProtocol {
 	public static final String HEADER_MESSAGE_FRAME_ID = "id";
 	public static final String HEADER_MESSAGE_ENGINE_ID = "engine_id";
 
+	public static final String CUSTOM_DATA_MESSAGE_TYPE = "type";
+	//response packet data type
+	public static final String CUSTOM_DATA_MESSAGE_TYPE_ADD_PERSON= "add_person";
+	public static final String CUSTOM_DATA_MESSAGE_TYPE_TRAIN= "train";
+	public static final String CUSTOM_DATA_MESSAGE_TYPE_DETECT = "detect";
+	public static final String CUSTOM_DATA_MESSAGE_TYPE_IMG = "image";
+	public static final String CUSTOM_DATA_MESSAGE_VALUE= "value";
+
 	public static final String CUSTOM_DATA_MESSAGE_NUM = "num";
 	public static final String CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X1 = "item_%_roi_x1";
 	public static final String CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y1 = "item_%_roi_y1";

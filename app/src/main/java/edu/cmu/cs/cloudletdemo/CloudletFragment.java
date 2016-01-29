@@ -17,15 +17,8 @@ import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.R;
 
-public class CloudletFragment extends Fragment {
-    private TextView titleTextView;
-    private TextView ipTextView;
-    private Button resetIPButton;
-    private EditText ipEditText;
-    private Button runDemoButton;
-    private static final String
-            IPV4Pattern = "(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])";
-    private static final String IPV6Pattern = "([0-9a-f]{1,4}:){7}([0-9a-f]){1,4}";
+public class CloudletFragment extends DemoFragment {
+    private final int LAUNCHCODE = 0;
 
     public CloudletFragment() {
 
@@ -39,21 +32,17 @@ public class CloudletFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        super.onCreateView(inflater,container,savedInstanceState);
-        View view=inflater.inflate(R.layout.cloudlet_fragment,container,false);
-        titleTextView=(TextView)view.findViewById(R.id.titleView);
+
+        View view = super.onCreateView(inflater, container, savedInstanceState);
         titleTextView.setText("cloudlet ip");
-        ipTextView=(TextView)view.findViewById(R.id.cloudletIPView);
         ipTextView.setText(Const.CLOUDLET_GABRIEL_IP);
-        resetIPButton=(Button)view.findViewById(R.id.resetIPButton);
-        ipEditText=(EditText)view.findViewById(R.id.cloudletIPEditTextView);
         resetIPButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String input = String.valueOf(ipEditText.getText());
-                if(isIpAddress(input)) {
+                if (isIpAddress(input)) {
                     ipTextView.setText(input);
-                    Const.CLOUDLET_GABRIEL_IP= input;
+                    Const.CLOUDLET_GABRIEL_IP = input;
                 } else {
                     new AlertDialog.Builder(getContext())
                             .setTitle("Invalid")
@@ -69,7 +58,6 @@ public class CloudletFragment extends Fragment {
             }
         });
 
-        runDemoButton=(Button)view.findViewById(R.id.cloudletRunDemoButton);
         runDemoButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -79,15 +67,30 @@ public class CloudletFragment extends Fragment {
                 Toast.makeText(getContext(), "initializing demo", Toast.LENGTH_SHORT).show();
             }
         });
+
+        addPersonButton.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name = String.valueOf(nameEditText.getText());
+                if (checkName(name)){
+                    Const.GABRIEL_IP = Const.CLOUDLET_GABRIEL_IP;
+                    Intent intent = new Intent(getContext(), GabrielClientActivity.class);
+                    intent.putExtra("name", name);
+                    startActivityForResult(intent, LAUNCHCODE);
+                    Toast.makeText(getContext(), "training", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
         // Inflate the layout for this fragment
         return view;
     }
 
-    public boolean isIpAddress(String ipAddress) {
-        if (ipAddress.matches(IPV4Pattern) || ipAddress.matches(IPV6Pattern)) {
-            return true;
-        }
-        return false;
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        String name = data.getStringExtra("name");
+        addTrainedPerson(name);
     }
+
 
 }

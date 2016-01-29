@@ -18,6 +18,8 @@ import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.R;
 
 public class CloudFragment extends DemoFragment {
+    private final int LAUNCHCODE = 1;
+
     public CloudFragment() {
 
     }
@@ -58,7 +60,29 @@ public class CloudFragment extends DemoFragment {
                 Toast.makeText(getContext(), "initializing demo", Toast.LENGTH_SHORT).show();
             }
         });
-        // Inflate the layout for this fragment
+
+        addPersonButton.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String name = String.valueOf(nameEditText.getText());
+                if (checkName(name)){
+                    Const.GABRIEL_IP = Const.CLOUD_GABRIEL_IP;
+                    Intent intent = new Intent(getContext(), GabrielClientActivity.class);
+                    intent.putExtra("name", name);
+                    startActivityForResult(intent, LAUNCHCODE);
+                    Toast.makeText(getContext(), "training", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
         return view;
     }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        String name = data.getStringExtra("name");
+        addTrainedPerson(name);
+    }
+
 }

@@ -4,7 +4,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="edu.cmu.cs.cloudletdemo.CloudletFragment"
-    android:weightSum="1">
+    android:id="@+id/fragmentRelativeLayout"
+    >
 
     <TextView
         android:layout_width="wrap_content"
@@ -31,28 +32,74 @@
         android:layout_height="wrap_content"
         android:text="Set IP"
         android:id="@+id/resetIPButton"
-        android:layout_marginTop="28dp"
+        android:layout_marginTop="29dp"
         android:layout_below="@+id/cloudletIPView"
-        android:layout_toRightOf="@+id/cloudletIPEditTextView"
-        android:layout_marginLeft="27dp" />
+        android:layout_toRightOf="@+id/cloudletIPEditTextView" />
 
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:ems="10"
         android:id="@+id/cloudletIPEditTextView"
-        android:layout_marginLeft="22dp"
+        android:hint="Enter Cloudlet IP"
         android:layout_alignBottom="@+id/resetIPButton"
-        android:layout_alignParentLeft="true"
-        android:hint="Enter Cloudlet IP" />
+        android:layout_alignRight="@+id/cloudletRunDemoButton" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Run Demo"
         android:id="@+id/cloudletRunDemoButton"
-        android:layout_below="@+id/cloudletIPEditTextView"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="94dp" />
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add Person"
+        android:id="@+id/addPersonButton"
+        android:layout_marginTop="51dp"
+        android:layout_below="@+id/resetIPButton"
+        android:layout_toRightOf="@+id/cloudletRunDemoButton" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/nameEditText"
+        android:hint="Enter Name"
+        android:layout_alignBaseline="@+id/addPersonButton"
+        android:layout_alignBottom="@+id/addPersonButton"
+        android:layout_alignLeft="@+id/cloudletIPEditTextView"
+        android:layout_alignRight="@+id/cloudletRunDemoButton" />
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        android:stretchColumns="0,1"
+        android:id="@+id/trainedTable"
+        android:layout_alignLeft="@+id/nameEditText"
+        android:layout_alignRight="@+id/addPersonButton"
+        android:layout_below="@+id/cloudletRunDemoButton"
+        android:layout_margin="8dp">
+
+        <TableRow
+            android:id="@+id/tableRow1"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/textView1"
+                android:layout_column="0"
+                android:text="test">
+            </TextView>
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_column="1"
+                android:text="test2">
+            </TextView>
+
+        </TableRow>
+
+    </TableLayout>
 
 </RelativeLayout>
