@@ -381,6 +381,44 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 		}
 	};
 
+	/**
+	 * format of face object json representation
+	 'roi_x1':roi_x1,
+	 'roi_y1':roi_y1,
+	 'roi_x2':roi_x2,
+	 'roi_y2':roi_y2,
+	 'name':self.name,
+	 'data':np_array_to_jpeg_string(self.data)
+	 * @param response
+	 * @return
+	 */
+	private Face parseFace(String response){
+		try {
+			JSONObject obj = new JSONObject(response);
+            int roi_x1 = obj.getInt(
+                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_X1);
+            int roi_y1 = obj.getInt(
+                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_Y1);
+            int roi_x2 = obj.getInt(
+                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_X2);
+            int roi_y2 = obj.getInt(
+                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_Y2);
+            String name = obj.getString(
+                    NetworkProtocol.CUSTOM_DATA_MESSAGE_NAME
+            );
+
+            String img_string = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG);
+
+            int[] roi = new int[]{roi_x1, roi_y1, roi_x2, roi_y2};
+            byte[] img = Base64.decode(img_string, Base64.DEFAULT);
+            Face face = new Face(roi, img, name);
+            return face;
+        } catch (JSONException e) {
+			e.printStackTrace();
+		}
+        return null;
+	}
+
     private Face[] parseFaceSnippets(String response) {
         try {
             JSONObject obj;
@@ -388,25 +426,12 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
             int roiFacePairNum = obj.getInt(NetworkProtocol.CUSTOM_DATA_MESSAGE_NUM);
             Face[] faces = new Face[roiFacePairNum];
             for (int idx = 0; idx < roiFacePairNum; idx++) {
-                int roi_x1 = obj.getInt(
-                        NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X1.replace("%", String.valueOf(idx)));
-                int roi_y1 = obj.getInt(
-                        NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y1.replace("%", String.valueOf(idx)));
-                int roi_x2 = obj.getInt(
-                        NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X2.replace("%", String.valueOf(idx)));
-                int roi_y2 = obj.getInt(
-                        NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y2.replace("%", String.valueOf(idx)));
-
-                String img_string = obj.getString(NetworkProtocol.
-                        CUSTOM_DATA_MESSAGE_IMG_TEMPLATE.replace("%", String.valueOf(idx)));
-//                            Log.d(LOG_TAG, "img string: " + img_string);
-
-                int[] roi = new int[]{roi_x1, roi_y1, roi_x2, roi_y2};
-                byte[] img = Base64.decode(img_string, Base64.DEFAULT);
-                Face face = new Face(roi, img);
+				String faceString = obj.getString(String.valueOf(idx));
+                Face face = this.parseFace(faceString);
                 faces[idx] = face;
-                return faces;
             }
+            Log.d(LOG_TAG, "parsed # faces " + faces.length);
+            return faces;
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -442,15 +467,22 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
                         }
 
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_TRAIN)) {
-                            String cnt = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
+                            String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
+                            Face[] faces = parseFaceSnippets(value);
+                            JSONObject cnt_json = new JSONObject(value);
+                            String cnt = cnt_json.getString("cnt");
                             Log.d(LOG_TAG, "gabriel server training cnt: " + cnt);
                             cnt_view.setText(String.valueOf(cnt));
+                            // if not destroyed
+                            if(cameraOverlay != null && mPreview !=null){
+                                cameraOverlay.drawFaces(faces, mPreview.imageSize);
+                            }
                         }
 
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_DETECT)) {
                             String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
                             Log.d(LOG_TAG, "received detection result ");
-                            Face[] faces = parseFaceSnippets(response);
+                            Face[] faces = parseFaceSnippets(value);
                             // if not destroyed
                             if(cameraOverlay != null && mPreview !=null){
                                 cameraOverlay.drawFaces(faces, mPreview.imageSize);

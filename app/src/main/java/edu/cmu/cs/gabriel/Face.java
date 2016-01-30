@@ -10,11 +10,26 @@ public class Face {
     private int[] roi;
     private byte[] img;
     private Bitmap bitmap;
+    private String name;
 
     public Face(int[] roi, byte[] img) {
         this.roi = roi;
         this.img = img;
     }
+
+    public Face(int[] roi, byte[] img, String name) {
+        this(roi, img);
+        this.name=name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
 
     public int[] getRoi() {
         return roi;

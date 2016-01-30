@@ -19,6 +19,7 @@ public class CameraOverlay extends View {
 
     private Face[] faces;
     private Paint myPaint;
+    private Paint textPaint;
 
     // image size of transmitted imgs
     // used for scaling
@@ -45,6 +46,9 @@ public class CameraOverlay extends View {
         myPaint.setStrokeWidth(10);
         myPaint.setStyle(Paint.Style.STROKE);
 
+        textPaint = new Paint();
+        textPaint.setColor(Color.RED);
+        textPaint.setTextSize(30);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -66,6 +70,10 @@ public class CameraOverlay extends View {
                         roi[2] - roi[0] + 1,
                         roi[3] - roi[1] + 1 ,false);
                 c.drawBitmap(scaledBitmap, roi[0], roi[1], null);
+                String name = face.getName();
+                if (null != name){
+                    c.drawText(name, roi[0]-4, roi[1]-4, textPaint);
+                }
             }
         }
 

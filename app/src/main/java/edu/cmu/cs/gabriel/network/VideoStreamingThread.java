@@ -62,6 +62,7 @@ public class VideoStreamingThread extends Thread {
 
 	//person's name for training face recognizers
 	private String name = null;
+    private boolean hasSentAddPerson;
 
 	public VideoStreamingThread(FileDescriptor fd,
 								String IPString,
@@ -82,6 +83,7 @@ public class VideoStreamingThread extends Thread {
 		
 		// check input data at image directory
 		imageFiles = this.getImageFiles(Const.TEST_IMAGE_DIR);
+        this.hasSentAddPerson=true;
 	}
 
 	public VideoStreamingThread(FileDescriptor fd,
@@ -91,7 +93,10 @@ public class VideoStreamingThread extends Thread {
 								TokenController tokenController,
 								String name) {
 		this(fd, IPString, port, handler, tokenController);
-		this.name = name;
+        if (name != null){
+            this.name = name;
+            this.hasSentAddPerson=false;
+        }
 	}
 
 	private File[] getImageFiles(File imageDir) {
@@ -160,11 +165,6 @@ public class VideoStreamingThread extends Thread {
 			return;
 		}
 
-		if (null != this.name){
-			byte[] header_bytes = ("{\"id\": -1, \"add_person\":" + "\"" + name + "\"" + "}").getBytes();
-			byte[] data_bytes = ("null").getBytes();
-			this.sendPacket(header_bytes, data_bytes);
-		}
 
 
 		while (this.is_running) {
@@ -178,6 +178,7 @@ public class VideoStreamingThread extends Thread {
 				// get data
 				byte[] data = null;
 				long dataTime = 0;
+//				long sendingFrameID = 0;
 				long sendingFrameID = 0;
 				synchronized(frameLock){
 					while (this.frameBuffer == null){
@@ -196,15 +197,21 @@ public class VideoStreamingThread extends Thread {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		        DataOutputStream dos=new DataOutputStream(baos);
 				byte[] header;
-				if (null == this.name){
-					header = ("{\"id\":" + sendingFrameID + "}").getBytes();
-				} else {
-//					header = ("{\"id\":" + sendingFrameID + "}").getBytes();
 
-					header = ("{\"id\":" + sendingFrameID + ","
-							+ "\"training\":" + "\"" + this.name + "\""
-							+"}").getBytes();
-				}
+                //first frame send add person
+                if (!hasSentAddPerson){
+                    header = ("{\"id\":" +sendingFrameID + ", \"add_person\":" + "\"" + name + "\"" + "}").getBytes();
+//                        this.sendPacket(header_bytes, data_bytes);
+                    hasSentAddPerson = true;
+                } else {
+                    if (null == this.name){
+                        header = ("{\"id\":" + sendingFrameID + "}").getBytes();
+                    } else {
+                        header = ("{\"id\":" + sendingFrameID + ","
+                                + "\"training\":" + "\"" + this.name + "\""
+                                +"}").getBytes();
+                    }
+                }
 
 				dos.writeInt(header.length);
 				dos.writeInt(data.length);

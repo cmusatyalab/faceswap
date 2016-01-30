@@ -28,4 +28,12 @@ public class NetworkProtocol {
 	public static final String CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y2 = "item_%_roi_y2";
 	public static final String CUSTOM_DATA_MESSAGE_IMG_TEMPLATE = "item_%_img";
 
+	public static final String CUSTOM_DATA_MESSAGE_ROI_X1 = "roi_x1";
+	public static final String CUSTOM_DATA_MESSAGE_ROI_Y1 = "roi_y1";
+	public static final String CUSTOM_DATA_MESSAGE_ROI_X2 = "roi_x2";
+	public static final String CUSTOM_DATA_MESSAGE_ROI_Y2 = "roi_y2";
+	public static final String CUSTOM_DATA_MESSAGE_NAME = "name";
+	public static final String CUSTOM_DATA_MESSAGE_IMG = "data";
+
+
 }
