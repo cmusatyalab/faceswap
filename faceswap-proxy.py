@@ -66,7 +66,7 @@ class DummyVideoApp(AppProxyThread):
         return json.dumps(msg)
         
     
-    def process(image):
+    def process(self, image):
         # pr = cProfile.Profile()
         # pr.enable()
         # rgb mode
@@ -74,32 +74,16 @@ class DummyVideoApp(AppProxyThread):
         # preprocessing techqniues : resize?
 #        image = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
 
-#        pdb.set_trace()
-        roi_face_pairs = transformer.swap_face(image)
-        roi_face_pairs_string = {}
-        roi_face_pairs_string['num'] = len(roi_face_pairs)
-        idx = 0
-        for roi, face in roi_face_pairs:
-            processed_img = Image.fromarray(face)
-            processed_output = StringIO.StringIO()
-            processed_img.save(processed_output, 'JPEG')
-            if DEBUG:
-                processed_img.save('test.jpg')
+        face_snippets_list = transformer.swap_face(image)
+        face_snippets_string = {}
+        face_snippets_string['num'] = len(face_snippets_list)
+        print 'length of resposne to android: {}'.format(len(face_snippets_list))
+        for idx, face_snippet in enumerate(face_snippets_list):
+            face_snippets_string[str(idx)] = face_snippet
 
-            jpeg_image = processed_output.getvalue()
-            face_string = base64.b64encode(jpeg_image)
-            processed_output.close()            
-
-            (roi_x1, roi_y1, roi_x2, roi_y2) = roi
-            roi_face_pairs_string['item_'+str(idx)+'_roi_x1'] = roi_x1
-            roi_face_pairs_string['item_'+str(idx)+'_roi_y1'] = roi_y1
-            roi_face_pairs_string['item_'+str(idx)+'_roi_x2'] = roi_x2
-            roi_face_pairs_string['item_'+str(idx)+'_roi_y2'] = roi_y2
-            roi_face_pairs_string['item_'+str(idx)+'_img'] = face_string
-            idx+=1
-#            roi_face_pairs_string.append((roi, face_string))
-
-
+        result = json.dumps(face_snippets_string)
+        return result
+        
         # pr.disable()
         # s = StringIO.StringIO()
         # sortby = 'cumulative'
@@ -117,9 +101,9 @@ class DummyVideoApp(AppProxyThread):
         # result = base64.b64encode(jpeg_image)
         # processed_output.close()
 
-        result = json.dumps(roi_face_pairs_string)
+
 #        print result
-        return result
+
 
     def handle(self, header, data):
         # PERFORM Cognitive Assistant Processing
@@ -133,6 +117,8 @@ class DummyVideoApp(AppProxyThread):
             name = header_dict['add_person']
             if isinstance(name, basestring):
                 transformer.addPerson(name)
+                transformer.training_cnt = 0                
+                print 'training_cnt :{}'.format(transformer.training_cnt)
             else:
                 raise TypeError('unsupported type for name of a person')
 
@@ -149,8 +135,22 @@ class DummyVideoApp(AppProxyThread):
             
         if training:
 #            pdb.set_trace()
-            cnt = transformer.train(image, name)        
-            return self.gen_response(AppDataProtocol.TYPE_train, str(cnt))
+            cnt, face_json = transformer.train(image, name)
+            if face_json is not None:
+                msg = {
+                    'num': 1,
+                    'cnt': cnt,
+                    '0': face_json
+                }
+                msg = json.dumps(msg)
+            else:
+                # time is a random number to avoid token leak
+                msg = {
+                    'num': 0,
+                    'cnt': cnt,
+                    'time': time.time()
+                }
+            return self.gen_response(AppDataProtocol.TYPE_train, msg)
         else:
             # swap faces
             snippets = self.process(image)

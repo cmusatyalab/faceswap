@@ -84,6 +84,19 @@ class OpenFaceClient(object):
         self.receive_thread_running.clear()
         self.ws.close()
 
+    def isTraining(self):
+        msg = {
+            'type': 'GET_TRAINING'
+        }
+        msg = json.dumps(msg)
+        self.ws.send(msg)
+        resp = self.recv()
+        resp = json.loads(resp)
+        if resp['type'] != 'IS_TRAINING':
+            raise ValueError
+        return resp['training']
+        
+
     def onReceive(self):
         while (self.receive_thread_running.isSet()):
             try:
