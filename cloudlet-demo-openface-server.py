@@ -34,7 +34,7 @@ import imagehash
 import json
 from PIL import Image
 import numpy as np
-import os
+import os, shutil
 import StringIO
 import urllib
 import base64
@@ -51,7 +51,16 @@ import matplotlib.cm as cm
 
 import openface
 DEBUG = True
-
+EXPERIMENT = 'e3'
+test_idx =0
+if DEBUG:
+    test_dir = EXPERIMENT+ '/test'
+    if os.path.exists(test_dir):
+        shutil.rmtree(test_dir)
+    os.makedirs(test_dir)
+    rep_file_name = EXPERIMENT+ '/reps.txt'
+    rep_file = open(rep_file_name, 'w+')
+    
 modelDir = os.path.join(fileDir, '..', '..', 'models')
 dlibModelDir = os.path.join(modelDir, 'dlib')
 openfaceModelDir = os.path.join(modelDir, 'openface')
@@ -83,9 +92,9 @@ class Face:
         self.identity = identity
 
     def __repr__(self):
-        return "{{id: {}, rep[0:5]: {}}}".format(
+        return "{{id: {}, rep[0:10]: {}}}".format(
             str(self.identity),
-            self.rep[0:5]
+            self.rep[0:10]
         )
 
 
@@ -129,6 +138,13 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             else:
                 print('warning: duplicate name')
             print(self.people)
+            
+            if DEBUG:
+                person_dir = EXPERIMENT+ '/' + name
+                if os.path.exists(person_dir):
+                    shutil.rmtree(person_dir)
+                os.makedirs(person_dir)                
+            
         elif msg['type'] == "UPDATE_IDENTITY":
             h = msg['hash'].encode('ascii', 'ignore')
             if h in self.images:
@@ -235,6 +251,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
     def trainSVM(self):
         print("+ Training SVM on {} labeled images.".format(len(self.images)))
+        print("+ labeled images {}".format(self.images))        
         d = self.getData()
         if d is None:
             self.svm = None
@@ -265,26 +282,18 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         img = Image.open(imgF)
         (img_width, img_height) = img.size                
 
-#        buf = np.fliplr(np.asarray(img))
         buf = np.asarray(img)
         rgbFrame = np.copy(buf)
-
-
-#        rgbFrame = np.zeros((300, 400, 3), dtype=np.uint8)
-
-        # flipping image
-        # (img_width, img_height) = img.size        
+        
+        # buf = np.fliplr(np.asarray(img))
         # rgbFrame = np.zeros((img_height, img_width, 3), dtype=np.uint8)
         # rgbFrame[:, :, 0] = buf[:, :, 2]
         # rgbFrame[:, :, 1] = buf[:, :, 1]
         # rgbFrame[:, :, 2] = buf[:, :, 0]
 
-        if not self.training:
-            annotatedFrame = np.copy(buf)
-
-        if DEBUG:
-            img.save('test.jpg')
-            cv2.imwrite('cv_test.jpg', rgbFrame)            
+#        if DEBUG:
+#            img.save('test.jpg')
+#            cv2.imwrite('cv_test.jpg', rgbFrame)            
 #            cv2.imshow('frame', rgbFrame)
 #            if cv2.waitKey(1) & 0xFF == ord('q'):
 #                return
@@ -301,14 +310,29 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         bbs = [bb] if bb is not None else []
         for bb in bbs:
             # print(len(bbs))
-            landmarks = align.findLandmarks(rgbFrame, bb)
-            alignedFace = align.align(args.imgDim, rgbFrame, bb,
-                                      landmarks=landmarks,
-                                      landmarkIndices=openface.AlignDlib.OUTER_EYES_AND_NOSE)
-            if alignedFace is None:
-                continue
+            # landmarks = align.findLandmarks(rgbFrame, bb)
+            
+            # alignedFace = align.align(args.imgDim, rgbFrame, bb,
+            #                           landmarks=landmarks,
+            #                           landmarkIndices=openface.AlignDlib.OUTER_EYES_AND_NOSE)
 
-            phash = str(imagehash.phash(Image.fromarray(alignedFace)))
+            # TODO: not providing bb will make openface to detect face again...
+            # double detection here!
+            alignedFace = align.align(args.imgDim, rgbFrame, bb=bb,
+                                      landmarkIndices=openface.AlignDlib.OUTER_EYES_AND_NOSE)
+            
+            if alignedFace is None:
+                if self.training:
+                    msg = {
+                        "type": "NEW_IMAGE",
+                        "success": False
+                    }
+                    self.sendMessage(json.dumps(msg))
+                print 'no face found. skip'
+                continue
+                
+            aligned_img= Image.fromarray(alignedFace)
+            phash = str(imagehash.phash(aligned_img))
             try:
                 identity = self.people.index(name)
             except ValueError:
@@ -316,30 +340,35 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 
             if phash in self.images:
                 identity = self.images[phash].identity
-                msg = {
-                        "type": "NEW_IMAGE",
-                        "identity": identity,
-                        "success": False
-                }
-                self.sendMessage(json.dumps(msg))
-                
-            else:
-                rep = net.forward(alignedFace)
-                # print(rep)
                 if self.training:
-                    self.images[phash] = Face(rep, identity)
-                    # TODO: Transferring as a string is suboptimal.
-                    # content = [str(x) for x in cv2.resize(alignedFace, (0,0),
-                    # fx=0.5, fy=0.5).flatten()]
-                    
-#                    content = [str(x) for x in alignedFace.flatten()]
                     msg = {
                         "type": "NEW_IMAGE",
-#                        "hash": phash,
+                        "success": False
+                    }
+                    self.sendMessage(json.dumps(msg))
+            else:
+                rep = net.forward(alignedFace)
+                
+                if DEBUG:
+                    global rep_file
+                    print >> rep_file, str(phash)+':\n'
+                    print >> rep_file, str(rep)+'\n'
+                    rep_file.flush()
+                    
+                if self.training:
+                    self.images[phash] = Face(rep, identity)
+                    msg = {
+                        "type": "NEW_IMAGE",
                         "identity": identity,
                         "success": True                        
                     }
                     self.sendMessage(json.dumps(msg))
+                    if DEBUG:
+                        output_file = EXPERIMENT + '/' +str(name) +'/'+ phash + '.jpg'
+                        img.save(output_file)
+                        output_file_aligned = EXPERIMENT + '/' +str(name) +'/'+ phash + '_aligned.jpg'
+                        aligned_img.save(output_file_aligned)                        
+                        
                 else:
                     print "detecting"
                     if len(self.people) == 0:
@@ -370,6 +399,14 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                     "name": name                    
                 }
                 self.sendMessage(json.dumps(msg))
+                global test_idx
+                print "svm result {0}: {1}".format(test_idx, name)
+                if DEBUG:
+                    output_file = str(EXPERIMENT+'/test') +'/'+ str(test_idx) + '.jpg'
+                    img.save(output_file)
+                    test_idx +=1
+
+                
                 
                 # bl = (bb.left(), bb.bottom())
                 # tr = (bb.right(), bb.top())

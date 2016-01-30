@@ -46,7 +46,7 @@ import cProfile, pstats, StringIO
 
 DEBUG = True
 transformer = FaceTransformation()
-
+prev_timestamp = time.time()*1000
 
 class AppDataProtocol(object):
     TYPE_add_person = "add_person"
@@ -106,10 +106,18 @@ class DummyVideoApp(AppProxyThread):
 
 
     def handle(self, header, data):
+        global prev_timestamp
+        global transformer
+        global DEBUG
+        
         # PERFORM Cognitive Assistant Processing
         # header is a dict
         sys.stdout.write("processing: ")
         sys.stdout.write("%s\n" % header)
+        cur_timestamp = time.time()*1000
+        interval = cur_timestamp - prev_timestamp
+        prev_timestamp = cur_timestamp
+        sys.stdout.write("packet interval: %d\n"%interval)
         
         header_dict = header
 
@@ -198,6 +206,7 @@ if __name__ == "__main__":
     result_pub.start()
     result_pub.isDaemon = True
 
+    
     try:
         while True:
             time.sleep(1)
