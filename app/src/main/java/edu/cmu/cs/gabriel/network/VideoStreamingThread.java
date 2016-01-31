@@ -17,6 +17,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.security.Policy;
 import java.util.TreeMap;
 import java.util.Vector;
 
@@ -27,8 +28,10 @@ import edu.cmu.cs.gabriel.token.TokenController;
 
 import android.graphics.Rect;
 import android.graphics.YuvImage;
+import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -166,7 +169,6 @@ public class VideoStreamingThread extends Thread {
 		}
 
 
-
 		while (this.is_running) {
 			try {
 				// check token
@@ -218,11 +220,12 @@ public class VideoStreamingThread extends Thread {
 				dos.write(header);
 				dos.write(data);
 
-				this.tokenController.sendData(sendingFrameID, System.currentTimeMillis(), dos.size());	
+                Log.d(LOG_TAG, "start sending frame ID: " + sendingFrameID);
+                this.tokenController.sendData(sendingFrameID, System.currentTimeMillis(), dos.size());
 				networkWriter.write(baos.toByteArray());
 				networkWriter.flush();
 				this.tokenController.decreaseToken();
-				Log.d(LOG_TAG,"send frame ID: "+sendingFrameID);
+                Log.d(LOG_TAG,"sent frame ID: "+sendingFrameID);
 				
 				// measurement
 		        if (packet_firstUpdateTime == 0) {
@@ -287,7 +290,70 @@ public class VideoStreamingThread extends Thread {
     private long frame_count = 0, frame_firstUpdateTime = 0;
     private long frame_prevUpdateTime = 0, frame_currentUpdateTime = 0;
     private long frame_totalsize = 0;
-    
+
+    public void pushAsync(byte[] frame, Parameters parameters) {
+        Object frameObj = frame;
+        Object param = parameters;
+        Object inputAsync[] = new Object[]{frame, param};
+        new PushTask().execute(inputAsync);
+    }
+
+    private class PushTask extends AsyncTask<Object, Void, Void> {
+        @Override
+        protected Void doInBackground(Object... objs) {
+            byte[] frame = (byte[]) objs[0];
+            Parameters parameters = (Parameters) objs[1];
+            if (frame_firstUpdateTime == 0) {
+                frame_firstUpdateTime = System.currentTimeMillis();
+            }
+            frame_currentUpdateTime = System.currentTimeMillis();
+
+            int datasize = 0;
+            cameraImageSize = parameters.getPreviewSize();
+            if (imageFiles == null) {
+                YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
+                        cameraImageSize.height, null);
+                ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
+                image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90, tmpBuffer);
+                synchronized (frameLock) {
+                    frameBuffer = tmpBuffer.toByteArray();
+                    frameGeneratedTime = System.currentTimeMillis();
+                    frameID++;
+                    frameLock.notify();
+                }
+                datasize = tmpBuffer.size();
+            } else {
+                try {
+                    int index = indexImageFile % imageFiles.length;
+                    datasize = (int) imageFiles[index].length();
+                    FileInputStream fi = new FileInputStream(imageFiles[index]);
+                    byte[] buffer = new byte[datasize];
+                    fi.read(buffer, 0, datasize);
+                    synchronized (frameLock) {
+                        frameBuffer = buffer;
+                        frameGeneratedTime = System.currentTimeMillis();
+                        frameID++;
+                        frameLock.notify();
+                    }
+                    indexImageFile++;
+                } catch (FileNotFoundException e) {
+                } catch (IOException e) {
+                }
+            }
+            frame_count++;
+            frame_totalsize += datasize;
+            if (frame_count % 50 == 0) {
+                Log.d(LOG_TAG, "(IMG)\t" +
+                        "BW: " + 8.0 * frame_totalsize / (frame_currentUpdateTime - frame_firstUpdateTime) / 1000 +
+                        " Mbps\tCurrent FPS: " + 8.0 * datasize / (frame_currentUpdateTime - frame_prevUpdateTime) / 1000 + " Mbps\t" +
+                        "FPS: " + 1000.0 * frame_count / (frame_currentUpdateTime - frame_firstUpdateTime));
+            }
+            frame_prevUpdateTime = frame_currentUpdateTime;
+            return null;
+        }
+    }
+
+/*
 	public void push(byte[] frame, Parameters parameters) {
         if (frame_firstUpdateTime == 0) {
             frame_firstUpdateTime = System.currentTimeMillis();
@@ -297,6 +363,7 @@ public class VideoStreamingThread extends Thread {
         int datasize = 0;
         cameraImageSize = parameters.getPreviewSize();
         if (this.imageFiles == null){
+            Log.d(LOG_TAG, "compress start");
             YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
             		cameraImageSize.height, null);
             ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
@@ -307,6 +374,7 @@ public class VideoStreamingThread extends Thread {
                 this.frameID++;
                 frameLock.notify();
 			}
+            Log.d(LOG_TAG, "compress end");
             datasize = tmpBuffer.size();
         }else{
         	try {
@@ -337,6 +405,7 @@ public class VideoStreamingThread extends Thread {
 		}
         frame_prevUpdateTime = frame_currentUpdateTime;
 	}
+*/
 
 	private void notifyError(String message) {
 		// callback

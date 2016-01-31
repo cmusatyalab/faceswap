@@ -17,6 +17,7 @@ import android.view.View;
  */
 public class CameraOverlay extends View {
 
+    private static final String DEBUG_TAG = "cameraOverlay";
     private Face[] faces;
     private Paint myPaint;
     private Paint textPaint;
@@ -24,6 +25,7 @@ public class CameraOverlay extends View {
     // image size of transmitted imgs
     // used for scaling
     private Camera.Size imageSize;
+    private long timeStamp;
 
     public CameraOverlay(Context context) {
         super(context);
@@ -58,47 +60,25 @@ public class CameraOverlay extends View {
 
     @Override
     protected void onDraw(Canvas c){
-        Log.d("cameraOverlay", "view width: " +this.getWidth());
+//        Log.d(DEBUG_TAG, "onDraw called! " + (System.currentTimeMillis()-timeStamp) +"ms");
         super.onDraw(c);
         if (null != faces){
             for (Face face: faces){
                 int[] roi = face.getRoi();
-                roi = scaleToScreen(roi);
                 c.drawRect(roi[0],roi[1],roi[2],roi[3],myPaint);
                 Bitmap renderImg = face.getBitmap();
-                Bitmap scaledBitmap =Bitmap.createScaledBitmap(renderImg,
-                        roi[2] - roi[0] + 1,
-                        roi[3] - roi[1] + 1 ,false);
-                c.drawBitmap(scaledBitmap, roi[0], roi[1], null);
+                c.drawBitmap(renderImg, roi[0], roi[1], null);
                 String name = face.getName();
                 if (null != name){
                     c.drawText(name, roi[0]-4, roi[1]-4, textPaint);
                 }
             }
         }
-
+        long time = System.currentTimeMillis();
+        long elapse = time - timeStamp;
+        Log.d(DEBUG_TAG, "cameraOverlay updated! " + elapse+ " ms");
     }
 
-    /**
-     * scale the original image size roi to actual screen size
-     * @param roi
-     */
-    private int[] scaleToScreen(int[] roi){
-        if (null == this.imageSize){
-            return  roi;
-        }
-        int[] scaledRoi = new int[roi.length];
-        int imageWidth = this.imageSize.width;
-        int imageHeight = this.imageSize.height;
-        double width_ratio = (double) this.getWidth() / imageWidth;
-        double height_ratio = (double) this.getHeight() / imageHeight;
-
-        scaledRoi[0] = (int) (roi[0] * width_ratio);
-        scaledRoi[1] = (int) (roi[1] * height_ratio);
-        scaledRoi[2] = (int) (roi[2] * width_ratio);
-        scaledRoi[3] = (int) (roi[3] * height_ratio);
-        return scaledRoi;
-    }
 
     public void drawFaces(Face[] faces, Camera.Size imageSize){
         this.faces = faces;
@@ -106,12 +86,10 @@ public class CameraOverlay extends View {
             this.imageSize = imageSize;
         }
         this.invalidate();
+        timeStamp = System.currentTimeMillis();
+        Log.d("cameraOverlay", "cameraOverlay refresh requested");
     }
 
-
-    public Camera.Size getImageSize() {
-        return imageSize;
-    }
 
     public void setImageSize(Camera.Size imageSize) {
         this.imageSize = imageSize;

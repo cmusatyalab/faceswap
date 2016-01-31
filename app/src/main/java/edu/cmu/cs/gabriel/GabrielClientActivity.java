@@ -36,6 +36,7 @@ import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.util.Base64;
 import android.util.Log;
+import android.util.Size;
 import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -375,7 +376,7 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 			if (hasStarted && (localOutputStream != null)) {
 				Camera.Parameters parameters = mCamera.getParameters();
 				if (videoStreamingThread != null){
-					videoStreamingThread.push(frame, parameters);
+					videoStreamingThread.pushAsync(frame, parameters);
 				}
 			}
 		}
@@ -438,11 +439,20 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
         return null;
     }
 
+    private void drawFaceSnippets(Face[] faces){
+        for (Face face: faces){
+            face.scale(mPreview.imageSize,
+                    cameraOverlay.getWidth(), cameraOverlay.getHeight());
+        }
+        // if not destroyed
+        if(cameraOverlay != null && mPreview !=null){
+            cameraOverlay.drawFaces(faces, mPreview.imageSize);
+        }
+    }
 
     private Handler returnMsgHandler = new Handler() {
 		public void handleMessage(Message msg) {
 			if (msg.what == NetworkProtocol.NETWORK_RET_FAILED) {
-
 				Bundle data = msg.getData();
 //				String message = data.getString("message");
 //				stopStreaming();
@@ -453,8 +463,8 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 			//handled by resultReceivingThread!!!
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
                 String response = (String) msg.obj;
-                Log.d(LOG_TAG, "received response");
-                Log.d(LOG_TAG, response);
+//                Log.d(LOG_TAG, "received response");
+//                Log.d(LOG_TAG, response);
 
                 if (Const.RESPONSE_JSON) {
                     try {
@@ -469,24 +479,17 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_TRAIN)) {
                             String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
                             Face[] faces = parseFaceSnippets(value);
+                            drawFaceSnippets(faces);
                             JSONObject cnt_json = new JSONObject(value);
                             String cnt = cnt_json.getString("cnt");
                             Log.d(LOG_TAG, "gabriel server training cnt: " + cnt);
                             cnt_view.setText(String.valueOf(cnt));
-                            // if not destroyed
-                            if(cameraOverlay != null && mPreview !=null){
-                                cameraOverlay.drawFaces(faces, mPreview.imageSize);
-                            }
                         }
 
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_DETECT)) {
                             String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
-                            Log.d(LOG_TAG, "received detection result ");
                             Face[] faces = parseFaceSnippets(value);
-                            // if not destroyed
-                            if(cameraOverlay != null && mPreview !=null){
-                                cameraOverlay.drawFaces(faces, mPreview.imageSize);
-                            }
+                            drawFaceSnippets(faces);
                         }
 
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_IMG)) {

@@ -27,7 +27,7 @@ public class Const {
 	
 	// image size and frame rate
 	public static int MIN_FPS = 10;
-	public static int IMAGE_WIDTH = 1080;
+	public static int IMAGE_WIDTH = 640;
 
 	// Result File
 	public static String LATENCY_FILE_NAME = "latency-" + GABRIEL_IP + "-" + MAX_TOKEN_SIZE + ".txt";
