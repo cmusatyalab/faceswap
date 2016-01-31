@@ -169,7 +169,7 @@ class FaceTransformation(object):
     def sync_faces(self):
         while True:
             self.sync_face_event.wait()
-            self.logger.debug('bg-thread getting updates from detection process!')
+#            self.logger.debug('bg-thread getting updates from detection process!')
             
             tracker_updates = self.trackers_queue.get()
             faces = tracker_updates['faces']
@@ -227,7 +227,7 @@ class FaceTransformation(object):
                 except Queue.Empty:
                     self.logger.debug('all image processed! # images {}'.format(frame_cnt))    
                     frame_available = False
-                    self.logger.debug('detection thread# trackers {}'.format(len(trackers)))
+#                    self.logger.debug('detection thread# trackers {}'.format(len(trackers)))
                     faces=[]
                     for idx, tracker in enumerate(trackers):
                         new_roi = tracker.get_position()
@@ -240,7 +240,7 @@ class FaceTransformation(object):
                         face = FaceROI(cur_roi, name=name)
                         faces.append(face)
                     if (len(faces)>0):
-                        self.logger.debug('update trackers!')
+#                        self.logger.debug('update trackers!')
                         tracker_updates = {'frame':frame, 'faces':faces}
                         trackers_queue.put(tracker_updates)
                         sync_face_event.set()
@@ -281,7 +281,7 @@ class FaceTransformation(object):
 
         self.faces = [face for face in self.faces if face not in to_be_removed_face]
         face_snippets = [face.get_json() for face in self.faces]
-        self.logger.debug('main thread tracking. # faces returned {} '.format(len(face_snippets)))   
+#        self.logger.debug('main thread tracking. # faces returned {} '.format(len(face_snippets)))   
         return face_snippets
         
 #        roi_face_pairs=self.shuffle_roi(self.rois, frame)        
@@ -298,10 +298,10 @@ class FaceTransformation(object):
         return large_rois, large_rois_trackers
         
     def swap_face(self,frame):
-        if DEBUG:
-            start = time.time()
+        # if DEBUG:
+        #     start = time.time()
 
-        self.logger.debug('main-process received frame!')
+#        self.logger.debug('main-process received frame!')
 
         # change training to true
         if self.training:
@@ -316,28 +316,13 @@ class FaceTransformation(object):
 #        grey_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         self.img_queue.put(grey_frame)
         
-        # try:
-        #     tracker_updates = self.trackers_queue.get_nowait()
-        #     faces = tracker_updates['faces']
-        #     tracker_frame = tracker_updates['frame']
-
-        #     self.faces = faces
-        #     self.logger.debug('main-process Received rois and frame based on detection!')
-        #     for face in self.faces:
-        #         tracker = create_tracker(tracker_frame, face.roi)
-        #         face.tracker = tracker
-        #     self.logger.debug('main-process Updated rois and frame based on detection!')
-        # except Queue.Empty:
-        #     self.logger.debug('main-process no trackers update')            
-
         self.faces_lock.acquire()                    
         results=self.track_faces(frame)
         self.faces_lock.release()
-#       self.logger.debug('main-process track face result: {}'.format(results))        
 
-        if DEBUG:
-            end = time.time()
-            self.logger.debug('total processing time: {}'.format((end-start)*1000))
+        # if DEBUG:
+        #     end = time.time()
+        #     self.logger.debug('total processing time: {}'.format((end-start)*1000))
         
         return results
 

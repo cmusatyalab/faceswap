@@ -77,7 +77,7 @@ class DummyVideoApp(AppProxyThread):
         face_snippets_list = transformer.swap_face(image)
         face_snippets_string = {}
         face_snippets_string['num'] = len(face_snippets_list)
-        print 'length of resposne to android: {}'.format(len(face_snippets_list))
+#        print 'length of resposne to android: {}'.format(len(face_snippets_list))
         for idx, face_snippet in enumerate(face_snippets_list):
             face_snippets_string[str(idx)] = face_snippet
 
@@ -109,18 +109,19 @@ class DummyVideoApp(AppProxyThread):
         global prev_timestamp
         global transformer
         global DEBUG
-        
+
         # PERFORM Cognitive Assistant Processing
         # header is a dict
         sys.stdout.write("processing: ")
         sys.stdout.write("%s\n" % header)
-        cur_timestamp = time.time()*1000
-        interval = cur_timestamp - prev_timestamp
-        prev_timestamp = cur_timestamp
-        sys.stdout.write("packet interval: %d\n"%interval)
+
+        if DEBUG:
+            cur_timestamp = time.time()*1000
+            interval = cur_timestamp - prev_timestamp
+            sys.stdout.write("packet interval: %d\n"%interval)
+            start = time.time()
         
         header_dict = header
-
         if 'add_person' in header_dict:
             name = header_dict['add_person']
             if isinstance(name, basestring):
@@ -130,39 +131,46 @@ class DummyVideoApp(AppProxyThread):
             else:
                 raise TypeError('unsupported type for name of a person')
 
-            return self.gen_response(AppDataProtocol.TYPE_add_person, name)
-        
-        training = False
-        if 'training' in header_dict:
-            training=True
-            name=header_dict['training']
-
-        # operate on client data
-        image_raw = Image.open(io.BytesIO(data))
-        image = np.array(image_raw)
-            
-        if training:
-#            pdb.set_trace()
-            cnt, face_json = transformer.train(image, name)
-            if face_json is not None:
-                msg = {
-                    'num': 1,
-                    'cnt': cnt,
-                    '0': face_json
-                }
-                msg = json.dumps(msg)
-            else:
-                # time is a random number to avoid token leak
-                msg = {
-                    'num': 0,
-                    'cnt': cnt,
-                    'time': time.time()
-                }
-            return self.gen_response(AppDataProtocol.TYPE_train, msg)
+            resp=self.gen_response(AppDataProtocol.TYPE_add_person, name)
         else:
-            # swap faces
-            snippets = self.process(image)
-            return self.gen_response(AppDataProtocol.TYPE_detect, snippets)
+            training = False
+            if 'training' in header_dict:
+                training=True
+                name=header_dict['training']
+
+            # operate on client data
+            image_raw = Image.open(io.BytesIO(data))
+            image = np.array(image_raw)
+
+            if training:
+                cnt, face_json = transformer.train(image, name)
+                if face_json is not None:
+                    msg = {
+                        'num': 1,
+                        'cnt': cnt,
+                        '0': face_json
+                    }
+                    msg = json.dumps(msg)
+                else:
+                    # time is a random number to avoid token leak
+                    msg = {
+                        'num': 0,
+                        'cnt': cnt,
+                        'time': time.time()
+                    }
+                resp= self.gen_response(AppDataProtocol.TYPE_train, msg)
+            else:
+                # swap faces
+                snippets = self.process(image)
+                resp= self.gen_response(AppDataProtocol.TYPE_detect, snippets)
+
+        if DEBUG:
+            end = time.time()
+            print('total processing time: {}'.format((end-start)*1000))
+            
+            prev_timestamp = time.time()*1000
+            
+        return resp
 
 class DummyAccApp(AppProxyThread):
     def chunks(self, l, n):
