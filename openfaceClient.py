@@ -63,15 +63,26 @@ class OpenFaceClient(object):
         self.ws.send(msg)
         return self.recv()
 
-    def setState(self,images, people, training_on):
-        msg = {
-            'type': 'ALL_STATE',
-            'images': images,
-            'people': people,
-            'training': training_on
-        }
-        msg = json.dumps(msg)
-        self.ws.send(msg)
+    def setState(self, state_string):
+        # state_json = json.loads(state_string)
+        # msg = {
+        #     'type': 'ALL_STATE',
+        #     'images': images,
+        #     'people': people,
+        #     'training': training_on
+        # }
+        # msg = json.dumps(msg)
+        self.ws.send(state_string)
+        
+    # def setState(self,images, people, training_on):
+    #     msg = {
+    #         'type': 'ALL_STATE',
+    #         'images': images,
+    #         'people': people,
+    #         'training': training_on
+    #     }
+    #     msg = json.dumps(msg)
+    #     self.ws.send(msg)
 
     def getState(self):
         msg = {
@@ -163,7 +174,9 @@ if __name__ == '__main__':
                 face_string = "data:image/jpeg;base64," + face_string
                 client.addFrame(face_string, 'test')
 
-    print client.getState()
+    state=client.getState()
+    print state
+    print client.setState(state)    
     time.sleep(20)
     print 'waked up'
     client.terminate()

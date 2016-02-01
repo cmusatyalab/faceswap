@@ -137,8 +137,16 @@ class DummyVideoApp(AppProxyThread):
             if get_state:
                 state_string = transformer.openface_client.getState()
                 resp=self.gen_response(AppDataProtocol.TYPE_get_state, state_string)
+                print 'send out response {}'.format(resp)
                 return resp
-            
+
+        if 'load_state' in header_dict:
+            state_string = header_dict['load_state']
+            print 'loading openface state'            
+            transformer.openface_client.setState(state_string)
+            resp=self.gen_response(AppDataProtocol.TYPE_load_state, True)
+            return resp
+                
         if 'add_person' in header_dict:
             name = header_dict['add_person']
             if isinstance(name, basestring):
