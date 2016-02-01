@@ -53,7 +53,7 @@ class AppDataProtocol(object):
     TYPE_train = "train"    
     TYPE_detect = "detect"
     TYPE_img = "image"        
-    
+    TYPE_get_state = "get_state"        
 
 # bad idea to transfer image back using json
 class DummyVideoApp(AppProxyThread):
@@ -122,6 +122,23 @@ class DummyVideoApp(AppProxyThread):
             start = time.time()
         
         header_dict = header
+
+        if 'reset' in header_dict:
+            reset = header_dict['reset']
+            print 'reset openface state'            
+            if reset:
+                transformer.terminate()
+                time.sleep(2)
+                transformer = FaceTransformation()
+
+        if 'get_state' in header_dict:
+            get_state = header_dict['get_state']
+            print 'get openface state'            
+            if get_state:
+                state_string = transformer.openface_client.getState()
+                resp=self.gen_response(AppDataProtocol.TYPE_get_state, state_string)
+                return resp
+            
         if 'add_person' in header_dict:
             name = header_dict['add_person']
             if isinstance(name, basestring):
@@ -130,39 +147,47 @@ class DummyVideoApp(AppProxyThread):
                 print 'training_cnt :{}'.format(transformer.training_cnt)
             else:
                 raise TypeError('unsupported type for name of a person')
-
             resp=self.gen_response(AppDataProtocol.TYPE_add_person, name)
-        else:
-            training = False
-            if 'training' in header_dict:
-                training=True
-                name=header_dict['training']
+        elif 'face_table' in header_dict:
+            face_table_string = header_dict['face_table']
+            print face_table_string
+            face_table = json.loads(face_table_string)
+            transformer.face_table=face_table
+            for from_person, to_person in face_table.iteritems():
+                print 'mapping:'
+                print '{0} <-- {1}'.format(from_person, to_person)
+            sys.stdout.flush()
 
-            # operate on client data
-            image_raw = Image.open(io.BytesIO(data))
-            image = np.array(image_raw)
+        training = False
+        if 'training' in header_dict:
+            training=True
+            name=header_dict['training']
 
-            if training:
-                cnt, face_json = transformer.train(image, name)
-                if face_json is not None:
-                    msg = {
-                        'num': 1,
-                        'cnt': cnt,
-                        '0': face_json
-                    }
-                    msg = json.dumps(msg)
-                else:
-                    # time is a random number to avoid token leak
-                    msg = {
-                        'num': 0,
-                        'cnt': cnt,
-                        'time': time.time()
-                    }
-                resp= self.gen_response(AppDataProtocol.TYPE_train, msg)
+        # operate on client data
+        image_raw = Image.open(io.BytesIO(data))
+        image = np.array(image_raw)
+
+        if training:
+            cnt, face_json = transformer.train(image, name)
+            if face_json is not None:
+                msg = {
+                    'num': 1,
+                    'cnt': cnt,
+                    '0': face_json
+                }
+                msg = json.dumps(msg)
             else:
-                # swap faces
-                snippets = self.process(image)
-                resp= self.gen_response(AppDataProtocol.TYPE_detect, snippets)
+                # time is a random number to avoid token leak
+                msg = {
+                    'num': 0,
+                    'cnt': cnt,
+                    'time': time.time()
+                }
+            resp= self.gen_response(AppDataProtocol.TYPE_train, msg)
+        else:
+            # swap faces
+            snippets = self.process(image)
+            resp= self.gen_response(AppDataProtocol.TYPE_detect, snippets)
 
         if DEBUG:
             end = time.time()
@@ -187,6 +212,8 @@ class DummyAccApp(AppProxyThread):
 
 
 if __name__ == "__main__":
+    global transformer
+    
     result_queue = list()
 
     sys.stdout.write("Discovery Control VM\n")

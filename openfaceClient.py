@@ -15,9 +15,13 @@ class OpenFaceClient(object):
     def __init__(self, server_ip=u"ws://128.2.211.75", server_port=9000, async=False):
         self.logger=MyUtils.getLogger(__name__)        
         server_ip_port = server_ip + ':' +str(server_port)
-        self.ws = create_connection(server_ip_port)
+#        self.logger.info('before creating connection to {}'.format(server_ip_port))                
+        self.ws=create_connection(server_ip_port)
+#        self.logger.info('after creating connection to {}'.format(server_ip_port))      
         self.async=async
 
+        self.receive_thread = None
+        self.receive_thread_running = None
         if (self.async):
             self.receive_thread = threading.Thread(target=self.onReceive, name='receive_thread')
             self.receive_thread_running = threading.Event()
@@ -69,6 +73,14 @@ class OpenFaceClient(object):
         msg = json.dumps(msg)
         self.ws.send(msg)
 
+    def getState(self):
+        msg = {
+            'type': 'GET_STATE'
+        }
+        msg = json.dumps(msg)
+        self.ws.send(msg)
+        return self.recv()        
+        
     # current processing frame
     def addFrame(self, data_url, name):
         msg = {
@@ -81,7 +93,8 @@ class OpenFaceClient(object):
         return self.recv()
         
     def terminate(self):
-        self.receive_thread_running.clear()
+        if None != self.receive_thread_running:
+            self.receive_thread_running.clear()
         self.ws.close()
 
     def isTraining(self):
@@ -150,7 +163,7 @@ if __name__ == '__main__':
                 face_string = "data:image/jpeg;base64," + face_string
                 client.addFrame(face_string, 'test')
 
-    
+    print client.getState()
     time.sleep(20)
     print 'waked up'
     client.terminate()

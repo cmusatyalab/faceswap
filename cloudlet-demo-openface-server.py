@@ -51,9 +51,10 @@ import matplotlib.cm as cm
 
 import openface
 DEBUG = True
+STORE_IMG_DEBUG = False
 EXPERIMENT = 'e3'
 test_idx =0
-if DEBUG:
+if STORE_IMG_DEBUG:
     test_dir = EXPERIMENT+ '/test'
     if os.path.exists(test_dir):
         shutil.rmtree(test_dir)
@@ -106,7 +107,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         self.people = []
         self.svm = None
         if args.unknown:
-            self.unknownImgs = np.load("./examples/web/unknown.npy")
+            self.unknownImgs = np.load("./unknown.npy")
 
     def onConnect(self, request):
         print("Client connecting: {0}".format(request.peer))
@@ -139,7 +140,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 print('warning: duplicate name')
             print(self.people)
             
-            if DEBUG:
+            if STORE_IMG_DEBUG:
                 person_dir = EXPERIMENT+ '/' + name
                 if os.path.exists(person_dir):
                     shutil.rmtree(person_dir)
@@ -291,7 +292,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         # rgbFrame[:, :, 1] = buf[:, :, 1]
         # rgbFrame[:, :, 2] = buf[:, :, 0]
 
-#        if DEBUG:
+#        if STORE_IMG_DEBUG:
 #            img.save('test.jpg')
 #            cv2.imwrite('cv_test.jpg', rgbFrame)            
 #            cv2.imshow('frame', rgbFrame)
@@ -349,7 +350,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             else:
                 rep = net.forward(alignedFace)
                 
-                if DEBUG:
+                if STORE_IMG_DEBUG:
                     global rep_file
                     print >> rep_file, str(phash)+':\n'
                     print >> rep_file, str(rep)+'\n'
@@ -363,7 +364,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                         "success": True                        
                     }
                     self.sendMessage(json.dumps(msg))
-                    if DEBUG:
+                    if STORE_IMG_DEBUG:
                         output_file = EXPERIMENT + '/' +str(name) +'/'+ phash + '.jpg'
                         img.save(output_file)
                         output_file_aligned = EXPERIMENT + '/' +str(name) +'/'+ phash + '_aligned.jpg'
@@ -401,12 +402,10 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 self.sendMessage(json.dumps(msg))
                 global test_idx
                 print "svm result {0}: {1}".format(test_idx, name)
-                if DEBUG:
+                if STORE_IMG_DEBUG:
                     output_file = str(EXPERIMENT+'/test') +'/'+ str(test_idx) + '.jpg'
                     img.save(output_file)
                     test_idx +=1
-
-                
                 
                 # bl = (bb.left(), bb.bottom())
                 # tr = (bb.right(), bb.top())
