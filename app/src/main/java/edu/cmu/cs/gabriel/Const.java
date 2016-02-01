@@ -27,8 +27,8 @@ public class Const {
 	public static int MAX_TOKEN_SIZE = 1;
 	
 	// image size and frame rate
-	public static int MIN_FPS = 7;
-	public static int IMAGE_WIDTH = 800;
+	public static int MIN_FPS = 10;
+	public static int IMAGE_WIDTH = 640;
 	//640x480
 	//800x600
 	//1024x960

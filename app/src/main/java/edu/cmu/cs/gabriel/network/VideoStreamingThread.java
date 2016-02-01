@@ -351,7 +351,7 @@ public class VideoStreamingThread extends Thread {
 				dos.write(header);
 				dos.write(data);
 
-                Log.d(LOG_TAG, "sending frameID: " + sendingFrameID);
+//                Log.d(LOG_TAG, "sending frameID: " + sendingFrameID);
                 this.tokenController.sendData(sendingFrameID, System.currentTimeMillis(), dos.size());
 				networkWriter.write(baos.toByteArray());
 				networkWriter.flush();
