@@ -18,6 +18,8 @@ public class NetworkProtocol {
 	public static final String CUSTOM_DATA_MESSAGE_TYPE_ADD_PERSON= "add_person";
 	public static final String CUSTOM_DATA_MESSAGE_TYPE_TRAIN= "train";
 	public static final String CUSTOM_DATA_MESSAGE_TYPE_DETECT = "detect";
+	public static final String CUSTOM_DATA_MESSAGE_TYPE_GET_STATE = "get_state";
+	public static final String CUSTOM_DATA_MESSAGE_TYPE_LOAD_STATE = "load_state";
 	public static final String CUSTOM_DATA_MESSAGE_TYPE_IMG = "image";
 	public static final String CUSTOM_DATA_MESSAGE_VALUE= "value";
 

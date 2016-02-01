@@ -17,17 +17,21 @@ public class Const {
 	public static File TEST_IMAGE_DIR = new File (ROOT_DIR.getAbsolutePath() + File.separator + "images" + File.separator);	
 	
 	// control VM
-	public static String GABRIEL_IP = "128.2.213.15";	// Cloudlet
+	public static String GABRIEL_IP = "128.2.213.107";	// Cloudlet
 //	public static String GABRIEL_IP = "54.201.173.207";	// Amazon West
     public static String CLOUDLET_GABRIEL_IP = "128.2.213.107";	// Cloudlet
-	public static String CLOUD_GABRIEL_IP = "54.200.101.84";	// Amazon West
+//	public static String CLOUD_GABRIEL_IP = "54.200.101.84";	// Amazon West
+	public static String CLOUD_GABRIEL_IP = "54.188.44.223";	// Amazon West
 	
 	// Token
 	public static int MAX_TOKEN_SIZE = 1;
 	
 	// image size and frame rate
-	public static int MIN_FPS = 10;
-	public static int IMAGE_WIDTH = 640;
+	public static int MIN_FPS = 7;
+	public static int IMAGE_WIDTH = 800;
+	//640x480
+	//800x600
+	//1024x960
 
 	// Result File
 	public static String LATENCY_FILE_NAME = "latency-" + GABRIEL_IP + "-" + MAX_TOKEN_SIZE + ".txt";

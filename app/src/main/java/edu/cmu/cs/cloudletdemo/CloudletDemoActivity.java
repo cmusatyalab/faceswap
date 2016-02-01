@@ -12,6 +12,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import edu.cmu.cs.gabriel.R;
@@ -20,6 +21,8 @@ public class CloudletDemoActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private TabLayout tabLayout;
     private ViewPager viewPager;
+    public HashMap<String, String> faceTable;
+    public boolean reset;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,19 +32,20 @@ public class CloudletDemoActivity extends AppCompatActivity {
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-//        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         viewPager = (ViewPager) findViewById(R.id.viewpager);
         setupViewPager(viewPager);
 
         tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
+
+        faceTable = new HashMap<String, String>();
+        reset=false;
     }
 
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
         adapter.addFragment(new CloudletFragment(), "cloudlet");
         adapter.addFragment(new CloudFragment(), "cloud-EC2");
-//        adapter.addFragment(new CloudletFragment(), "THREE");
         viewPager.setAdapter(adapter);
     }
 

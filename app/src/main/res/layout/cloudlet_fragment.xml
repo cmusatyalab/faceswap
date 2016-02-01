@@ -32,9 +32,10 @@
         android:layout_height="wrap_content"
         android:text="Set IP"
         android:id="@+id/resetIPButton"
-        android:layout_marginTop="29dp"
+        android:layout_marginTop="30dp"
         android:layout_below="@+id/cloudletIPView"
-        android:layout_toRightOf="@+id/cloudletIPEditTextView" />
+        android:layout_alignRight="@+id/trainedTable"
+        android:layout_marginRight="26dp" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -50,7 +51,7 @@
         android:layout_height="wrap_content"
         android:text="Run Demo"
         android:id="@+id/cloudletRunDemoButton"
-        android:layout_centerVertical="true"
+        android:layout_below="@+id/removeRuleButton"
         android:layout_centerHorizontal="true" />
 
     <Button
@@ -58,30 +59,24 @@
         android:layout_height="wrap_content"
         android:text="Add Person"
         android:id="@+id/addPersonButton"
-        android:layout_marginTop="51dp"
-        android:layout_below="@+id/resetIPButton"
-        android:layout_toRightOf="@+id/cloudletRunDemoButton" />
+        android:layout_alignBottom="@+id/nameEditText"
+        android:layout_alignLeft="@+id/resetIPButton" />
 
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/nameEditText"
         android:hint="Enter Name"
-        android:layout_alignBaseline="@+id/addPersonButton"
-        android:layout_alignBottom="@+id/addPersonButton"
+        android:layout_below="@+id/cloudletIPEditTextView"
         android:layout_alignLeft="@+id/cloudletIPEditTextView"
-        android:layout_alignRight="@+id/cloudletRunDemoButton" />
+        android:layout_alignRight="@+id/cloudletIPEditTextView" />
 
     <TableLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentBottom="true"
-        android:stretchColumns="0,1"
         android:id="@+id/trainedTable"
-        android:layout_alignLeft="@+id/nameEditText"
-        android:layout_alignRight="@+id/addPersonButton"
         android:layout_below="@+id/cloudletRunDemoButton"
-        android:layout_margin="8dp">
+        android:layout_centerHorizontal="true">
 
         <TableRow
             android:id="@+id/tableRow1"
@@ -89,17 +84,97 @@
             android:layout_height="wrap_content">
             <TextView
                 android:id="@+id/textView1"
-                android:layout_column="0"
-                android:text="test">
+                android:text="Trained People:">
             </TextView>
+        </TableRow>
+        <TableRow
+            android:id="@+id/tableRow2"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
             <TextView
-                android:id="@+id/textView2"
-                android:layout_column="1"
-                android:text="test2">
+                android:id="@+id/trainPeopleTextView">
             </TextView>
-
+        </TableRow>
+        <TableRow
+            android:id="@+id/tableRow3"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/textViewRulesHeader"
+                android:text="Existing Rules:">
+            </TextView>
+        </TableRow>
+        <TableRow
+            android:id="@+id/tableRow4"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/textViewRules">
+            </TextView>
         </TableRow>
 
+
     </TableLayout>
+
+    <Spinner
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/fromSpinner"
+        android:layout_below="@+id/nameEditText"
+        android:layout_alignLeft="@+id/nameEditText"
+        android:spinnerMode="dropdown"
+        android:layout_toLeftOf="@+id/cloudletRunDemoButton" />
+
+    <Spinner
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/toSpinner"
+        android:layout_below="@+id/nameEditText"
+        android:layout_alignRight="@+id/addPersonButton"
+        android:layout_toRightOf="@+id/nameEditText"
+        android:spinnerMode="dropdown" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="add rule"
+        android:id="@+id/addSwapRuleButton"
+        android:layout_below="@+id/fromSpinner"
+        android:layout_alignLeft="@+id/fromSpinner"
+        android:layout_marginTop="10dp"
+        />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="remove rule"
+        android:id="@+id/removeRuleButton"
+        android:layout_alignTop="@+id/addSwapRuleButton"
+        android:layout_centerHorizontal="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="to"
+        android:id="@+id/textView"
+        android:textSize="20dp"
+        android:layout_alignBottom="@+id/fromSpinner"
+        android:layout_centerHorizontal="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="reset"
+        android:id="@+id/resetButton"
+        android:layout_alignTop="@+id/removeRuleButton"
+        android:layout_alignLeft="@+id/addPersonButton" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="fetch state"
+        android:id="@+id/getStateButton"
+        android:layout_above="@+id/trainedTable"
+        android:layout_alignRight="@+id/toSpinner" />
 
 </RelativeLayout>

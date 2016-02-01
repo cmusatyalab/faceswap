@@ -63,7 +63,10 @@ public class CloudletFragment extends DemoFragment {
             public void onClick(View v) {
                 Const.GABRIEL_IP=Const.CLOUDLET_GABRIEL_IP;
                 Intent intent = new Intent(getContext(), GabrielClientActivity.class);
+                intent.putExtra("faceTable", ((CloudletDemoActivity)getActivity()).faceTable);
+                intent.putExtra("reset", ((CloudletDemoActivity) getActivity()).reset);
                 startActivity(intent);
+                ((CloudletDemoActivity) getActivity()).reset =false;
                 Toast.makeText(getContext(), "initializing demo", Toast.LENGTH_SHORT).show();
             }
         });
@@ -76,7 +79,9 @@ public class CloudletFragment extends DemoFragment {
                     Const.GABRIEL_IP = Const.CLOUDLET_GABRIEL_IP;
                     Intent intent = new Intent(getContext(), GabrielClientActivity.class);
                     intent.putExtra("name", name);
+                    intent.putExtra("reset", ((CloudletDemoActivity)getActivity()).reset);
                     startActivityForResult(intent, LAUNCHCODE);
+                    ((CloudletDemoActivity) getActivity()).reset =false;
                     Toast.makeText(getContext(), "training", Toast.LENGTH_SHORT).show();
                 }
             }

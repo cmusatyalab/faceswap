@@ -1,6 +1,5 @@
 package edu.cmu.cs.gabriel.network;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -8,27 +7,22 @@ import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.security.Policy;
-import java.util.TreeMap;
-import java.util.Vector;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import edu.cmu.cs.gabriel.Const;
-import edu.cmu.cs.gabriel.network.AccStreamingThread.AccData;
-import edu.cmu.cs.gabriel.token.SentPacketInfo;
 import edu.cmu.cs.gabriel.token.TokenController;
 
 import android.graphics.Rect;
 import android.graphics.YuvImage;
-import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
 import android.os.AsyncTask;
@@ -36,6 +30,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class VideoStreamingThread extends Thread {
 
@@ -65,13 +62,22 @@ public class VideoStreamingThread extends Thread {
 
 	//person's name for training face recognizers
 	private String name = null;
-    private boolean hasSentAddPerson;
+    private boolean hasSentInitialization;
+
+    //for swapping faces
+    private HashMap<String, String> faceTable;
+    //for setting openface server state
+    private boolean reset;
+    private boolean getState;
+    public AtomicBoolean receivedState;
+    public volatile String state_string;
 
 	public VideoStreamingThread(FileDescriptor fd,
 								String IPString,
 								int port,
 								Handler handler,
-								TokenController tokenController) {
+								TokenController tokenController,
+                                boolean reset) {
 		is_running = false;
 		this.networkHander = handler;
 		this.tokenController = tokenController;
@@ -86,7 +92,10 @@ public class VideoStreamingThread extends Thread {
 		
 		// check input data at image directory
 		imageFiles = this.getImageFiles(Const.TEST_IMAGE_DIR);
-        this.hasSentAddPerson=true;
+        this.hasSentInitialization =true;
+        this.reset = reset;
+        this.getState =false;
+        this.receivedState = new AtomicBoolean(false);
 	}
 
 	public VideoStreamingThread(FileDescriptor fd,
@@ -94,13 +103,42 @@ public class VideoStreamingThread extends Thread {
 								int port,
 								Handler handler,
 								TokenController tokenController,
+                                boolean reset,
 								String name) {
-		this(fd, IPString, port, handler, tokenController);
+		this(fd, IPString, port, handler, tokenController, reset);
         if (name != null){
             this.name = name;
-            this.hasSentAddPerson=false;
+            this.hasSentInitialization =false;
         }
 	}
+
+    public VideoStreamingThread(FileDescriptor fd,
+                                String IPString,
+                                int port,
+                                Handler handler,
+                                TokenController tokenController,
+                                boolean reset,
+                                HashMap faceTable) {
+        this(fd, IPString, port, handler, tokenController, reset);
+        if (faceTable != null){
+            this.faceTable=faceTable;
+            this.hasSentInitialization =false;
+        }
+    }
+
+    public VideoStreamingThread(FileDescriptor fd,
+                                String IPString,
+                                int port,
+                                Handler handler,
+                                TokenController tokenController,
+                                boolean reset,
+                                boolean getState) {
+        this(fd, IPString, port, handler, tokenController, reset);
+        this.getState=getState;
+        if (this.getState){
+            this.hasSentInitialization =false;
+        }
+    }
 
 	private File[] getImageFiles(File imageDir) {
 		if (imageDir == null){
@@ -142,6 +180,55 @@ public class VideoStreamingThread extends Thread {
 		}
 	}
 
+    private void switchConnection(){
+        if (tcpSocket != null) {
+            try {
+                tcpSocket.close();
+            } catch (IOException e) {
+            }
+        }
+        if (networkWriter != null) {
+            try {
+                networkWriter.close();
+            } catch (IOException e) {
+            }
+        }
+        if (networkReceiver != null) {
+            networkReceiver.close();
+        }
+
+        InetAddress ip=null;
+        if (remoteIP.equals(Const.CLOUD_GABRIEL_IP)){
+            try {
+                ip = InetAddress.getByName(Const.CLOUDLET_GABRIEL_IP);
+            } catch (UnknownHostException e) {
+                Log.e(LOG_TAG, "unknown host: " + e.getMessage());
+            }
+        } else {
+            try {
+                ip = InetAddress.getByName(Const.CLOUD_GABRIEL_IP);
+            } catch (UnknownHostException e) {
+                Log.e(LOG_TAG, "unknown host: " + e.getMessage());
+            }
+        }
+        try {
+            tcpSocket = new Socket();
+            tcpSocket.setTcpNoDelay(true);
+            tcpSocket.connect(new InetSocketAddress(ip, remotePort), 5 * 1000);
+            networkWriter = new DataOutputStream(tcpSocket.getOutputStream());
+            DataInputStream networkReader = new DataInputStream(tcpSocket.getInputStream());
+            networkReceiver = new VideoControlThread(networkReader, this.networkHander, tokenController);
+            networkReceiver.start();
+        } catch (IOException e) {
+            Log.e(LOG_TAG, Log.getStackTraceString(e));
+            Log.e(LOG_TAG, "Error in initializing Data socket: " + e);
+            this.notifyError(e.getMessage());
+            this.is_running = false;
+            return;
+        }
+        Log.d(LOG_TAG, "switching host: " + remoteIP + " changed to " + ip);
+    }
+
 	public void run() {
 		this.is_running = true;
 		Log.i(LOG_TAG, "Streaming thread running");
@@ -180,7 +267,6 @@ public class VideoStreamingThread extends Thread {
 				// get data
 				byte[] data = null;
 				long dataTime = 0;
-//				long sendingFrameID = 0;
 				long sendingFrameID = 0;
 				synchronized(frameLock){
 					while (this.frameBuffer == null){
@@ -200,32 +286,77 @@ public class VideoStreamingThread extends Thread {
 		        DataOutputStream dos=new DataOutputStream(baos);
 				byte[] header;
 
-                //first frame send add person
-                if (!hasSentAddPerson){
-                    header = ("{\"id\":" +sendingFrameID + ", \"add_person\":" + "\"" + name + "\"" + "}").getBytes();
-//                        this.sendPacket(header_bytes, data_bytes);
-                    hasSentAddPerson = true;
-                } else {
-                    if (null == this.name){
-                        header = ("{\"id\":" + sendingFrameID + "}").getBytes();
-                    } else {
-                        header = ("{\"id\":" + sendingFrameID + ","
-                                + "\"training\":" + "\"" + this.name + "\""
-                                +"}").getBytes();
+                JSONObject headerJson = new JSONObject();
+                try{
+                    headerJson.put("id", sendingFrameID);
+                    //reset flag
+                    if (reset){
+                        headerJson.put("reset", "True");
+                        reset = false;
                     }
+                    //initilization packet for training and detecting
+                    if (!hasSentInitialization) {
+                        if (null != this.name) {
+                            headerJson.put("add_person", this.name);
+                            headerJson.put("training", this.name);
+                            hasSentInitialization = true;
+/*
+                            //training case
+                            header = ("{\"id\":" + sendingFrameID +
+                                    ", \"add_person\":" + "\"" + this.name + "\"" + ","
+                                    + "\"training\":" + "\"" + this.name + "\""
+                                    + "}").getBytes();
+*/
+                        } else if (null != this.faceTable) {
+                            //detecting case
+                            JSONObject faceTableJson = new JSONObject();
+                            String faceTableString = null;
+                            try {
+                                for (Map.Entry<String, String> entry : faceTable.entrySet()) {
+                                    faceTableJson.put(entry.getKey(), entry.getValue());
+                                }
+                                faceTableString = faceTableJson.toString();
+                                headerJson.put("face_table", faceTableString);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                            hasSentInitialization = true;
+                        } else if (getState){
+                            //get state first, then issue load state
+                            if (!receivedState.get()){
+                                Log.d(LOG_TAG, "send get_state request");
+                                headerJson.put("get_state", "True");
+                            } else {
+                                Log.d(LOG_TAG, "send load_state request");
+                                switchConnection();
+                                headerJson.put("load_state", state_string);
+                                hasSentInitialization = true;
+                            }
+                        }
+                    } else {
+                        //if training then add training flag
+                        if (null != this.name){
+                            headerJson.put("training", this.name);
+                        }
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
                 }
+                Log.d("json", headerJson.toString());
+                header = headerJson.toString().getBytes();
 
 				dos.writeInt(header.length);
 				dos.writeInt(data.length);
 				dos.write(header);
 				dos.write(data);
 
-                Log.d(LOG_TAG, "start sending frame ID: " + sendingFrameID);
+                Log.d(LOG_TAG, "sending frameID: " + sendingFrameID);
                 this.tokenController.sendData(sendingFrameID, System.currentTimeMillis(), dos.size());
 				networkWriter.write(baos.toByteArray());
 				networkWriter.flush();
 				this.tokenController.decreaseToken();
-                Log.d(LOG_TAG,"sent frame ID: "+sendingFrameID);
+//                Log.d(LOG_TAG,"sent frame ID: "+sendingFrameID);
 				
 				// measurement
 		        if (packet_firstUpdateTime == 0) {
