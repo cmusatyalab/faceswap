@@ -68,8 +68,6 @@ public class VideoStreamingThread extends Thread {
     private HashMap<String, String> faceTable;
     //for setting openface server state
     private boolean reset;
-    private boolean getState;
-    public AtomicBoolean receivedState;
     public volatile String state_string;
 
 	public VideoStreamingThread(FileDescriptor fd,
@@ -91,11 +89,10 @@ public class VideoStreamingThread extends Thread {
 		cameraInputStream = new FileInputStream(fd);
 		
 		// check input data at image directory
-		imageFiles = this.getImageFiles(Const.TEST_IMAGE_DIR);
+//		imageFiles = this.getImageFiles(Const.TEST_IMAGE_DIR);
+        imageFiles=null;
         this.hasSentInitialization =true;
         this.reset = reset;
-        this.getState =false;
-        this.receivedState = new AtomicBoolean(false);
 	}
 
 	public VideoStreamingThread(FileDescriptor fd,
@@ -126,20 +123,6 @@ public class VideoStreamingThread extends Thread {
         }
     }
 
-    public VideoStreamingThread(FileDescriptor fd,
-                                String IPString,
-                                int port,
-                                Handler handler,
-                                TokenController tokenController,
-                                boolean reset,
-                                boolean getState) {
-        this(fd, IPString, port, handler, tokenController, reset);
-        this.getState=getState;
-        if (this.getState){
-            this.hasSentInitialization =false;
-        }
-    }
-
 	private File[] getImageFiles(File imageDir) {
 		if (imageDir == null){
 			return null;
@@ -157,28 +140,6 @@ public class VideoStreamingThread extends Thread {
 		return files;
 	}
 
-	private void sendPacket(byte[] header, byte[] data){
-		try{
-			//send add person packet first
-			// make it as a single packet
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			DataOutputStream dos=new DataOutputStream(baos);
-
-			dos.writeInt(header.length);
-			dos.writeInt(data.length);
-			dos.write(header);
-			dos.write(data);
-
-			networkWriter.write(baos.toByteArray());
-			networkWriter.flush();
-			Log.d(LOG_TAG, "header size: " + header.length+ " data size: " +data.length);
-		} catch (IOException e) {
-			Log.e(LOG_TAG, e.getMessage());
-			this.notifyError(e.getMessage());
-			this.is_running = false;
-			return;
-		}
-	}
 
     private void switchConnection(){
         if (tcpSocket != null) {
@@ -322,17 +283,6 @@ public class VideoStreamingThread extends Thread {
                             }
 
                             hasSentInitialization = true;
-                        } else if (getState){
-                            //get state first, then issue load state
-                            if (!receivedState.get()){
-                                Log.d(LOG_TAG, "send get_state request");
-                                headerJson.put("get_state", "True");
-                            } else {
-                                Log.d(LOG_TAG, "send load_state request");
-                                switchConnection();
-                                headerJson.put("load_state", state_string);
-                                hasSentInitialization = true;
-                            }
                         }
                     } else {
                         //if training then add training flag
@@ -343,7 +293,7 @@ public class VideoStreamingThread extends Thread {
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-                Log.d("json", headerJson.toString());
+//                Log.d("json", headerJson.toString());
                 header = headerJson.toString().getBytes();
 
 				dos.writeInt(header.length);

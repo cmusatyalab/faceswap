@@ -42,9 +42,9 @@ public class VideoControlThread extends Thread {
 		// Recv initial simulation information
 		while(is_running == true){			
 			try {
-                Log.d(LOG_TAG, "before receive msg ");
+//                Log.d(LOG_TAG, "before receive msg ");
 				String recvMsg = this.receiveMsg(networkReader);
-                Log.d(LOG_TAG, "received message: " + recvMsg);
+//                Log.d(LOG_TAG, "received message: " + recvMsg);
 				this.notifyReceivedData(recvMsg);
 			} catch (IOException e) {
 				Log.e("krha", e.toString());

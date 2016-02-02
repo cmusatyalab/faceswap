@@ -30,6 +30,7 @@ import java.util.Map;
 
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
+import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
 import edu.cmu.cs.gabriel.R;
 
 /**
@@ -103,12 +104,18 @@ public class DemoFragment extends Fragment implements  AdapterView.OnItemSelecte
         getStateButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getContext(), GabrielClientActivity.class);
-                intent.putExtra("getState", true);
-                startActivity(intent);
-                Toast.makeText(getContext(), "getting state", Toast.LENGTH_SHORT).show();
+                new GabrielConfigurationAsyncTask(getActivity(),
+                        Const.GABRIEL_IP,
+                        GabrielClientActivity.VIDEO_STREAM_PORT,
+                        GabrielClientActivity.RESULT_RECEIVING_PORT).execute(
+                        Const.GABRIEL_CONFIGURATION_SYNC_STATE);
             }
         });
+
+//        Intent intent = new Intent(getContext(), GabrielClientActivity.class);
+//        intent.putExtra("getState", true);
+//        startActivity(intent);
+//        Toast.makeText(getContext(), "getting state", Toast.LENGTH_SHORT).show();
 
 
         tb = (TableLayout)view.findViewById(R.id.trainedTable);

@@ -123,7 +123,7 @@ public class ResultReceivingThread extends Thread {
 		} catch(JSONException e){}
 		try{
 			frameID = obj.getLong(NetworkProtocol.HEADER_MESSAGE_FRAME_ID);
-			Log.d(LOG_TAG, "received response. frameID: "+frameID);
+//			Log.d(LOG_TAG, "received response. frameID: "+frameID);
 			engineID = obj.getString(NetworkProtocol.HEADER_MESSAGE_ENGINE_ID);
 		} catch(JSONException e){}
 		

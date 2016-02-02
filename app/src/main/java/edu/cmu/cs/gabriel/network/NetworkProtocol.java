@@ -23,6 +23,7 @@ public class NetworkProtocol {
 	public static final String CUSTOM_DATA_MESSAGE_TYPE_IMG = "image";
 	public static final String CUSTOM_DATA_MESSAGE_VALUE= "value";
 
+
 	public static final String CUSTOM_DATA_MESSAGE_NUM = "num";
 	public static final String CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_X1 = "item_%_roi_x1";
 	public static final String CUSTOM_DATA_MESSAGE_ROI_TEMPLATE_Y1 = "item_%_roi_y1";

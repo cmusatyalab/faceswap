@@ -87,7 +87,7 @@ public class CameraOverlay extends View {
         }
         this.invalidate();
         timeStamp = System.currentTimeMillis();
-        Log.d("cameraOverlay", "cameraOverlay refresh requested");
+//        Log.d("cameraOverlay", "cameraOverlay refresh requested");
     }
 
 

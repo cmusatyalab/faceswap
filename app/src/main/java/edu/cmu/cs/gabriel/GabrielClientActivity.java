@@ -59,8 +59,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.w3c.dom.Text;
 
-public class GabrielClientActivity extends Activity implements TextToSpeech.OnInitListener,
-        SensorEventListener {
+public class GabrielClientActivity extends Activity {
 	
     private static final String LOG_TAG = "GabrielClientActivity";
 	private static final String DEBUG_TAG = "krha_debug";
@@ -102,7 +101,6 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 	private String name = null;
     private HashMap<String, String> faceTable;
     private boolean reset=false;
-    private boolean getState=false;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -137,9 +135,6 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
             setResult(RESULT_OK, reply);
 		} else if (intent.hasExtra("faceTable")){
             faceTable = (HashMap<String, String>) intent.getSerializableExtra("faceTable");
-        } else if (intent.hasExtra("getState")){
-            getState =intent.getBooleanExtra("getState", false);
-            Log.d(LOG_TAG, "getstate flag set");
         }
 
 		// Connect to Gabriel Server if it's not experiment
@@ -304,9 +299,6 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 		} else if (null!=faceTable ){
             videoStreamingThread = new VideoStreamingThread(fd,
                     Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset, faceTable);
-        } else if (getState){
-            videoStreamingThread = new VideoStreamingThread(fd,
-                    Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset, getState);
         } else {
             videoStreamingThread = new VideoStreamingThread(fd,
                     Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
@@ -450,8 +442,8 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 			//handled by resultReceivingThread!!!
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
                 String response = (String) msg.obj;
-//                Log.d(LOG_TAG, "received response");
-//                Log.d(LOG_TAG, response);
+                Log.d(LOG_TAG, "received response");
+                Log.d(LOG_TAG, response);
 
                 if (Const.RESPONSE_JSON) {
                     try {
@@ -466,13 +458,6 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_LOAD_STATE)) {
                             Log.d(LOG_TAG, "load state finished");
                             Toast.makeText(getApplicationContext(), "load state finished!", Toast.LENGTH_SHORT).show();
-                        }
-
-                        if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_GET_STATE)) {
-                            String stateString = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
-                            Log.d(LOG_TAG, "get state from openface server: " + stateString.substring(0, 10));
-                            videoStreamingThread.receivedState.set(true);
-                            videoStreamingThread.state_string=stateString;
                         }
 
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_TRAIN)) {
@@ -695,17 +680,19 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 			mPreview.close();
 			mPreview = null;
 		}
-		if (mSensorManager != null) {
-			mSensorManager.unregisterListener(this);
-			mSensorManager = null;
-			mAccelerometer = null;
-		}
+
+//		if (mSensorManager != null) {
+//			mSensorManager.unregisterListener(this);
+//			mSensorManager = null;
+//			mAccelerometer = null;
+//		}
 
 		if (mDisplay !=null){
 			mDisplay =null;
 		}
 	}
 
+/*
 	@Override
 	public void onAccuracyChanged(Sensor sensor, int accuracy) {
 	}
@@ -715,9 +702,9 @@ public class GabrielClientActivity extends Activity implements TextToSpeech.OnIn
 		if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER)
 			return;
 		if (accStreamingThread != null) {
-//			accStreamingThread.push(event.values);
+			accStreamingThread.push(event.values);
 		}
-		// Log.d(LOG_TAG, "acc_x : " + mSensorX + "\tacc_y : " + mSensorY);
+		Log.d(LOG_TAG, "acc_x : " + mSensorX + "\tacc_y : " + mSensorY);
 	}
-
+*/
 }
