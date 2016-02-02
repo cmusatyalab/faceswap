@@ -53,7 +53,8 @@ class AppDataProtocol(object):
     TYPE_train = "train"    
     TYPE_detect = "detect"
     TYPE_img = "image"        
-    TYPE_get_state = "get_state"        
+    TYPE_get_state = "get_state"
+    TYPE_load_state = "load_state"            
 
 # bad idea to transfer image back using json
 class DummyVideoApp(AppProxyThread):
@@ -137,7 +138,7 @@ class DummyVideoApp(AppProxyThread):
             if get_state:
                 state_string = transformer.openface_client.getState()
                 resp=self.gen_response(AppDataProtocol.TYPE_get_state, state_string)
-                print 'send out response {}'.format(resp)
+#                print 'send out response {}'.format(resp)
                 return resp
 
         if 'load_state' in header_dict:

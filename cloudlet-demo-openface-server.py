@@ -95,7 +95,7 @@ class Face:
     def __repr__(self):
         return "{{id: {}, rep[0:10]: {}}}".format(
             str(self.identity),
-            self.rep[0:10]
+            self.rep[0:2]
         )
 
 
@@ -123,6 +123,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             msg['type'], len(raw)))
         if msg['type'] == "ALL_STATE":
             self.loadState(msg['images'], msg['training'], msg['people'])
+        elif msg['type'] == "GET_STATE":
+            self.getState()
         elif msg['type'] == "NULL":
             self.sendMessage('{"type": "NULL"}')
         elif msg['type'] == "FRAME":
@@ -177,6 +179,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         print("WebSocket connection closed: {0}".format(reason))
 
     def loadState(self, jsImages, training, jsPeople):
+        self.image = {}
+        self.people =[]
         self.training = training
 
         for jsImage in jsImages:
@@ -189,6 +193,23 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
         if not training:
             self.trainSVM()
+
+    def getState(self):
+        # format it such that json can serialize
+        images_serializable=[]
+        for h, face in self.images.iteritems():
+            images_serializable.append({
+                'hash':h,
+                'representation':list(face.rep),
+                'identity':face.identity
+                })
+        msg ={
+            'type': 'ALL_STATE',
+            'images': images_serializable,
+            'people': self.people,
+            'training': self.training
+        }
+        self.sendMessage(json.dumps(msg))
 
     def getData(self):
         X = []

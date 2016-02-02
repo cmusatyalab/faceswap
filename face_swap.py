@@ -153,7 +153,7 @@ class FaceTransformation(object):
         
         # openface related
         self.training_cnt = 0
-        self.server_ip = u"ws://128.2.211.75"
+        self.server_ip = u"ws://localhost"
         self.server_port = 9000
         self.openface_client = OpenFaceClient(self.server_ip, self.server_port)
         self.training = self.openface_client.isTraining()
@@ -248,32 +248,54 @@ class FaceTransformation(object):
             names = self.recognize_faces(None, frame, rois)
             trackers = create_trackers(frame, rois)
             frame_available = True
-            frame_cnt = 0 
-            while frame_available:
-                try:
-                    frame = img_queue.get_nowait()
+            frame_cnt = 0
+            while (frame_cnt < 20):
+                try:                
+                    frame = img_queue.get(timeout=1)
                     self.update_trackers(trackers, frame)
                     frame_cnt +=1
                 except Queue.Empty:
-                    self.logger.debug('all image processed! # images {}'.format(frame_cnt))    
-                    frame_available = False
-#                    self.logger.debug('detection thread# trackers {}'.format(len(trackers)))
-                    faces=[]
-                    for idx, tracker in enumerate(trackers):
-                        new_roi = tracker.get_position()
-                        cur_roi = (int(new_roi.left()),
-                                         int(new_roi.top()),
-                                         int(new_roi.right()),
-                                         int(new_roi.bottom()))
-                        name = names[idx]                        
-                        self.logger.debug('recognized faces {0} {1}'.format(idx, name))
-                        face = FaceROI(cur_roi, name=name)
-                        faces.append(face)
-                    if (len(faces)>0):
-#                        self.logger.debug('update trackers!')
-                        tracker_updates = {'frame':frame, 'faces':faces}
-                        trackers_queue.put(tracker_updates)
-                        sync_face_event.set()
+                    pass
+            faces=[]
+            for idx, tracker in enumerate(trackers):
+                new_roi = tracker.get_position()
+                cur_roi = (int(new_roi.left()),
+                                 int(new_roi.top()),
+                                 int(new_roi.right()),
+                                 int(new_roi.bottom()))
+                name = names[idx]                        
+                self.logger.debug('recognized faces {0} {1}'.format(idx, name))
+                face = FaceROI(cur_roi, name=name)
+                faces.append(face)
+            if (len(faces)>0):
+                tracker_updates = {'frame':frame, 'faces':faces}
+                trackers_queue.put(tracker_updates)
+                sync_face_event.set()
+
+                
+            # while frame_available:
+            #     try:
+            #         frame = img_queue.get_nowait()
+            #         self.update_trackers(trackers, frame)
+            #         frame_cnt +=1
+            #     except Queue.Empty:
+            #         self.logger.debug('all image processed! # images {}'.format(frame_cnt))    
+            #         frame_available = False
+            #         faces=[]
+            #         for idx, tracker in enumerate(trackers):
+            #             new_roi = tracker.get_position()
+            #             cur_roi = (int(new_roi.left()),
+            #                              int(new_roi.top()),
+            #                              int(new_roi.right()),
+            #                              int(new_roi.bottom()))
+            #             name = names[idx]                        
+            #             self.logger.debug('recognized faces {0} {1}'.format(idx, name))
+            #             face = FaceROI(cur_roi, name=name)
+            #             faces.append(face)
+            #         if (len(faces)>0):
+            #             tracker_updates = {'frame':frame, 'faces':faces}
+            #             trackers_queue.put(tracker_updates)
+            #             sync_face_event.set()
         sync_face_event.set()
                     
     def update_trackers(self, trackers, frame):
@@ -348,9 +370,10 @@ class FaceTransformation(object):
         
         self.faces_lock.acquire()                    
         self.faces=self.track_faces(frame, self.faces)
-        self.faces=self.shuffle_roi(self.faces, self.face_table)
-        face_snippets = [face.get_json() for face in self.faces]        
-        self.faces_lock.release()
+        return_faces=self.shuffle_roi(self.faces, self.face_table)
+        self.faces_lock.release()        
+        face_snippets = [face.get_json() for face in return_faces]        
+
 
         # if DEBUG:
         #     end = time.time()
@@ -366,12 +389,14 @@ class FaceTransformation(object):
     
     # shuffle faces
     def shuffle_roi(self, faces, face_table):
+        to_people = []
         for idx, face in enumerate(faces):
             if face.name in face_table:
                 (roi_x1, roi_y1, roi_x2, roi_y2) = face.roi
                 to_person = self.get_FaceROI_from_string(faces, face_table[face.name])
                 if (None == to_person):
                     continue
+                to_people.append(to_person)
                 nxt_face = to_person.data
                 cur_face = face.data
                 dim = (cur_face.shape[1],cur_face.shape[0])
@@ -381,6 +406,10 @@ class FaceTransformation(object):
                     print 'error: face resize failed!'
                 face.swap_tmp_data=nxt_face_resized
 
+        to_people = set(to_people)
+        faces = [face for face in faces if face not in to_people]        
+#        faces = [face in faces if face in face_table and face not in to_people]
+#        faces.extend([ face in faces if face in face_table and face in to_people])
         for face in faces:
             if None != face.swap_tmp_data:
                 face.data = face.swap_tmp_data
