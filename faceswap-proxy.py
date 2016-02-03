@@ -142,6 +142,7 @@ class DummyVideoApp(AppProxyThread):
             if get_state:
                 state_string = transformer.openface_client.getState()
                 resp=self.gen_response(AppDataProtocol.TYPE_get_state, state_string)
+
 #                print 'send out response {}'.format(resp[:10])
 #                sys.stdout.flush()
                 return resp

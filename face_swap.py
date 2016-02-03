@@ -154,7 +154,7 @@ class FaceTransformation(object):
         
         # openface related
         self.training_cnt = 0
-        self.server_ip = u"ws://128.2.211.75"
+        self.server_ip = u"ws://localhost"
         self.server_port = 9000
         self.openface_client = OpenFaceClient(self.server_ip, self.server_port)
         self.training = self.openface_client.isTraining()
@@ -249,6 +249,7 @@ class FaceTransformation(object):
             trackers = create_trackers(frame, rois)
             frame_available = True
             frame_cnt = 0
+            
             # while (frame_cnt < 20):
             #     try:                
             #         frame = img_queue.get(timeout=1)
@@ -296,6 +297,7 @@ class FaceTransformation(object):
                         tracker_updates = {'frame':frame, 'faces':faces}
                         trackers_queue.put(tracker_updates)
                         sync_face_event.set()
+        # wake thread up for terminating
         sync_face_event.set()
                     
     def update_trackers(self, trackers, frame):
@@ -365,6 +367,7 @@ class FaceTransformation(object):
         
         self.faces_lock.acquire()                    
         self.faces=self.track_faces(frame, self.faces)
+
         return_faces = self.faces
 #        return_faces=self.shuffle_roi(self.faces, self.face_table)
         self.faces_lock.release()
