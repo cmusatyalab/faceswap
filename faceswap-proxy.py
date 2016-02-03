@@ -53,7 +53,8 @@ class AppDataProtocol(object):
     TYPE_train = "train"    
     TYPE_detect = "detect"
     TYPE_img = "image"        
-    TYPE_get_state = "get_state"        
+    TYPE_get_state = "get_state"
+    TYPE_load_state = "load_state"            
 
 # bad idea to transfer image back using json
 class DummyVideoApp(AppProxyThread):
@@ -109,11 +110,15 @@ class DummyVideoApp(AppProxyThread):
         global prev_timestamp
         global transformer
         global DEBUG
-
+        
+        # locking to make sure tracker update thread is not interrupting
+        transformer.tracking_thread_idle_event.clear()
+        
         # PERFORM Cognitive Assistant Processing
         # header is a dict
         sys.stdout.write("processing: ")
         sys.stdout.write("%s\n" % header)
+
 
         if DEBUG:
             cur_timestamp = time.time()*1000
@@ -137,7 +142,8 @@ class DummyVideoApp(AppProxyThread):
             if get_state:
                 state_string = transformer.openface_client.getState()
                 resp=self.gen_response(AppDataProtocol.TYPE_get_state, state_string)
-                print 'send out response {}'.format(resp)
+#                print 'send out response {}'.format(resp[:10])
+#                sys.stdout.flush()
                 return resp
 
         if 'load_state' in header_dict:
@@ -200,9 +206,9 @@ class DummyVideoApp(AppProxyThread):
         if DEBUG:
             end = time.time()
             print('total processing time: {}'.format((end-start)*1000))
-            
             prev_timestamp = time.time()*1000
-            
+
+        transformer.tracking_thread_idle_event.set()            
         return resp
 
 class DummyAccApp(AppProxyThread):

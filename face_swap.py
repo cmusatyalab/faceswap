@@ -24,7 +24,7 @@ import pdb
 
 MIN_WIDTH_THRESHOLD=3
 MIN_HEIGHT_THRESHOLD=3
-RATIO_DETECT_TRACK = 10
+DETECT_TRACK_RATIO = 10
 
 DEBUG = True
 
@@ -43,7 +43,7 @@ def create_trackers_parallel(tracker_input):
     frame=tracker_input.prev_frame
     roi = tracker_input.prev_roi
     tracker = create_tracker(frame,roi)
-    sys.stdout.flush()        
+#    sys.stdout.flush()        
     return tracker
     
 def create_tracker(frame, roi):
@@ -85,7 +85,7 @@ def create_and_track(tracker_input):
         print 'workerpool: process id: {} running time: {}'.format(os.getpid(),
                                                                    (end-start)*1000)        
 
-    sys.stdout.flush()
+#    sys.stdout.flush()
     
     return new_roi
 
@@ -111,16 +111,17 @@ class FaceROI(object):
         self.tracker = tracker
         self.swap_tmp_data=None
 
-    def get_json(self):
+    def get_json(self, send_data=False):
         (roi_x1, roi_y1, roi_x2, roi_y2) = self.roi        
         msg = {
             'roi_x1':roi_x1,
             'roi_y1':roi_y1,
             'roi_x2':roi_x2,
             'roi_y2':roi_y2,
-            'name':self.name,
-            'data':np_array_to_jpeg_string(self.data)
+            'name':self.name
             }
+        if send_data:
+            msg['data'] = np_array_to_jpeg_string(self.data)
         return json.dumps(msg)
     
 class FaceTransformation(object):
@@ -164,6 +165,8 @@ class FaceTransformation(object):
         
         self.sync_face_event = multiprocessing.Event()
         self.sync_face_event.clear()
+        self.tracking_thread_idle_event = threading.Event()
+        self.tracking_thread_idle_event.clear()
         self.sync_thread_stop_event=threading.Event()
         self.sync_thread_stop_event.clear()
         self.sync_faces_thread = threading.Thread(target=self.sync_faces, name='bgThread', kwargs={'stop_event' : self.sync_thread_stop_event})
@@ -174,11 +177,6 @@ class FaceTransformation(object):
         self.detection_process = multiprocessing.Process(target = self.detection_update_thread, name='DetectionProcess', args=(self.img_queue, self.trackers_queue, self.server_ip, self.server_port, self.sync_face_event,self.detection_process_stop_event,))
         self.detection_process.start()
 
-    # def reset_openface(self):
-    #     self.openface_client.terminate()
-    #     self.openface_client = OpenFaceClient(self.server_ip, self.server_port)
-    #     self.training = self.openface_client.isTraining()
-        
     # background thread that updates self.faces once
     # detection process signaled
     def sync_faces(self, stop_event=None):
@@ -186,6 +184,8 @@ class FaceTransformation(object):
             self.sync_face_event.wait(1)
             if (not self.sync_face_event.is_set()):
                 continue
+            while(not self.tracking_thread_idle_event.is_set()):
+                self.tracking_thread_idle_event.wait(1)
 #            self.logger.debug('bg-thread getting updates from detection process!')
             try:
                 tracker_updates = self.trackers_queue.get(timeout=1)
@@ -248,7 +248,31 @@ class FaceTransformation(object):
             names = self.recognize_faces(None, frame, rois)
             trackers = create_trackers(frame, rois)
             frame_available = True
-            frame_cnt = 0 
+            frame_cnt = 0
+            # while (frame_cnt < 20):
+            #     try:                
+            #         frame = img_queue.get(timeout=1)
+            #         self.update_trackers(trackers, frame)
+            #         frame_cnt +=1
+            #     except Queue.Empty:
+            #         pass
+            # faces=[]
+            # for idx, tracker in enumerate(trackers):
+            #     new_roi = tracker.get_position()
+            #     cur_roi = (int(new_roi.left()),
+            #                      int(new_roi.top()),
+            #                      int(new_roi.right()),
+            #                      int(new_roi.bottom()))
+            #     name = names[idx]                        
+            #     self.logger.debug('recognized faces {0} {1}'.format(idx, name))
+            #     face = FaceROI(cur_roi, name=name)
+            #     faces.append(face)
+            # if (len(faces)>0):
+            #     tracker_updates = {'frame':frame, 'faces':faces}
+            #     trackers_queue.put(tracker_updates)
+            #     sync_face_event.set()
+
+                
             while frame_available:
                 try:
                     frame = img_queue.get_nowait()
@@ -257,7 +281,6 @@ class FaceTransformation(object):
                 except Queue.Empty:
                     self.logger.debug('all image processed! # images {}'.format(frame_cnt))    
                     frame_available = False
-#                    self.logger.debug('detection thread# trackers {}'.format(len(trackers)))
                     faces=[]
                     for idx, tracker in enumerate(trackers):
                         new_roi = tracker.get_position()
@@ -270,7 +293,6 @@ class FaceTransformation(object):
                         face = FaceROI(cur_roi, name=name)
                         faces.append(face)
                     if (len(faces)>0):
-#                        self.logger.debug('update trackers!')
                         tracker_updates = {'frame':frame, 'faces':faces}
                         trackers_queue.put(tracker_updates)
                         sync_face_event.set()
@@ -281,20 +303,19 @@ class FaceTransformation(object):
             tracker.update(frame)
             
     def track_faces(self, frame, faces):
-#        self.rois=[]
         self.logger.debug('main thread tracking. # faces tracking {} '.format(len(faces)))
         to_be_removed_face = []
         for idx, face in enumerate(faces):
             tracker = face.tracker
-#        for idx, tracker in enumerate(self.trackers):
             if DEBUG:
                 start = time.time()
                 
             # preprocessing to grey scale can reduce run time
 #            grey_frame = frame
             grey_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-                
-            tracker.update(grey_frame)
+
+            (x1,y1,x2,y2)=face.roi
+            tracker.update(grey_frame, dlib.rectangle(x1,y1,x2,y2))
             new_roi = tracker.get_position()
             if DEBUG:
                 end = time.time()
@@ -307,16 +328,12 @@ class FaceTransformation(object):
             if (self.is_small_face(face.roi)):
                 to_be_removed_face.append(face)
             else:
-                # add in data
                 face.data = np.copy(frame[y1:y2+1, x1:x2+1])
 
         faces = [face for face in faces if face not in to_be_removed_face]
 #        self.logger.debug('main thread tracking. # faces returned {} '.format(len(face_snippets)))   
         return faces
         
-#        roi_face_pairs=self.shuffle_roi(self.rois, frame)        
-#        self.rois, self.trackers = self.get_large_faces(self.rois, self.trackers)
-
     def get_large_faces(self, rois, trackers):
         # find small faces
         small_face_idx=self.find_small_face_idx(rois)
@@ -348,9 +365,16 @@ class FaceTransformation(object):
         
         self.faces_lock.acquire()                    
         self.faces=self.track_faces(frame, self.faces)
-        self.faces=self.shuffle_roi(self.faces, self.face_table)
-        face_snippets = [face.get_json() for face in self.faces]        
+        return_faces = self.faces
+#        return_faces=self.shuffle_roi(self.faces, self.face_table)
         self.faces_lock.release()
+        face_snippets = []
+        for face in return_faces:
+            try:
+                face_json = face.get_json()
+                face_snippets.append(face_json)
+            except ValueError:
+                pass
 
         # if DEBUG:
         #     end = time.time()
@@ -366,12 +390,14 @@ class FaceTransformation(object):
     
     # shuffle faces
     def shuffle_roi(self, faces, face_table):
+        to_people = []
         for idx, face in enumerate(faces):
             if face.name in face_table:
                 (roi_x1, roi_y1, roi_x2, roi_y2) = face.roi
                 to_person = self.get_FaceROI_from_string(faces, face_table[face.name])
                 if (None == to_person):
                     continue
+                to_people.append(to_person)
                 nxt_face = to_person.data
                 cur_face = face.data
                 dim = (cur_face.shape[1],cur_face.shape[0])
@@ -381,6 +407,10 @@ class FaceTransformation(object):
                     print 'error: face resize failed!'
                 face.swap_tmp_data=nxt_face_resized
 
+        to_people = set(to_people)
+        faces = [face for face in faces if face not in to_people]        
+#        faces = [face in faces if face in face_table and face not in to_people]
+#        faces.extend([ face in faces if face in face_table and face in to_people])
         for face in faces:
             if None != face.swap_tmp_data:
                 face.data = face.swap_tmp_data

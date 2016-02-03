@@ -32,7 +32,7 @@ class OpenFaceClient(object):
         if not self.async:
             try:
                 resp = self.ws.recv()
-                self.logger.debug('server said: {}'.format(resp))
+                self.logger.debug('server said: {}'.format(resp[:30]))
                 return resp
             except WebSocketException as e:
                 self.logger.debug("web socket error: {0}".format(e))
