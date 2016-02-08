@@ -295,10 +295,11 @@ class FaceTransformation(object):
                             self.logger.info('recognized faces {0} {1}'.format(idx, name))
                             face = FaceROI(cur_roi, name=name)
                             faces.append(face)
-                        if (len(faces)>0):
-                            tracker_updates = {'frame':frame, 'faces':faces}
-                            trackers_queue.put(tracker_updates)
-                            sync_face_event.set()
+                            
+#                        if (len(faces)>0):
+                        tracker_updates = {'frame':frame, 'faces':faces}
+                        trackers_queue.put(tracker_updates)
+                        sync_face_event.set()
 
         # wake thread up for terminating
         sync_face_event.set()
