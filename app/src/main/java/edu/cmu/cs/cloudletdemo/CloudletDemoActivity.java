@@ -13,7 +13,9 @@ import android.view.MenuItem;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import edu.cmu.cs.gabriel.R;
 
@@ -22,6 +24,8 @@ public class CloudletDemoActivity extends AppCompatActivity {
     private TabLayout tabLayout;
     private ViewPager viewPager;
     public HashMap<String, String> faceTable;
+    public Set<String> trainedPeople;
+
     public boolean reset;
 
     @Override
@@ -39,6 +43,7 @@ public class CloudletDemoActivity extends AppCompatActivity {
         tabLayout.setupWithViewPager(viewPager);
 
         faceTable = new HashMap<String, String>();
+        trainedPeople = new HashSet<String>();
         reset=false;
     }
 

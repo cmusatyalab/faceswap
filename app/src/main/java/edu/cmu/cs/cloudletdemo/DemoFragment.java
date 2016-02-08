@@ -25,8 +25,10 @@ import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
@@ -55,12 +57,13 @@ public class DemoFragment extends Fragment implements  AdapterView.OnItemSelecte
             IPV4Pattern = "(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])";
     protected static final String IPV6Pattern = "([0-9a-f]{1,4}:){7}([0-9a-f]){1,4}";
     protected View view;
-    protected List<String> trainedPeople;
+//    protected Set<String> trainedPeople;
+    protected List<String> spinnerList;
     protected TableLayout tb;
     protected Spinner fromSpinner, toSpinner;
-    protected ArrayAdapter<String> spinnerAdapter;
-    protected TextView trainPeopleTextView;
-    protected TextView ruleTextView;
+    public ArrayAdapter<String> spinnerAdapter;
+    public TextView trainPeopleTextView;
+    public TextView ruleTextView;
 
     private static final String LOG_TAG = "fragment";
 
@@ -70,7 +73,9 @@ public class DemoFragment extends Fragment implements  AdapterView.OnItemSelecte
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        this.trainedPeople= new ArrayList<String>();
+//        this.trainedPeople= new ArrayList<String>();
+//        this.trainedPeople= new HashSet<String>();
+        this.spinnerList = new ArrayList<String>();
 
     }
 
@@ -128,7 +133,7 @@ public class DemoFragment extends Fragment implements  AdapterView.OnItemSelecte
 //        trainedPeople.add("test1");
 //        trainedPeople.add("test2");
         spinnerAdapter = new ArrayAdapter<String>(getActivity(),
-                R.layout.support_simple_spinner_dropdown_item, trainedPeople);
+                R.layout.support_simple_spinner_dropdown_item, spinnerList);
         spinnerAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
         fromSpinner.setAdapter(spinnerAdapter);
         toSpinner.setAdapter(spinnerAdapter);
@@ -200,10 +205,15 @@ public class DemoFragment extends Fragment implements  AdapterView.OnItemSelecte
     // (screen resolution change, these dynamicallly added views are lost)
     public void addTrainedPerson(String name){
         if (checkName(name)){
-            trainedPeople.add(name);
-            spinnerAdapter.notifyDataSetChanged();
-            Log.d("fragment", "add name :"+name);
-            trainPeopleTextView.setText(String.valueOf(trainedPeople));
+            Set<String> trainedPeople=((CloudletDemoActivity) getActivity()).trainedPeople;
+            if (!trainedPeople.contains(name)){
+                trainedPeople.add(name);
+                spinnerList.clear();
+                spinnerList.addAll(trainedPeople);
+                spinnerAdapter.notifyDataSetChanged();
+                Log.d("fragment", "add name :"+name);
+                trainPeopleTextView.setText(String.valueOf(trainedPeople));
+            }
         }
 
     }

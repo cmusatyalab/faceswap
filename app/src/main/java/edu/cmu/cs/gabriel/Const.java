@@ -48,4 +48,6 @@ public class Const {
 
     //display preview or img processed from gabriel server
     public static String GABRIEL_CONFIGURATION_SYNC_STATE="syncState";
+
+	public static boolean FACE_DEMO_BOUNDING_BOX_ONLY=false;
 }

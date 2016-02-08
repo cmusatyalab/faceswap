@@ -6,10 +6,8 @@ import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -27,13 +25,10 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.hardware.Camera.PreviewCallback;
 import android.os.Bundle;
@@ -43,26 +38,18 @@ import android.preference.PreferenceManager;
 import android.speech.tts.TextToSpeech;
 import android.util.Base64;
 import android.util.Log;
-import android.util.Size;
 import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.SurfaceHolder;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 public class GabrielClientActivity extends Activity {
 	
@@ -303,8 +290,11 @@ public class GabrielClientActivity extends Activity {
             videoStreamingThread = new VideoStreamingThread(fd,
                     Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset, name);
 		} else if (null!=faceTable ){
+            //TODO: reorganize. facetable is not sent to the server anymore
+//            videoStreamingThread = new VideoStreamingThread(fd,
+//                    Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset, faceTable);
             videoStreamingThread = new VideoStreamingThread(fd,
-                    Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset, faceTable);
+                    Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
         } else {
             videoStreamingThread = new VideoStreamingThread(fd,
                     Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
@@ -440,18 +430,18 @@ public class GabrielClientActivity extends Activity {
         return null;
     }
 
-    private void drawFaceSnippets(Face[] faces){
-        // if not destroyed
-        if(cameraOverlay != null && mPreview !=null){
-            for (Face face: faces){
-                face.scale(mPreview.imageSize,
-                        cameraOverlay.getWidth(), cameraOverlay.getHeight());
-            }
-            cameraOverlay.drawFaces(faces, mPreview.imageSize);
-        }
-    }
+	private void drawFaceSnippets(Face[] faces, Bitmap curFrame){
+		// if not destroyed
+		if(cameraOverlay != null && mPreview !=null){
+			for (Face face: faces){
+				face.scale(mPreview.imageSize,
+						cameraOverlay.getWidth(), cameraOverlay.getHeight());
+			}
+			cameraOverlay.drawFaces(faces, mPreview.imageSize, curFrame);
+		}
+	}
 
-    private Handler returnMsgHandler = new Handler() {
+	private Handler returnMsgHandler = new Handler() {
 		public void handleMessage(Message msg) {
 			if (msg.what == NetworkProtocol.NETWORK_RET_FAILED) {
 				Bundle data = msg.getData();
@@ -485,7 +475,7 @@ public class GabrielClientActivity extends Activity {
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_TRAIN)) {
                             String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
                             Face[] faces = parseFaceSnippets(value);
-                            drawFaceSnippets(faces);
+                            drawFaceSnippets(faces,null);
                             JSONObject cnt_json = new JSONObject(value);
                             String cnt = cnt_json.getString("cnt");
 //                            Log.d(LOG_TAG, "gabriel server training cnt: " + cnt);
@@ -495,7 +485,10 @@ public class GabrielClientActivity extends Activity {
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_DETECT)) {
                             String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
                             Face[] faces = parseFaceSnippets(value);
-                            drawFaceSnippets(faces);
+                            swapFaces(faces);
+                            if (null != videoStreamingThread) {
+                                drawFaceSnippets(faces, videoStreamingThread.curFrame);
+                            }
                         }
 
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_IMG)) {
@@ -511,7 +504,7 @@ public class GabrielClientActivity extends Activity {
                     Face[] faces = parseFaceSnippets(response);
                     // if not destroyed
                     if(cameraOverlay != null && mPreview !=null){
-                        cameraOverlay.drawFaces(faces, mPreview.imageSize);
+                        cameraOverlay.drawFaces(faces, mPreview.imageSize, curFrame);
                     }
 
                 }
@@ -538,8 +531,25 @@ public class GabrielClientActivity extends Activity {
 		}
 	};
 
+    private void swapFaces(Face[] faces) {
+        Face[] originalFaces = new Face[faces.length];
+        System.arraycopy(faces, 0, originalFaces, 0 ,faces.length);
+        for (Face face: faces){
+            if (faceTable.containsKey(face.getName())){
+                String toPerson=faceTable.get(face.getName());
+                for (Face face2: originalFaces){
+                    if (face2.getName().equals(toPerson)){
+                        face.imageRoi = face2.imageRoi;
+                        break;
+                    }
+                }
 
-	protected int selectedRangeIndex = 0;
+            }
+        }
+    }
+
+
+    protected int selectedRangeIndex = 0;
 
 	public void selectFrameRate(View view) throws IOException {
 		selectedRangeIndex = 0;
@@ -712,6 +722,11 @@ public class GabrielClientActivity extends Activity {
 		if (mDisplay !=null){
 			mDisplay =null;
 		}
+
+        if (cameraOverlay!=null){
+            cameraOverlay.destroyDrawingCache();
+            cameraOverlay=null;
+        }
 	}
 
 /*

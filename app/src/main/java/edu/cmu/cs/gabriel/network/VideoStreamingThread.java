@@ -402,7 +402,7 @@ public class VideoStreamingThread extends Thread {
                         0,
                         buffer.length,
                         options);
-                Log.d(LOG_TAG, "reused current bitmap");
+//                Log.d(LOG_TAG, "reused current bitmap");
             }
         }
 

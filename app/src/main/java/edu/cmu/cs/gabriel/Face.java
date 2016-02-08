@@ -3,19 +3,23 @@ package edu.cmu.cs.gabriel;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.hardware.Camera;
-import android.util.Size;
 
 /**
  * Created by junjuew on 1/21/16.
  */
 public class Face {
     private int[] roi;
+    public int[] screenSizeRoi;
+    public int[] imageRoi;
     private byte[] img;
-    private Bitmap bitmap;
+    public Bitmap bitmap;
+    public Bitmap screenBitmap;
     private String name;
 
     public Face(int[] roi, byte[] img) {
         this.roi = roi;
+        this.imageRoi=new int[roi.length];
+        System.arraycopy(this.roi, 0, this.imageRoi, 0, this.roi.length);
         this.img = img;
     }
 
@@ -49,7 +53,7 @@ public class Face {
         this.img = img;
     }
 
-    public Bitmap getBitmap() {
+    public Bitmap createBitmapFromByteArray() {
         if (null != this.img && null == this.bitmap) {
             this.bitmap = BitmapFactory.decodeByteArray(this.img, 0, this.img.length);
         }
@@ -60,7 +64,7 @@ public class Face {
      * scale the original image size roi to actual screen size
      */
     public void scale(Camera.Size imageSize, int viewWidth, int viewHeight) {
-        if (null != imageSize){
+        if (null != imageSize && null ==screenSizeRoi){
             int[] scaledRoi = new int[roi.length];
             int imageWidth = imageSize.width;
             int imageHeight = imageSize.height;
@@ -72,12 +76,12 @@ public class Face {
             scaledRoi[2] = (int) (roi[2] * width_ratio);
             scaledRoi[3] = (int) (roi[3] * height_ratio);
 
-            this.roi = scaledRoi;
+            this.screenSizeRoi=scaledRoi;
             if (null != img){
-                Bitmap renderImg = this.getBitmap();
+                Bitmap renderImg = this.createBitmapFromByteArray();
                 Bitmap scaledBitmap =Bitmap.createScaledBitmap(renderImg,
-                        roi[2] - roi[0] + 1,
-                        roi[3] - roi[1] + 1 ,false);
+                        scaledRoi[2] - scaledRoi[0] + 1,
+                        scaledRoi[3] - scaledRoi[1] + 1 ,false);
                 this.bitmap = scaledBitmap;
             }
         }
