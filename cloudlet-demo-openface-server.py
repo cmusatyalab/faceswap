@@ -99,20 +99,37 @@ class Face:
         )
 
 
+images = {}
+training = False
+people = []
+svm = None
+        
 class OpenFaceServerProtocol(WebSocketServerProtocol):
 
     def __init__(self):
-        self.images = {}
-        self.training = False
-        self.people = []
-        self.svm = None
+        if DEBUG:
+            global images
+            global training
+            global people
+            global svm
+            self.images = images
+            self.training = training
+            self.people = people
+            if len(people) > 0:
+                self.trainSVM()                
+        else:
+            self.images = {}
+            self.training = False
+            self.people = []
+            self.svm = None
         if args.unknown:
             self.unknownImgs = np.load("./unknown.npy")
 
     def onConnect(self, request):
         print("Client connecting: {0}".format(request.peer))
         self.training = False
-
+        print("server state: {0}".format(self.people))
+        
     def onOpen(self):
         print("WebSocket connection open.")
 

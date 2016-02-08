@@ -41,7 +41,7 @@ import io, StringIO
 import base64
 import numpy as np
 import json
-
+#from scipy.ndimage import imread
 import cProfile, pstats, StringIO
 
 DEBUG = True
@@ -62,7 +62,8 @@ class DummyVideoApp(AppProxyThread):
     def gen_response(self, response_type, value):
         msg = {
             'type': response_type,
-            'value': value
+            'value': value,
+            'time': int(time.time()*1000)
             }
         return json.dumps(msg)
         
@@ -107,6 +108,10 @@ class DummyVideoApp(AppProxyThread):
 
 
     def handle(self, header, data):
+        # pr = cProfile.Profile()
+        # pr.enable()
+
+        
         global prev_timestamp
         global transformer
         global DEBUG
@@ -180,7 +185,9 @@ class DummyVideoApp(AppProxyThread):
 
         # operate on client data
         image_raw = Image.open(io.BytesIO(data))
+        image_raw.load()
         image = np.array(image_raw)
+
 
         if training:
             cnt, face_json = transformer.train(image, name)
@@ -196,7 +203,6 @@ class DummyVideoApp(AppProxyThread):
                 msg = {
                     'num': 0,
                     'cnt': cnt,
-                    'time': time.time()
                 }
             resp= self.gen_response(AppDataProtocol.TYPE_train, msg)
         else:
@@ -209,7 +215,15 @@ class DummyVideoApp(AppProxyThread):
             print('total processing time: {}'.format((end-start)*1000))
             prev_timestamp = time.time()*1000
 
-        transformer.tracking_thread_idle_event.set()            
+        transformer.tracking_thread_idle_event.set()
+
+        # pr.disable()
+        # s = StringIO.StringIO()
+        # sortby = 'cumulative'
+        # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        # ps.print_stats()
+        # print s.getvalue()
+        
         return resp
 
 class DummyAccApp(AppProxyThread):

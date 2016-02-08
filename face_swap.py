@@ -26,7 +26,7 @@ MIN_WIDTH_THRESHOLD=3
 MIN_HEIGHT_THRESHOLD=3
 DETECT_TRACK_RATIO = 10
 
-DEBUG = True
+DEBUG = False
 
 class TrackerInitializer(object):
     def __init__(self, prev_frame, prev_roi, frame):
@@ -135,7 +135,7 @@ class FaceTransformation(object):
         formatter = logging.Formatter('%(asctime)-15s %(levelname)-8s %(processName)s %(message)s')   
         self.logger=logging.getLogger(__name__)
         ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(logging.DEBUG)
+        ch.setLevel(logging.INFO)
         ch.setFormatter(formatter)
         fh = logging.FileHandler('faceswap.log')
         fh.setLevel(logging.DEBUG)
@@ -154,11 +154,11 @@ class FaceTransformation(object):
         
         # openface related
         self.training_cnt = 0
-        self.server_ip = u"ws://localhost"
+        self.server_ip = u"ws://128.2.211.75"
         self.server_port = 9000
         self.openface_client = OpenFaceClient(self.server_ip, self.server_port)
         self.training = self.openface_client.isTraining()
-        self.logger.debug('openface is training?{}'.format(self.training))
+        self.logger.info('openface is training?{}'.format(self.training))
 
         mpl = multiprocessing.log_to_stderr()
         mpl.setLevel(logging.INFO)        
@@ -186,7 +186,7 @@ class FaceTransformation(object):
                 continue
             while(not self.tracking_thread_idle_event.is_set()):
                 self.tracking_thread_idle_event.wait(1)
-#            self.logger.debug('bg-thread getting updates from detection process!')
+            self.logger.debug('bg-thread getting updates from detection process!')
             try:
                 tracker_updates = self.trackers_queue.get(timeout=1)
                 faces = tracker_updates['faces']
@@ -195,7 +195,7 @@ class FaceTransformation(object):
                     tracker = create_tracker(tracker_frame, face.roi)
                     face.tracker = tracker
 
-                self.logger.debug('bg-thread updating faces from detection process!')
+                self.logger.info('bg-thread updating faces from detection process!')
             
                 self.faces_lock.acquire()            
                 self.faces = faces
@@ -203,15 +203,15 @@ class FaceTransformation(object):
 
                 self.sync_face_event.clear()
             except Queue.Empty:
-                self.logger.debug('bg-thread updating faces queue empty!')
+                self.logger.info('bg-thread updating faces queue empty!')
     
     def terminate(self):
         self.detection_process_stop_event.set()
         self.sync_thread_stop_event.set()
         self.detection_process.join()
-        self.logger.debug('detection process shutdown!')        
+        self.logger.info('detection process shutdown!')        
         self.sync_faces_thread.join()
-        self.logger.debug('sync faces thread shutdown!')                
+        self.logger.info('sync faces thread shutdown!')                
         self.openface_client.terminate()        
         self.logger.debug('transformer terminate!')
 
@@ -246,57 +246,60 @@ class FaceTransformation(object):
                 continue
             rois = self.detect_faces(frame, detector)
             names = self.recognize_faces(None, frame, rois)
-            trackers = create_trackers(frame, rois)
-            frame_available = True
-            frame_cnt = 0
             
-            # while (frame_cnt < 20):
-            #     try:                
-            #         frame = img_queue.get(timeout=1)
-            #         self.update_trackers(trackers, frame)
-            #         frame_cnt +=1
-            #     except Queue.Empty:
-            #         pass
-            # faces=[]
-            # for idx, tracker in enumerate(trackers):
-            #     new_roi = tracker.get_position()
-            #     cur_roi = (int(new_roi.left()),
-            #                      int(new_roi.top()),
-            #                      int(new_roi.right()),
-            #                      int(new_roi.bottom()))
-            #     name = names[idx]                        
-            #     self.logger.debug('recognized faces {0} {1}'.format(idx, name))
-            #     face = FaceROI(cur_roi, name=name)
-            #     faces.append(face)
-            # if (len(faces)>0):
-            #     tracker_updates = {'frame':frame, 'faces':faces}
-            #     trackers_queue.put(tracker_updates)
-            #     sync_face_event.set()
+            if (len(names) >0 ):
+                trackers = create_trackers(frame, rois)
+                frame_available = True
+                frame_cnt = 0
+                
+                # while (frame_cnt < 10):
+                #     try:                
+                #         frame = img_queue.get(timeout=1)
+                #         self.update_trackers(trackers, frame)
+                #         frame_cnt +=1
+                #     except Queue.Empty:
+                #         pass
+                # faces=[]
+                # for idx, tracker in enumerate(trackers):
+                #     new_roi = tracker.get_position()
+                #     cur_roi = (int(new_roi.left()),
+                #                      int(new_roi.top()),
+                #                      int(new_roi.right()),
+                #                      int(new_roi.bottom()))
+                #     name = names[idx]                        
+                #     self.logger.debug('recognized faces {0} {1}'.format(idx, name))
+                #     face = FaceROI(cur_roi, name=name)
+                #     faces.append(face)
+                # if (len(faces)>0):
+                #     tracker_updates = {'frame':frame, 'faces':faces}
+                #     trackers_queue.put(tracker_updates)
+                #     sync_face_event.set()
 
                 
-            while frame_available:
-                try:
-                    frame = img_queue.get_nowait()
-                    self.update_trackers(trackers, frame)
-                    frame_cnt +=1
-                except Queue.Empty:
-                    self.logger.debug('all image processed! # images {}'.format(frame_cnt))    
-                    frame_available = False
-                    faces=[]
-                    for idx, tracker in enumerate(trackers):
-                        new_roi = tracker.get_position()
-                        cur_roi = (int(new_roi.left()),
-                                         int(new_roi.top()),
-                                         int(new_roi.right()),
-                                         int(new_roi.bottom()))
-                        name = names[idx]                        
-                        self.logger.debug('recognized faces {0} {1}'.format(idx, name))
-                        face = FaceROI(cur_roi, name=name)
-                        faces.append(face)
-                    if (len(faces)>0):
-                        tracker_updates = {'frame':frame, 'faces':faces}
-                        trackers_queue.put(tracker_updates)
-                        sync_face_event.set()
+                while frame_available:
+                    try:
+                        frame = img_queue.get_nowait()
+                        self.update_trackers(trackers, frame)
+                        frame_cnt +=1
+                    except Queue.Empty:
+                        self.logger.info('all image processed! # images {}'.format(frame_cnt))    
+                        frame_available = False
+                        faces=[]
+                        for idx, tracker in enumerate(trackers):
+                            new_roi = tracker.get_position()
+                            cur_roi = (int(new_roi.left()),
+                                             int(new_roi.top()),
+                                             int(new_roi.right()),
+                                             int(new_roi.bottom()))
+                            name = names[idx]                        
+                            self.logger.info('recognized faces {0} {1}'.format(idx, name))
+                            face = FaceROI(cur_roi, name=name)
+                            faces.append(face)
+                        if (len(faces)>0):
+                            tracker_updates = {'frame':frame, 'faces':faces}
+                            trackers_queue.put(tracker_updates)
+                            sync_face_event.set()
+
         # wake thread up for terminating
         sync_face_event.set()
                     
@@ -363,7 +366,6 @@ class FaceTransformation(object):
         # openface need rgb images
         grey_frame = frame
 #        grey_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-        self.img_queue.put(grey_frame)
         
         self.faces_lock.acquire()                    
         self.faces=self.track_faces(frame, self.faces)
@@ -374,15 +376,17 @@ class FaceTransformation(object):
         face_snippets = []
         for face in return_faces:
             try:
+#                face_json = face.get_json(send_data=True)
                 face_json = face.get_json()
                 face_snippets.append(face_json)
             except ValueError:
                 pass
 
+        self.img_queue.put(grey_frame)                
         # if DEBUG:
         #     end = time.time()
         #     self.logger.debug('total processing time: {}'.format((end-start)*1000))
-        
+        self.logger.debug('total returned images: {}'.format(len(self.faces)))
         return face_snippets
 
     def get_FaceROI_from_string(self, faces, name):
