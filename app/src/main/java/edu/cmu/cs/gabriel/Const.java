@@ -21,7 +21,7 @@ public class Const {
 //	public static String GABRIEL_IP = "54.201.173.207";	// Amazon West
     public static String CLOUDLET_GABRIEL_IP = "128.2.213.107";	// Cloudlet
 //	public static String CLOUD_GABRIEL_IP = "54.200.101.84";	// Amazon West
-	public static String CLOUD_GABRIEL_IP = "54.189.135.226";	// Amazon West
+	public static String CLOUD_GABRIEL_IP = "54.185.43.252";	// Amazon West
 	
 	// Token
 	public static int MAX_TOKEN_SIZE = 1;

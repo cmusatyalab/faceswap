@@ -1,6 +1,7 @@
 package edu.cmu.cs.gabriel;
 
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -23,8 +24,12 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
+import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -101,6 +106,7 @@ public class GabrielClientActivity extends Activity {
 	private String name = null;
     private HashMap<String, String> faceTable;
     private boolean reset=false;
+	private Bitmap curFrame=null;
 
     @Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -356,6 +362,19 @@ public class GabrielClientActivity extends Activity {
 				Camera.Parameters parameters = mCamera.getParameters();
 				if (videoStreamingThread != null){
 					videoStreamingThread.pushAsync(frame, parameters);
+					//convert to bitmap
+					Camera.Size cameraImageSize = parameters.getPreviewSize();
+					YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
+							cameraImageSize.height, null);
+					ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
+					image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
+							tmpBuffer);
+					if (curFrame == null){
+						curFrame = BitmapFactory.decodeByteArray(tmpBuffer.toByteArray()
+								, 0, tmpBuffer.size());
+
+					}
+
 				}
 			}
 		}
@@ -387,10 +406,13 @@ public class GabrielClientActivity extends Activity {
                     NetworkProtocol.CUSTOM_DATA_MESSAGE_NAME
             );
 
-            String img_string = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG);
+            byte[] img = null;
+            if (obj.has(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG)){
+                String img_string = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG);
+                img = Base64.decode(img_string, Base64.DEFAULT);
+            }
 
             int[] roi = new int[]{roi_x1, roi_y1, roi_x2, roi_y2};
-            byte[] img = Base64.decode(img_string, Base64.DEFAULT);
             Face face = new Face(roi, img, name);
             return face;
         } catch (JSONException e) {
@@ -443,7 +465,7 @@ public class GabrielClientActivity extends Activity {
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
                 String response = (String) msg.obj;
                 Log.d(LOG_TAG, "received response");
-                Log.d(LOG_TAG, response);
+//                Log.d(LOG_TAG, response);
 
                 if (Const.RESPONSE_JSON) {
                     try {

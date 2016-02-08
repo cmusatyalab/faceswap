@@ -10,6 +10,7 @@ import android.hardware.Camera;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.view.View;
 
 /**
@@ -67,16 +68,19 @@ public class CameraOverlay extends View {
                 int[] roi = face.getRoi();
                 c.drawRect(roi[0],roi[1],roi[2],roi[3],myPaint);
                 Bitmap renderImg = face.getBitmap();
-                c.drawBitmap(renderImg, roi[0], roi[1], null);
+                if (null != renderImg){
+                    c.drawBitmap(renderImg, roi[0], roi[1], null);
+                    renderImg.recycle();
+                }
                 String name = face.getName();
-                if (null != name){
+                if (null != name) {
                     c.drawText(name, roi[0]-4, roi[1]-4, textPaint);
                 }
             }
         }
         long time = System.currentTimeMillis();
         long elapse = time - timeStamp;
-        Log.d(DEBUG_TAG, "cameraOverlay updated! " + elapse+ " ms");
+        Log.d(DEBUG_TAG, "cameraOverlay updated! " + elapse + " ms");
     }
 
 

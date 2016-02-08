@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.Toast;
 
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback{
     private static final String LOG_TAG = "CameraPreview";
@@ -77,26 +78,31 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 	public CameraPreview(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		Log.d("krha_debug", "context : " + context);
-		if (mCamera == null) {
+
 			// Launching Camera App using voice command need to wait.
 			// See more at https://code.google.com/p/google-glass-api/issues/list
 //			try {
 //				Thread.sleep(1000);
 //			} catch (InterruptedException e) {}
 //
-            if (checkCameraHardware(context)){
-                mCamera = getCameraInstance();
-            } else {
+		if (checkCameraHardware(context)){
+			mCamera = getCameraInstance();
+		} else {
                 //TODO: exit with warning "no camera hardware"
-            }
+			Log.e(LOG_TAG, "no camera hardware available");
+			Toast.makeText(getContext(), "no camera hardware available",
+					Toast.LENGTH_LONG).show();
 		}
 
 		mHolder = getHolder();
 		mHolder.addCallback(this);
-        //normal is needed for locking canvas
-        // http://stackoverflow.com/questions/6478375/how-can-i-manipulate-the-camera-preview
+		//normal is needed for locking canvas
+		// http://stackoverflow.com/questions/6478375/how-can-i-manipulate-the-camera-preview
 //		mHolder.setType(SurfaceHolder.SURFACE_TYPE_NORMAL);
 		mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+
+        //set enable cache to cache the view bitmap
+        this.setDrawingCacheEnabled(true);
 	}
 
 	@Override

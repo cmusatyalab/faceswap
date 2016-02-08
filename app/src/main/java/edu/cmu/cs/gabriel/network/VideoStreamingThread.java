@@ -21,6 +21,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.token.TokenController;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera.Parameters;
@@ -69,6 +71,7 @@ public class VideoStreamingThread extends Thread {
     //for setting openface server state
     private boolean reset;
     public volatile String state_string;
+    public Bitmap curFrame=null;
 
 	public VideoStreamingThread(FileDescriptor fd,
 								String IPString,
@@ -379,9 +382,32 @@ public class VideoStreamingThread extends Thread {
         new PushTask().execute(inputAsync);
     }
 
-    private class PushTask extends AsyncTask<Object, Void, Void> {
+    private class PushTask extends AsyncTask<Object, Void, byte[]> {
+
         @Override
-        protected Void doInBackground(Object... objs) {
+        protected void onPostExecute(byte[] buffer){
+            if (curFrame==null){
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inMutable=true;
+                curFrame = BitmapFactory.decodeByteArray(buffer,
+                        0,
+                        buffer.length);
+                Log.i(LOG_TAG, "created current frame bitmap");
+
+            } else {
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inBitmap=curFrame;
+                options.inMutable=true;
+                curFrame=BitmapFactory.decodeByteArray(buffer,
+                        0,
+                        buffer.length,
+                        options);
+                Log.d(LOG_TAG, "reused current bitmap");
+            }
+        }
+
+        @Override
+        protected byte[] doInBackground(Object... objs) {
             byte[] frame = (byte[]) objs[0];
             Parameters parameters = (Parameters) objs[1];
             if (frame_firstUpdateTime == 0) {
@@ -391,36 +417,17 @@ public class VideoStreamingThread extends Thread {
 
             int datasize = 0;
             cameraImageSize = parameters.getPreviewSize();
-            if (imageFiles == null) {
-                YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
-                        cameraImageSize.height, null);
-                ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
-                image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90, tmpBuffer);
-                synchronized (frameLock) {
-                    frameBuffer = tmpBuffer.toByteArray();
-                    frameGeneratedTime = System.currentTimeMillis();
-                    frameID++;
-                    frameLock.notify();
-                }
-                datasize = tmpBuffer.size();
-            } else {
-                try {
-                    int index = indexImageFile % imageFiles.length;
-                    datasize = (int) imageFiles[index].length();
-                    FileInputStream fi = new FileInputStream(imageFiles[index]);
-                    byte[] buffer = new byte[datasize];
-                    fi.read(buffer, 0, datasize);
-                    synchronized (frameLock) {
-                        frameBuffer = buffer;
-                        frameGeneratedTime = System.currentTimeMillis();
-                        frameID++;
-                        frameLock.notify();
-                    }
-                    indexImageFile++;
-                } catch (FileNotFoundException e) {
-                } catch (IOException e) {
-                }
+            YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
+                    cameraImageSize.height, null);
+            ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
+            image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90, tmpBuffer);
+            synchronized (frameLock) {
+                frameBuffer = tmpBuffer.toByteArray();
+                frameGeneratedTime = System.currentTimeMillis();
+                frameID++;
+                frameLock.notify();
             }
+            datasize = tmpBuffer.size();
             frame_count++;
             frame_totalsize += datasize;
             if (frame_count % 50 == 0) {
@@ -430,7 +437,7 @@ public class VideoStreamingThread extends Thread {
                         "FPS: " + 1000.0 * frame_count / (frame_currentUpdateTime - frame_firstUpdateTime));
             }
             frame_prevUpdateTime = frame_currentUpdateTime;
-            return null;
+            return tmpBuffer.toByteArray();
         }
     }
 

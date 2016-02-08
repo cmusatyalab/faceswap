@@ -50,7 +50,7 @@ public class Face {
     }
 
     public Bitmap getBitmap() {
-        if (null == this.bitmap) {
+        if (null != this.img && null == this.bitmap) {
             this.bitmap = BitmapFactory.decodeByteArray(this.img, 0, this.img.length);
         }
         return this.bitmap;
@@ -73,11 +73,13 @@ public class Face {
             scaledRoi[3] = (int) (roi[3] * height_ratio);
 
             this.roi = scaledRoi;
-            Bitmap renderImg = this.getBitmap();
-            Bitmap scaledBitmap =Bitmap.createScaledBitmap(renderImg,
-                    roi[2] - roi[0] + 1,
-                    roi[3] - roi[1] + 1 ,false);
-            this.bitmap = scaledBitmap;
+            if (null != img){
+                Bitmap renderImg = this.getBitmap();
+                Bitmap scaledBitmap =Bitmap.createScaledBitmap(renderImg,
+                        roi[2] - roi[0] + 1,
+                        roi[3] - roi[1] + 1 ,false);
+                this.bitmap = scaledBitmap;
+            }
         }
 
     }
