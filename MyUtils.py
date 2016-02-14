@@ -57,3 +57,11 @@ def send_email(recipient, subject, body):
         # print 'successfully sent the mail'
     except:
         print "failed to send mail"
+
+
+def drectangle_to_tuple(drectangle):
+    cur_roi = (int(drectangle.left()),
+                     int(drectangle.top()),
+                     int(drectangle.right()),
+                     int(drectangle.bottom()))
+    return cur_roi

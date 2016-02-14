@@ -21,12 +21,13 @@ import json
 
 from openfaceClient import OpenFaceClient
 import pdb
+import camShift
 
 MIN_WIDTH_THRESHOLD=3
 MIN_HEIGHT_THRESHOLD=3
 DETECT_TRACK_RATIO = 10
 
-DEBUG = False
+DEBUG = True
 
 class TrackerInitializer(object):
     def __init__(self, prev_frame, prev_roi, frame):
@@ -34,28 +35,21 @@ class TrackerInitializer(object):
         self.prev_roi = prev_roi
         self.frame = frame
     
-def create_and_track_star(a_b):
-    """Convert `f([1,2])` to `f(1,2)` call."""
-    return create_and_track(*a_b)
+# def create_tracker(frame, roi):
+#     tracker = dlib.correlation_tracker()
+#     (roi_x1, roi_y1, roi_x2, roi_y2) = roi
+#     tracker.start_track(frame,
+#                         dlib.rectangle(roi_x1, roi_y1, roi_x2, roi_y2))
+#     return tracker
 
-def create_trackers_parallel(tracker_input):
-    print "create_trackers. process id : {}".format(os.getpid())
-    frame=tracker_input.prev_frame
-    roi = tracker_input.prev_roi
-    tracker = create_tracker(frame,roi)
-#    sys.stdout.flush()        
-    return tracker
-    
 def create_tracker(frame, roi):
-    tracker = dlib.correlation_tracker()
+    tracker = camShift.camshiftTracker()
     (roi_x1, roi_y1, roi_x2, roi_y2) = roi
-#    print 'workerpool: start tracking! # face: {}'.format(roi)
     tracker.start_track(frame,
                         dlib.rectangle(roi_x1, roi_y1, roi_x2, roi_y2))
     return tracker
 
 def create_trackers(frame, rois):
-#    self.logger.debug("detection_process:")
     trackers = []
     for roi in rois:
         tracker = create_tracker(frame,roi)
@@ -161,7 +155,7 @@ class FaceTransformation(object):
         self.logger.info('openface is training?{}'.format(self.training))
 
         mpl = multiprocessing.log_to_stderr()
-        mpl.setLevel(logging.INFO)        
+        mpl.setLevel(logging.DEBUG)        
         
         self.sync_face_event = multiprocessing.Event()
         self.sync_face_event.clear()
@@ -248,6 +242,7 @@ class FaceTransformation(object):
             names = self.recognize_faces(None, frame, rois)
             
             if (len(names) >0 ):
+                self.logger.info('received server response.trying to create trackers...')    
                 trackers = create_trackers(frame, rois)
                 frame_available = True
                 frame_cnt = 0
@@ -317,8 +312,8 @@ class FaceTransformation(object):
                 start = time.time()
                 
             # preprocessing to grey scale can reduce run time
-#            grey_frame = frame
-            grey_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            grey_frame = frame
+#            grey_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
             (x1,y1,x2,y2)=face.roi
             tracker.update(grey_frame, dlib.rectangle(x1,y1,x2,y2))
@@ -524,30 +519,3 @@ class FaceTransformation(object):
             self.training_cnt +=1
 
         return self.training_cnt, face.get_json()
-            
-        
-#     def detect_swap_face(self, frame):
-#         # The 1 in the second argument indicates that we should upsample the image
-#         # 1 time.  This will make everything bigger and allow us to detect more
-#         # faces.
-#         start = time.time()
-# #        dets, scores, idx = detector.run(frame, 1)
-#         dets = self.detector(frame, 1)
-#         end = time.time()
-#         print 'detector run: {}'.format((end-start)*1000)
-        
-#         # changed dets format here
-#         dets = map(lambda d: (int(d.left()), int(d.top()), int(d.right()), int(d.bottom())), dets)
-#         rois=self.rm_small_face(dets)
-#         rois=sorted(rois)
-        
-#         roi_face_pairs=[]
-#         if (len(rois) > 0):
-#             # swap faces:
-# #            faces=[]
-#             roi_face_pairs= self.shuffle_roi(rois, frame)
-            
-#         self.rois =rois
-            
-#         return roi_face_pairs
-

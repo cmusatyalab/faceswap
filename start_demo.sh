@@ -20,7 +20,7 @@ then
     if [[ $debug -eq 1 ]];
     then
         echo 'debug mode...'
-        ./faceswap-proxy.py | tee faceswap.log
+        ./faceswap-proxy.py 2>&1 | tee faceswap.log
     else
         ./faceswap-proxy.py
     fi
