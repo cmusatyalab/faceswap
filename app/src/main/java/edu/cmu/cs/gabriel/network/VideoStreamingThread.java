@@ -304,7 +304,7 @@ public class VideoStreamingThread extends Thread {
 				dos.write(header);
 				dos.write(data);
 
-//                Log.d(LOG_TAG, "sending frameID: " + sendingFrameID);
+                Log.d(LOG_TAG, "sending frameID: " + sendingFrameID);
                 this.tokenController.sendData(sendingFrameID, System.currentTimeMillis(), dos.size());
 				networkWriter.write(baos.toByteArray());
 				networkWriter.flush();
@@ -391,9 +391,8 @@ public class VideoStreamingThread extends Thread {
                 options.inMutable=true;
                 curFrame = BitmapFactory.decodeByteArray(buffer,
                         0,
-                        buffer.length);
+                        buffer.length,options);
                 Log.i(LOG_TAG, "created current frame bitmap");
-
             } else {
                 BitmapFactory.Options options = new BitmapFactory.Options();
                 options.inBitmap=curFrame;

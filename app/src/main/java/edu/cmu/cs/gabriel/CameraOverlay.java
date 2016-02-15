@@ -51,7 +51,7 @@ public class CameraOverlay extends View {
 
         textPaint = new Paint();
         textPaint.setColor(Color.RED);
-        textPaint.setTextSize(30);
+        textPaint.setTextSize(50);
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -68,17 +68,16 @@ public class CameraOverlay extends View {
                 int[] roi = face.screenSizeRoi;
                 c.drawRect(roi[0],roi[1],roi[2],roi[3],myPaint);
                 if (null == face.screenBitmap){
-                    Bitmap renderImg = face.createBitmapFromByteArray();
-                    if (null != renderImg){
-                        c.drawBitmap(renderImg, roi[0], roi[1], null);
-                        renderImg.recycle();
-                    }
+//                    Bitmap renderImg = face.createBitmapFromByteArray();
+//                    if (null != renderImg){
+//                        c.drawBitmap(renderImg, roi[0], roi[1], null);
+//                        renderImg.recycle();
+//                    }
                 } else {
-                    c.drawBitmap(face.screenBitmap, face.screenSizeRoi[0], face.screenSizeRoi[1],
-                            null);
-//                    face.bitmap.recycle();
-//                    face.screenBitmap.recycle();
-//                    Log.d(DEBUG_TAG, "drew face bitmap from camera preview! ");
+                    if (face.renderBitmap){
+                        c.drawBitmap(face.screenBitmap, face.screenSizeRoi[0], face.screenSizeRoi[1],
+                                null);
+                    }
                 }
                 String name = face.getName();
                 if (null != name) {

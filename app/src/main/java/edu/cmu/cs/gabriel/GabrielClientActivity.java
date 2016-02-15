@@ -352,18 +352,20 @@ public class GabrielClientActivity extends Activity {
 				Camera.Parameters parameters = mCamera.getParameters();
 				if (videoStreamingThread != null){
 					videoStreamingThread.pushAsync(frame, parameters);
-					//convert to bitmap
-					Camera.Size cameraImageSize = parameters.getPreviewSize();
-					YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
-							cameraImageSize.height, null);
-					ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
-					image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
-							tmpBuffer);
-					if (curFrame == null){
-						curFrame = BitmapFactory.decodeByteArray(tmpBuffer.toByteArray()
-								, 0, tmpBuffer.size());
 
-					}
+					//convert to bitmap
+                    //done in video streaming thread background
+//					Camera.Size cameraImageSize = parameters.getPreviewSize();
+//					YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
+//							cameraImageSize.height, null);
+//					ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
+//					image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
+//							tmpBuffer);
+//					if (curFrame == null){
+//						curFrame = BitmapFactory.decodeByteArray(tmpBuffer.toByteArray()
+//								, 0, tmpBuffer.size());
+//
+//					}
 
 				}
 			}
@@ -454,7 +456,7 @@ public class GabrielClientActivity extends Activity {
 			//handled by resultReceivingThread!!!
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
                 String response = (String) msg.obj;
-                Log.d(LOG_TAG, "received response");
+//                Log.d(LOG_TAG, "received response");
 //                Log.d(LOG_TAG, response);
 
                 if (Const.RESPONSE_JSON) {
@@ -483,12 +485,15 @@ public class GabrielClientActivity extends Activity {
                         }
 
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_DETECT)) {
+                            long time =System.currentTimeMillis();
                             String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
                             Face[] faces = parseFaceSnippets(value);
                             swapFaces(faces);
                             if (null != videoStreamingThread) {
                                 drawFaceSnippets(faces, videoStreamingThread.curFrame);
                             }
+                            Log.w(LOG_TAG, "detect image processing time: " +
+                                    (System.currentTimeMillis()-time));
                         }
 
                         if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_IMG)) {
@@ -540,6 +545,18 @@ public class GabrielClientActivity extends Activity {
                 for (Face face2: originalFaces){
                     if (face2.getName().equals(toPerson)){
                         face.imageRoi = face2.imageRoi;
+                        break;
+                    }
+                }
+            }
+        }
+        //remove the bitmap from toPerson
+        for (Face face: faces){
+            if (faceTable.containsKey(face.getName())){
+                String toPerson=faceTable.get(face.getName());
+                for (Face face2: faces){
+                    if (face2.getName().equals(toPerson)){
+                        face2.renderBitmap=false;
                         break;
                     }
                 }

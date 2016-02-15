@@ -15,6 +15,7 @@ public class Face {
     public Bitmap bitmap;
     public Bitmap screenBitmap;
     private String name;
+    public boolean renderBitmap=true;
 
     public Face(int[] roi, byte[] img) {
         this.roi = roi;
