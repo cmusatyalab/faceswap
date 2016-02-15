@@ -30,8 +30,11 @@ class camshiftTracker(object):
         cv2.normalize(hist, hist, 0, 255, cv2.NORM_MINMAX)
         self.hist = hist.reshape(-1)
         
-    def update(self, frame, suggested_roi=None):
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    def update(self, frame, converted=False, suggested_roi=None):
+        if not converted:
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        else:
+            hsv = frame
         mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))        
         prob = cv2.calcBackProject([hsv], [0], self.hist, [0, 180], 1)
         prob &= mask
@@ -39,9 +42,6 @@ class camshiftTracker(object):
         retval, self.track_window = cv2.CamShift(prob, self.track_window, term_crit)
 
     def get_position(self):
-        # get rectangle
-#        track_rect_rotate = cv2.boxPoints(self.track_box)        
-#        track_rect = cv2.boundingRect(track_rect_rotate)
         track_rect = self.track_window
         roi_x1, roi_y1 = track_rect[0], track_rect[1]
         roi_x2 = track_rect[0] + track_rect[2]

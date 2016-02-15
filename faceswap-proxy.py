@@ -71,7 +71,6 @@ class DummyVideoApp(AppProxyThread):
     def process(self, image):
         # pr = cProfile.Profile()
         # pr.enable()
-        # rgb mode
 
         # preprocessing techqniues : resize?
 #        image = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
@@ -185,7 +184,6 @@ class DummyVideoApp(AppProxyThread):
 
         # operate on client data
         image_raw = Image.open(io.BytesIO(data))
-        image_raw.load()
         image = np.array(image_raw)
 
 

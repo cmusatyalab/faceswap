@@ -12,7 +12,7 @@ echo -e $gabriel_home
 gabriel_control="${gabriel_home}/bin"
 cd $gabriel_control &&
 ./gabriel-control &
-sleep 3 &&
+sleep 5 &&
 ./gabriel-ucomm &
 sleep 8 &&
 if pgrep -f "gabriel-ucomm" > /dev/null
