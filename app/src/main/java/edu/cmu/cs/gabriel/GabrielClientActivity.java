@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import edu.cmu.cs.gabriel.network.AccStreamingThread;
 import edu.cmu.cs.gabriel.network.NetworkProtocol;
 import edu.cmu.cs.gabriel.network.ResultReceivingThread;
 import edu.cmu.cs.gabriel.network.VideoStreamingThread;
@@ -52,8 +51,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class GabrielClientActivity extends Activity {
-	
-    private static final String LOG_TAG = "GabrielClientActivity";
+
+	private static final String LOG_TAG = "GabrielClientActivity";
 	private static final String DEBUG_TAG = "krha_debug";
 
 	private static final int SETTINGS_ID = Menu.FIRST;
@@ -66,81 +65,76 @@ public class GabrielClientActivity extends Activity {
 	public static final int GPS_PORT = 9100;
 	public static final int RESULT_RECEIVING_PORT = 9101;
 
-	CameraConnector cameraRecorder;
-	
+//	CameraConnector cameraRecorder;
+
 	VideoStreamingThread videoStreamingThread;
-	AccStreamingThread accStreamingThread;
 	ResultReceivingThread resultThread;
 	TokenController tokenController = null;
 
 	private SharedPreferences sharedPref;
 	private boolean hasStarted;
-    private CameraPreview mPreview;
+	private CameraPreview mPreview;
 
 	private BufferedOutputStream localOutputStream;
 	AlertDialog errorAlertDialog;
 
-	private SensorManager mSensorManager = null;
-	private Sensor mAccelerometer = null;
-	protected TextToSpeech mTTS = null;
-
-
-    private DisplaySurface mDisplay;
-    private CameraOverlay cameraOverlay;
-    private RelativeLayout rly;
-    private TextView cnt_view;
+	private DisplaySurface mDisplay;
+	private CameraOverlay cameraOverlay;
+	private RelativeLayout rly;
+	private TextView cnt_view;
 
 	private String name = null;
-    private HashMap<String, String> faceTable;
-    private boolean reset=false;
-	private Bitmap curFrame=null;
+	private HashMap<String, String> faceTable;
+	private boolean reset = false;
+	private Bitmap curFrame = null;
 
-    @Override
+	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.d(DEBUG_TAG, "on onCreate");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-        rly = (RelativeLayout) findViewById(R.id.camera_relative_layout);
+		rly = (RelativeLayout) findViewById(R.id.camera_relative_layout);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED +
 				WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON +
 				WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
 		Intent intent = getIntent();
-        reset =intent.getExtras().getBoolean("reset");
-		if (intent.hasExtra("name")){
+		reset = intent.getExtras().getBoolean("reset");
+		if (intent.hasExtra("name")) {
 			this.name = String.valueOf(intent.getStringExtra("name"));
-            //add training overlay for count
-            cnt_view= new TextView(getApplicationContext());
-            cnt_view.setText("0");
-            cnt_view.setTextColor(Color.RED);
-            cnt_view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 25);
-            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
-                    RelativeLayout.LayoutParams.WRAP_CONTENT,
-                    RelativeLayout.LayoutParams.WRAP_CONTENT
-            );
-            lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-            lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            cnt_view.setLayoutParams(lp);
-            rly.addView(cnt_view);
+			//add training overlay for count
+			cnt_view = new TextView(getApplicationContext());
+			cnt_view.setText("0");
+			cnt_view.setTextColor(Color.RED);
+			cnt_view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 25);
+			RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
+					RelativeLayout.LayoutParams.WRAP_CONTENT,
+					RelativeLayout.LayoutParams.WRAP_CONTENT
+			);
+			lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+			lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+			cnt_view.setLayoutParams(lp);
+			rly.addView(cnt_view);
 
-            Intent reply = new Intent();
-            reply.putExtra("name", name);
-            setResult(RESULT_OK, reply);
-		} else if (intent.hasExtra("faceTable")){
-            faceTable = (HashMap<String, String>) intent.getSerializableExtra("faceTable");
-        }
+			Intent reply = new Intent();
+			reply.putExtra("name", name);
+			setResult(RESULT_OK, reply);
+		} else if (intent.hasExtra("faceTable")) {
+			faceTable = (HashMap<String, String>) intent.getSerializableExtra("faceTable");
+		}
 
 		// Connect to Gabriel Server if it's not experiment
-		if (Const.IS_EXPERIMENT == false){
+		if (Const.IS_EXPERIMENT == false) {
 			final Button expButton = (Button) findViewById(R.id.button_runexperiment);
 			expButton.setVisibility(View.GONE);
 			init_once();
-			init_experiement();			
+			init_experiement();
 		}
 
 	}
 
 	boolean experimentStarted = false;
+
 	public void startExperiment(View view) {
 		if (!experimentStarted) {
 			// scriptized experiement	
@@ -148,20 +142,21 @@ public class GabrielClientActivity extends Activity {
 			runExperiements();
 		}
 	}
-	
-	protected void runExperiements(){
+
+	protected void runExperiements() {
 		final Timer startTimer = new Timer();
-		TimerTask autoStart = new TimerTask(){
-			String[] ipList = {"128.2.213.15"};	//"54.203.73.67"
-//			int[] tokenSize = {1};
+		TimerTask autoStart = new TimerTask() {
+			String[] ipList = {"128.2.213.15"};    //"54.203.73.67"
+			//			int[] tokenSize = {1};
 			int[] tokenSize = {10000};
 			int ipIndex = 0;
 			int tokenIndex = 0;
+
 			@Override
 			public void run() {
 				GabrielClientActivity.this.runOnUiThread(new Runnable() {
-		            @Override
-		            public void run() {
+					@Override
+					public void run() {
 						// end condition
 						if ((ipIndex == ipList.length) || (tokenIndex == tokenSize.length)) {
 							Log.d(LOG_TAG, "Finish all experiemets");
@@ -169,96 +164,95 @@ public class GabrielClientActivity extends Activity {
 							terminate();
 							return;
 						}
-						
+
 						// make a new configuration
 						Const.GABRIEL_IP = ipList[ipIndex];
 						Const.MAX_TOKEN_SIZE = tokenSize[tokenIndex];
 						Const.LATENCY_FILE_NAME = "latency-" + ipIndex + "-" + Const.GABRIEL_IP + "-" + Const.MAX_TOKEN_SIZE + ".txt";
-						Const.LATENCY_FILE = new File (Const.ROOT_DIR.getAbsolutePath() +
+						Const.LATENCY_FILE = new File(Const.ROOT_DIR.getAbsolutePath() +
 								File.separator + "exp" +
 								File.separator + Const.LATENCY_FILE_NAME);
 						Log.d(LOG_TAG, "Start new experiemet");
-						Log.d(LOG_TAG, "ip: " + Const.GABRIEL_IP +"\tToken: " + Const.MAX_TOKEN_SIZE);
+						Log.d(LOG_TAG, "ip: " + Const.GABRIEL_IP + "\tToken: " + Const.MAX_TOKEN_SIZE);
 
-						
+
 						// run the experiment
 						init_experiement();
-						
+
 						// move on the next experiment
 						tokenIndex++;
-						if (tokenIndex == tokenSize.length){
+						if (tokenIndex == tokenSize.length) {
 							tokenIndex = 0;
 							ipIndex++;
 						}
-		            }
-		        });
+					}
+				});
 			}
 		};
-		
+
 		// run 3 minutes for each experiement
 		init_once();
-		startTimer.schedule(autoStart, 1000, 10*60*1000);
+		startTimer.schedule(autoStart, 1000, 10 * 60 * 1000);
 	}
 
 	private void init_once() {
 		Log.d(DEBUG_TAG, "on init once");
 
-        cameraOverlay = (CameraOverlay) findViewById(R.id.display_surface);
-        cameraOverlay.bringToFront();
+		cameraOverlay = (CameraOverlay) findViewById(R.id.display_surface);
+		cameraOverlay.bringToFront();
 
-        mPreview = (CameraPreview) findViewById(R.id.camera_preview);
-        if (Const.DISPLAY_PREVIEW_ONLY) {
-            RelativeLayout.LayoutParams invisibleLayout = new RelativeLayout.LayoutParams(0, 0);
-            mDisplay.setLayoutParams(invisibleLayout);
-            mDisplay.setVisibility(View.INVISIBLE);
-            mDisplay.setZOrderMediaOverlay(false);
-        }
+		mPreview = (CameraPreview) findViewById(R.id.camera_preview);
+		if (Const.DISPLAY_PREVIEW_ONLY) {
+			RelativeLayout.LayoutParams invisibleLayout = new RelativeLayout.LayoutParams(0, 0);
+			mDisplay.setLayoutParams(invisibleLayout);
+			mDisplay.setVisibility(View.INVISIBLE);
+			mDisplay.setZOrderMediaOverlay(false);
+		}
 
-        mPreview.setPreviewCallback(previewCallback);
-        cameraOverlay.setImageSize(mPreview.imageSize);
+		mPreview.setPreviewCallback(previewCallback);
+		cameraOverlay.setImageSize(mPreview.imageSize);
 
 		Const.ROOT_DIR.mkdirs();
 		Const.LATENCY_DIR.mkdirs();
 		// TextToSpeech.OnInitListener
-		if (mTTS == null) {
-            //unused
-		}
-
 		if (this.errorAlertDialog == null) {
 			this.errorAlertDialog = new AlertDialog.Builder(GabrielClientActivity.this).create();
 			this.errorAlertDialog.setTitle("Error");
 			this.errorAlertDialog.setIcon(R.drawable.ic_launcher);
 		}
 
-		if (cameraRecorder != null) {
-			cameraRecorder.close();
-			cameraRecorder = null;
-		}
+//		if (cameraRecorder != null) {
+//			cameraRecorder.close();
+//			cameraRecorder = null;
+//		}
 
-		if (localOutputStream != null){
-			try {
-				localOutputStream.close();
-			} catch (IOException e) {}
-			localOutputStream = null;
-		}
-		
-		if (cameraRecorder == null) {
-			cameraRecorder = new CameraConnector();
-			cameraRecorder.init();
-			Log.d(LOG_TAG, "new cameraRecorder");
-		}
-		if (localOutputStream == null){
-			localOutputStream = new BufferedOutputStream(new FileOutputStream(
-					cameraRecorder.getInputFileDescriptor()), LOCAL_OUTPUT_BUFF_SIZE);
+//		if (localOutputStream != null) {
+//			try {
+//				localOutputStream.close();
+//			} catch (IOException e) {
+//			}
+//			localOutputStream = null;
+//		}
 
-			Log.d(LOG_TAG, "new localoutputStream");
-		}
+//		if (cameraRecorder == null) {
+//			cameraRecorder = new CameraConnector();
+//			cameraRecorder.init();
+//			Log.d(LOG_TAG, "new cameraRecorder");
+//		}
+
+//		if (localOutputStream == null) {
+//			localOutputStream = new BufferedOutputStream(new FileOutputStream(
+//					cameraRecorder.getInputFileDescriptor()), LOCAL_OUTPUT_BUFF_SIZE);
+//
+//			Log.d(LOG_TAG, "new localoutputStream");
+//		}
+
 		hasStarted = true;
 	}
-	
+
 	private void init_experiement() {
 		Log.d(DEBUG_TAG, "on init experiment");
-		if (tokenController != null){
+		if (tokenController != null) {
 			tokenController.close();
 		}
 		if ((videoStreamingThread != null) && (videoStreamingThread.isAlive())) {
@@ -266,45 +260,39 @@ public class GabrielClientActivity extends Activity {
 			videoStreamingThread = null;
 		}
 
-		if ((accStreamingThread != null) && (accStreamingThread.isAlive())) {
-			accStreamingThread.stopStreaming();
-			accStreamingThread = null;
-		}
-
 		if ((resultThread != null) && (resultThread.isAlive())) {
 			resultThread.close();
 			resultThread = null;
 		}
-		
+
 		try {
-			Thread.sleep(3*1000);
-		} catch (InterruptedException e) {}
-		
+			Thread.sleep(3 * 1000);
+		} catch (InterruptedException e) {
+		}
+
 		tokenController = new TokenController(Const.LATENCY_FILE);
 		resultThread = new ResultReceivingThread(Const.GABRIEL_IP,
-                RESULT_RECEIVING_PORT, returnMsgHandler, tokenController);
+				RESULT_RECEIVING_PORT, returnMsgHandler, tokenController);
 		resultThread.start();
-		
-		FileDescriptor fd = cameraRecorder.getOutputFileDescriptor();
-		if (null != name){
-            videoStreamingThread = new VideoStreamingThread(fd,
-                    Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset, name);
-		} else if (null!=faceTable ){
-            //TODO: reorganize. facetable is not sent to the server anymore
-//            videoStreamingThread = new VideoStreamingThread(fd,
-//                    Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset, faceTable);
-            videoStreamingThread = new VideoStreamingThread(fd,
-                    Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
-        } else {
-            videoStreamingThread = new VideoStreamingThread(fd,
-                    Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
+
+//		FileDescriptor fd = cameraRecorder.getOutputFileDescriptor();
+		FileDescriptor fd = null;
+		if (null != name) {
+			videoStreamingThread = new VideoStreamingThread(fd,
+					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset, name);
+		} else if (null != faceTable) {
+			videoStreamingThread = new VideoStreamingThread(fd,
+					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
+		} else {
+			videoStreamingThread = new VideoStreamingThread(fd,
+					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
 		}
 		videoStreamingThread.start();
 	}
-	
+
 	// Implements TextToSpeech.OnInitListener
 	public void onInit(int status) {
-    }
+	}
 
 	@Override
 	protected void onResume() {
@@ -333,28 +321,28 @@ public class GabrielClientActivity extends Activity {
 		Intent intent;
 
 		switch (item.getItemId()) {
-		case SETTINGS_ID:
-			intent = new Intent().setClass(this, SettingsActivity.class);
-			startActivityForResult(intent, CHANGE_SETTING_CODE);
-			break;
+			case SETTINGS_ID:
+				intent = new Intent().setClass(this, SettingsActivity.class);
+				startActivityForResult(intent, CHANGE_SETTING_CODE);
+				break;
 		}
 
 		return super.onOptionsItemSelected(item);
 	}
 
-    /***
-     * call back once a preview is available
-     */
+	/***
+	 * call back once a preview is available
+	 */
 	private PreviewCallback previewCallback = new PreviewCallback() {
 		public void onPreviewFrame(byte[] frame, Camera mCamera) {
 ///			Log.d(LOG_TAG, "onpreviewframe called. data transmitting");
 			if (hasStarted && (localOutputStream != null)) {
 				Camera.Parameters parameters = mCamera.getParameters();
-				if (videoStreamingThread != null){
+				if (videoStreamingThread != null) {
 					videoStreamingThread.pushAsync(frame, parameters);
 
 					//convert to bitmap
-                    //done in video streaming thread background
+					//done in video streaming thread background
 //					Camera.Size cameraImageSize = parameters.getPreviewSize();
 //					YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
 //							cameraImageSize.height, null);
@@ -374,68 +362,69 @@ public class GabrielClientActivity extends Activity {
 
 	/**
 	 * format of face object json representation
-	 'roi_x1':roi_x1,
-	 'roi_y1':roi_y1,
-	 'roi_x2':roi_x2,
-	 'roi_y2':roi_y2,
-	 'name':self.name,
-	 'data':np_array_to_jpeg_string(self.data)
+	 * 'roi_x1':roi_x1,
+	 * 'roi_y1':roi_y1,
+	 * 'roi_x2':roi_x2,
+	 * 'roi_y2':roi_y2,
+	 * 'name':self.name,
+	 * 'data':np_array_to_jpeg_string(self.data)
+	 *
 	 * @param response
 	 * @return
 	 */
-	private Face parseFace(String response){
+	private Face parseFace(String response) {
 		try {
 			JSONObject obj = new JSONObject(response);
-            int roi_x1 = obj.getInt(
-                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_X1);
-            int roi_y1 = obj.getInt(
-                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_Y1);
-            int roi_x2 = obj.getInt(
-                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_X2);
-            int roi_y2 = obj.getInt(
-                    NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_Y2);
-            String name = obj.getString(
-                    NetworkProtocol.CUSTOM_DATA_MESSAGE_NAME
-            );
+			int roi_x1 = obj.getInt(
+					NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_X1);
+			int roi_y1 = obj.getInt(
+					NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_Y1);
+			int roi_x2 = obj.getInt(
+					NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_X2);
+			int roi_y2 = obj.getInt(
+					NetworkProtocol.CUSTOM_DATA_MESSAGE_ROI_Y2);
+			String name = obj.getString(
+					NetworkProtocol.CUSTOM_DATA_MESSAGE_NAME
+			);
 
-            byte[] img = null;
-            if (obj.has(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG)){
-                String img_string = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG);
-                img = Base64.decode(img_string, Base64.DEFAULT);
-            }
+			byte[] img = null;
+			if (obj.has(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG)) {
+				String img_string = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG);
+				img = Base64.decode(img_string, Base64.DEFAULT);
+			}
 
-            int[] roi = new int[]{roi_x1, roi_y1, roi_x2, roi_y2};
-            Face face = new Face(roi, img, name);
-            return face;
-        } catch (JSONException e) {
+			int[] roi = new int[]{roi_x1, roi_y1, roi_x2, roi_y2};
+			Face face = new Face(roi, img, name);
+			return face;
+		} catch (JSONException e) {
 			e.printStackTrace();
 		}
-        return null;
+		return null;
 	}
 
-    private Face[] parseFaceSnippets(String response) {
-        try {
-            JSONObject obj;
-            obj = new JSONObject(response);
-            int roiFacePairNum = obj.getInt(NetworkProtocol.CUSTOM_DATA_MESSAGE_NUM);
-            Face[] faces = new Face[roiFacePairNum];
-            for (int idx = 0; idx < roiFacePairNum; idx++) {
+	private Face[] parseFaceSnippets(String response) {
+		try {
+			JSONObject obj;
+			obj = new JSONObject(response);
+			int roiFacePairNum = obj.getInt(NetworkProtocol.CUSTOM_DATA_MESSAGE_NUM);
+			Face[] faces = new Face[roiFacePairNum];
+			for (int idx = 0; idx < roiFacePairNum; idx++) {
 				String faceString = obj.getString(String.valueOf(idx));
-                Face face = this.parseFace(faceString);
-                faces[idx] = face;
-            }
+				Face face = this.parseFace(faceString);
+				faces[idx] = face;
+			}
 //            Log.d(LOG_TAG, "parsed # faces " + faces.length);
-            return faces;
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+			return faces;
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
 
-	private void drawFaceSnippets(Face[] faces, Bitmap curFrame){
+	private void drawFaceSnippets(Face[] faces, Bitmap curFrame) {
 		// if not destroyed
-		if(cameraOverlay != null && mPreview !=null){
-			for (Face face: faces){
+		if (cameraOverlay != null && mPreview != null) {
+			for (Face face : faces) {
 				face.scale(mPreview.imageSize,
 						cameraOverlay.getWidth(), cameraOverlay.getHeight());
 			}
@@ -455,72 +444,72 @@ public class GabrielClientActivity extends Activity {
 
 			//handled by resultReceivingThread!!!
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
-                String response = (String) msg.obj;
+				String response = (String) msg.obj;
 //                Log.d(LOG_TAG, "received response");
 //                Log.d(LOG_TAG, response);
 
-                if (Const.RESPONSE_JSON) {
-                    try {
-                        JSONObject obj;
-                        obj = new JSONObject(response);
-                        String type = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE);
-                        if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_ADD_PERSON)) {
-                            String name = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
-                            Log.d(LOG_TAG, "gabriel server added person: " + name);
-                        }
+				if (Const.RESPONSE_JSON) {
+					try {
+						JSONObject obj;
+						obj = new JSONObject(response);
+						String type = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE);
+						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_ADD_PERSON)) {
+							String name = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
+							Log.d(LOG_TAG, "gabriel server added person: " + name);
+						}
 
-                        if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_LOAD_STATE)) {
-                            Log.d(LOG_TAG, "load state finished");
-                            Toast.makeText(getApplicationContext(), "load state finished!", Toast.LENGTH_SHORT).show();
-                        }
+						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_LOAD_STATE)) {
+							Log.d(LOG_TAG, "load state finished");
+							Toast.makeText(getApplicationContext(), "load state finished!", Toast.LENGTH_SHORT).show();
+						}
 
-                        if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_TRAIN)) {
-                            String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
-                            Face[] faces = parseFaceSnippets(value);
-                            drawFaceSnippets(faces,null);
-                            JSONObject cnt_json = new JSONObject(value);
-                            String cnt = cnt_json.getString("cnt");
+						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_TRAIN)) {
+							String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
+							Face[] faces = parseFaceSnippets(value);
+							drawFaceSnippets(faces, null);
+							JSONObject cnt_json = new JSONObject(value);
+							String cnt = cnt_json.getString("cnt");
 //                            Log.d(LOG_TAG, "gabriel server training cnt: " + cnt);
-                            cnt_view.setText(String.valueOf(cnt));
-                        }
+							cnt_view.setText(String.valueOf(cnt));
+						}
 
-                        if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_DETECT)) {
-                            long time =System.currentTimeMillis();
-                            String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
-                            Face[] faces = parseFaceSnippets(value);
-                            swapFaces(faces);
-                            if (null != videoStreamingThread) {
-                                drawFaceSnippets(faces, videoStreamingThread.curFrame);
-                            }
-                            Log.w(LOG_TAG, "detect image processing time: " +
-                                    (System.currentTimeMillis()-time));
-                        }
+						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_DETECT)) {
+							long time = System.currentTimeMillis();
+							String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
+							Face[] faces = parseFaceSnippets(value);
+							swapFaces(faces);
+							if (null != videoStreamingThread) {
+								drawFaceSnippets(faces, videoStreamingThread.curFrame);
+							}
+							Log.w(LOG_TAG, "detect image processing time: " +
+									(System.currentTimeMillis() - time));
+						}
 
-                        if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_IMG)) {
-                            Log.w(LOG_TAG, "received encoded img. Do not support anymore ");
-                        }
+						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_IMG)) {
+							Log.w(LOG_TAG, "received encoded img. Do not support anymore ");
+						}
 
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
+					} catch (JSONException e) {
+						e.printStackTrace();
+					}
+				}
 
-                if (Const.RESPONSE_ROI_FACE_SNIPPET){
-                    Face[] faces = parseFaceSnippets(response);
-                    // if not destroyed
-                    if(cameraOverlay != null && mPreview !=null){
-                        cameraOverlay.drawFaces(faces, mPreview.imageSize, curFrame);
-                    }
+				if (Const.RESPONSE_ROI_FACE_SNIPPET) {
+					Face[] faces = parseFaceSnippets(response);
+					// if not destroyed
+					if (cameraOverlay != null && mPreview != null) {
+						cameraOverlay.drawFaces(faces, mPreview.imageSize, curFrame);
+					}
 
-                }
+				}
 
 
-                if (Const.RESPONSE_ENCODED_IMG){
-                    byte[] img = Base64.decode(response, Base64.DEFAULT);
-                    if (mDisplay!=null) {
-                        mDisplay.push(img);
-                    }
-                }
+				if (Const.RESPONSE_ENCODED_IMG) {
+					byte[] img = Base64.decode(response, Base64.DEFAULT);
+					if (mDisplay != null) {
+						mDisplay.push(img);
+					}
+				}
 
 
 //				if (mTTS != null){
@@ -536,37 +525,37 @@ public class GabrielClientActivity extends Activity {
 		}
 	};
 
-    private void swapFaces(Face[] faces) {
-        Face[] originalFaces = new Face[faces.length];
-        System.arraycopy(faces, 0, originalFaces, 0 ,faces.length);
-        for (Face face: faces){
-            if (faceTable.containsKey(face.getName())){
-                String toPerson=faceTable.get(face.getName());
-                for (Face face2: originalFaces){
-                    if (face2.getName().equals(toPerson)){
-                        face.imageRoi = face2.imageRoi;
-                        break;
-                    }
-                }
-            }
-        }
-        //remove the bitmap from toPerson
-        for (Face face: faces){
-            if (faceTable.containsKey(face.getName())){
-                String toPerson=faceTable.get(face.getName());
-                for (Face face2: faces){
-                    if (face2.getName().equals(toPerson)){
-                        face2.renderBitmap=false;
-                        break;
-                    }
-                }
+	private void swapFaces(Face[] faces) {
+		Face[] originalFaces = new Face[faces.length];
+		System.arraycopy(faces, 0, originalFaces, 0, faces.length);
+		for (Face face : faces) {
+			if (faceTable.containsKey(face.getName())) {
+				String toPerson = faceTable.get(face.getName());
+				for (Face face2 : originalFaces) {
+					if (face2.getName().equals(toPerson)) {
+						face.imageRoi = face2.imageRoi;
+						break;
+					}
+				}
+			}
+		}
+		//remove the bitmap from toPerson
+		for (Face face : faces) {
+			if (faceTable.containsKey(face.getName())) {
+				String toPerson = faceTable.get(face.getName());
+				for (Face face2 : faces) {
+					if (face2.getName().equals(toPerson)) {
+						face2.renderBitmap = false;
+						break;
+					}
+				}
 
-            }
-        }
-    }
+			}
+		}
+	}
 
 
-    protected int selectedRangeIndex = 0;
+	protected int selectedRangeIndex = 0;
 
 	public void selectFrameRate(View view) throws IOException {
 		selectedRangeIndex = 0;
@@ -619,18 +608,18 @@ public class GabrielClientActivity extends Activity {
 				selectedRangeIndex = position;
 			}
 		}).setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int position) {
-                if (position >= 0) {
-                    selectedRangeIndex = position;
-                }
-                Camera.Size targetSize = imageSize.get(selectedRangeIndex);
-                mPreview.changeConfiguration(null, targetSize);
-            }
-        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int position) {
-                return;
-            }
-        });
+			public void onClick(DialogInterface dialog, int position) {
+				if (position >= 0) {
+					selectedRangeIndex = position;
+				}
+				Camera.Size targetSize = imageSize.get(selectedRangeIndex);
+				mPreview.changeConfiguration(null, targetSize);
+			}
+		}).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int position) {
+				return;
+			}
+		});
 		ab.show();
 	}
 
@@ -640,9 +629,6 @@ public class GabrielClientActivity extends Activity {
 			mPreview.setPreviewCallback(null);
 		if (videoStreamingThread != null && videoStreamingThread.isAlive()) {
 			videoStreamingThread.stopStreaming();
-		}
-		if (accStreamingThread != null && accStreamingThread.isAlive()) {
-			accStreamingThread.stopStreaming();
 		}
 		if (resultThread != null && resultThread.isAlive()) {
 			resultThread.close();
@@ -674,32 +660,13 @@ public class GabrielClientActivity extends Activity {
 	 */
 	Intent batteryRecordingService = null;
 
-	public void startBatteryRecording() {
-		BatteryRecordingService.AppName = "Gabriel" + File.separator + "exp";
-		BatteryRecordingService.setOutputFileNames("Battery-" + Const.LATENCY_FILE.getName(), 
-				"CPU-" + Const.LATENCY_FILE.getName());
-		Log.i("wenluh", "Starting Battery Recording Service");
-		batteryRecordingService = new Intent(this, BatteryRecordingService.class);
-		startService(batteryRecordingService);
-	}
-
-	public void stopBatteryRecording() {
-		Log.i("wenluh", "Stopping Battery Recording Service");
-		if (batteryRecordingService != null) {
-			stopService(batteryRecordingService);
-			batteryRecordingService = null;
-		}
-	}
-	
 	private void terminate() {
 		Log.d(DEBUG_TAG, "on terminate");
-		// change only soft state
-//		stopBatteryRecording();
-		
-		if (cameraRecorder != null) {
-			cameraRecorder.close();
-			cameraRecorder = null;
-		}
+
+//		if (cameraRecorder != null) {
+//			cameraRecorder.close();
+//			cameraRecorder = null;
+//		}
 		if ((resultThread != null) && (resultThread.isAlive())) {
 			resultThread.close();
 			resultThread = null;
@@ -708,57 +675,24 @@ public class GabrielClientActivity extends Activity {
 			videoStreamingThread.stopStreaming();
 			videoStreamingThread = null;
 		}
-		if ((accStreamingThread != null) && (accStreamingThread.isAlive())) {
-			accStreamingThread.stopStreaming();
-			accStreamingThread = null;
-		}
-		if (tokenController != null){
+		if (tokenController != null) {
 			tokenController.close();
 			tokenController = null;
 		}
-		
-		// Don't forget to shutdown!
-		if (mTTS != null) {
-			Log.d(LOG_TAG, "TTS is closed");
-			mTTS.stop();
-			mTTS.shutdown();
-			mTTS = null;
-		}
+
 		if (mPreview != null) {
 			mPreview.setPreviewCallback(null);
 			mPreview.close();
 			mPreview = null;
 		}
 
-//		if (mSensorManager != null) {
-//			mSensorManager.unregisterListener(this);
-//			mSensorManager = null;
-//			mAccelerometer = null;
-//		}
-
-		if (mDisplay !=null){
-			mDisplay =null;
+		if (mDisplay != null) {
+			mDisplay = null;
 		}
 
-        if (cameraOverlay!=null){
-            cameraOverlay.destroyDrawingCache();
-            cameraOverlay=null;
-        }
-	}
-
-/*
-	@Override
-	public void onAccuracyChanged(Sensor sensor, int accuracy) {
-	}
-
-	@Override
-	public void onSensorChanged(SensorEvent event) {
-		if (event.sensor.getType() != Sensor.TYPE_ACCELEROMETER)
-			return;
-		if (accStreamingThread != null) {
-			accStreamingThread.push(event.values);
+		if (cameraOverlay != null) {
+			cameraOverlay.destroyDrawingCache();
+			cameraOverlay = null;
 		}
-		Log.d(LOG_TAG, "acc_x : " + mSensorX + "\tacc_y : " + mSensorY);
 	}
-*/
 }

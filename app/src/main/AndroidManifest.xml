@@ -36,8 +36,6 @@
             </intent-filter>
         </activity>
 
-        <!--<service android:name=".BatteryRecordingService" />-->
-
         <activity
             android:name=".GabrielClientActivity"
             android:label="@string/title_activity_main"
@@ -52,18 +50,6 @@
             <meta-data
                 android:name="com.google.android.glass.VoiceTrigger"
                 android:resource="@xml/gabriel_start" />
-            -->
-        </activity>
-        <activity
-            android:name=".test.GabrielBatteryActivity"
-            android:label="@string/title_activity_main"
-            android:screenOrientation="landscape">
-            <!--
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
             -->
         </activity>
         <activity android:name=".SettingsActivity" >

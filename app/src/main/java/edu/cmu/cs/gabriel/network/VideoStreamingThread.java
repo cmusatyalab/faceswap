@@ -344,12 +344,12 @@ public class VideoStreamingThread extends Thread {
 			udpSocket.close();
 			udpSocket = null;
 		}
-		if (cameraInputStream != null) {
-			try {
-				cameraInputStream.close();
-			} catch (IOException e) {
-			}
-		}
+//		if (cameraInputStream != null) {
+//			try {
+//				cameraInputStream.close();
+//			} catch (IOException e) {
+//			}
+//		}
 		if (tcpSocket != null) {
 			try {
 				tcpSocket.close();
