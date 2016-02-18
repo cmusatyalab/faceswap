@@ -89,7 +89,7 @@ public class VideoStreamingThread extends Thread {
 			Log.e(LOG_TAG, "unknown host: " + e.getMessage());
 		}
 		remotePort = port;
-		cameraInputStream = new FileInputStream(fd);
+//		cameraInputStream = new FileInputStream(fd);
 		
 		// check input data at image directory
 //		imageFiles = this.getImageFiles(Const.TEST_IMAGE_DIR);
@@ -186,7 +186,7 @@ public class VideoStreamingThread extends Thread {
         } catch (IOException e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
             Log.e(LOG_TAG, "Error in initializing Data socket: " + e);
-            this.notifyError(e.getMessage());
+            this.notifyError(Const.CONNECTION_FAILURE_MESSAGE);
             this.is_running = false;
             return;
         }
@@ -214,7 +214,7 @@ public class VideoStreamingThread extends Thread {
 		} catch (IOException e) {
 		    Log.e(LOG_TAG, Log.getStackTraceString(e));
 			Log.e(LOG_TAG, "Error in initializing Data socket: " + e);
-			this.notifyError(e.getMessage());
+			this.notifyError(Const.CONNECTION_FAILURE_MESSAGE);
 			this.is_running = false;
 			return;
 		}

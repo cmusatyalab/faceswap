@@ -68,7 +68,7 @@ public class ResultReceivingThread extends Thread {
 		} catch (IOException e) {
 		    Log.e(LOG_TAG, Log.getStackTraceString(e));
 			Log.e(LOG_TAG, "Error in initializing Data socket: " + e);
-			this.notifyError(e.getMessage());
+			this.notifyError(Const.CONNECTION_FAILURE_MESSAGE);
 			this.is_running = false;
 			return;
 		}

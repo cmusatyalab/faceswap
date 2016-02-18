@@ -18,6 +18,7 @@ import edu.cmu.cs.gabriel.token.TokenController;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -30,6 +31,9 @@ import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.hardware.Camera.PreviewCallback;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -123,77 +127,23 @@ public class GabrielClientActivity extends Activity {
 			faceTable = (HashMap<String, String>) intent.getSerializableExtra("faceTable");
 		}
 
-		// Connect to Gabriel Server if it's not experiment
-		if (Const.IS_EXPERIMENT == false) {
-			final Button expButton = (Button) findViewById(R.id.button_runexperiment);
-			expButton.setVisibility(View.GONE);
-			init_once();
-			init_experiement();
-		}
-
+        //check wifi state
+        boolean online = isOnline();
+        if (!online){
+            Log.d(LOG_TAG, "no internet connectivity");
+            notifyError(Const.CONNECTIVITY_NOT_AVAILABLE);
+        } else {
+            init_once();
+            init_experiement();
+        }
 	}
 
-	boolean experimentStarted = false;
-
-	public void startExperiment(View view) {
-		if (!experimentStarted) {
-			// scriptized experiement	
-			experimentStarted = true;
-			runExperiements();
-		}
-	}
-
-	protected void runExperiements() {
-		final Timer startTimer = new Timer();
-		TimerTask autoStart = new TimerTask() {
-			String[] ipList = {"128.2.213.15"};    //"54.203.73.67"
-			//			int[] tokenSize = {1};
-			int[] tokenSize = {10000};
-			int ipIndex = 0;
-			int tokenIndex = 0;
-
-			@Override
-			public void run() {
-				GabrielClientActivity.this.runOnUiThread(new Runnable() {
-					@Override
-					public void run() {
-						// end condition
-						if ((ipIndex == ipList.length) || (tokenIndex == tokenSize.length)) {
-							Log.d(LOG_TAG, "Finish all experiemets");
-							startTimer.cancel();
-							terminate();
-							return;
-						}
-
-						// make a new configuration
-						Const.GABRIEL_IP = ipList[ipIndex];
-						Const.MAX_TOKEN_SIZE = tokenSize[tokenIndex];
-						Const.LATENCY_FILE_NAME = "latency-" + ipIndex + "-" + Const.GABRIEL_IP + "-" + Const.MAX_TOKEN_SIZE + ".txt";
-						Const.LATENCY_FILE = new File(Const.ROOT_DIR.getAbsolutePath() +
-								File.separator + "exp" +
-								File.separator + Const.LATENCY_FILE_NAME);
-						Log.d(LOG_TAG, "Start new experiemet");
-						Log.d(LOG_TAG, "ip: " + Const.GABRIEL_IP + "\tToken: " + Const.MAX_TOKEN_SIZE);
-
-
-						// run the experiment
-						init_experiement();
-
-						// move on the next experiment
-						tokenIndex++;
-						if (tokenIndex == tokenSize.length) {
-							tokenIndex = 0;
-							ipIndex++;
-						}
-					}
-				});
-			}
-		};
-
-		// run 3 minutes for each experiement
-		init_once();
-		startTimer.schedule(autoStart, 1000, 10 * 60 * 1000);
-	}
+    public boolean isOnline() {
+        ConnectivityManager connMgr = (ConnectivityManager)
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        return (networkInfo != null && networkInfo.isConnected());
+    }
 
 	private void init_once() {
 		Log.d(DEBUG_TAG, "on init once");
@@ -336,7 +286,8 @@ public class GabrielClientActivity extends Activity {
 	private PreviewCallback previewCallback = new PreviewCallback() {
 		public void onPreviewFrame(byte[] frame, Camera mCamera) {
 ///			Log.d(LOG_TAG, "onpreviewframe called. data transmitting");
-			if (hasStarted && (localOutputStream != null)) {
+//			if (hasStarted && (localOutputStream != null)) {
+			if (hasStarted) {
 				Camera.Parameters parameters = mCamera.getParameters();
 				if (videoStreamingThread != null) {
 					videoStreamingThread.pushAsync(frame, parameters);
@@ -432,14 +383,28 @@ public class GabrielClientActivity extends Activity {
 		}
 	}
 
+    private void notifyError(String msg){
+        DialogInterface.OnClickListener error_listener =
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        terminate();
+                        finish();
+                    }
+                };
+
+        new AlertDialog.Builder(this)
+                .setTitle("Error").setMessage(msg)
+                .setNegativeButton("close", error_listener).show();
+    }
+
 	private Handler returnMsgHandler = new Handler() {
 		public void handleMessage(Message msg) {
 			if (msg.what == NetworkProtocol.NETWORK_RET_FAILED) {
 				Bundle data = msg.getData();
-//				String message = data.getString("message");
-//				stopStreaming();
-//				new AlertDialog.Builder(GabrielClientActivity.this).setTitle("INFO").setMessage(message)
-//						.setIcon(R.drawable.ic_launcher).setNegativeButton("Confirm", null).show();
+				String message = data.getString("message");
+				stopStreaming();
+                notifyError(message);
 			}
 
 			//handled by resultReceivingThread!!!

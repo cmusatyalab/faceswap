@@ -50,4 +50,10 @@ public class Const {
     public static String GABRIEL_CONFIGURATION_SYNC_STATE="syncState";
 
 	public static boolean FACE_DEMO_BOUNDING_BOX_ONLY=false;
+
+	public static String CONNECTION_FAILURE_MESSAGE = "Connecting to Gabriel Server Failed. " +
+			"Do you have a gabriel server running at: " + Const.GABRIEL_IP + "?";
+    public static String CONNECTIVITY_NOT_AVAILABLE = "Not Connected to the Internet. Please enable " +
+            "network connections first.";
+
 }
