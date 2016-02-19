@@ -13,11 +13,10 @@ import os
 
 class OpenFaceClient(object):
     def __init__(self, server_ip=u"ws://128.2.211.75", server_port=9000, async=False):
-        self.logger=MyUtils.getLogger(__name__)        
+        self.logger=MyUtils.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)                
         server_ip_port = server_ip + ':' +str(server_port)
-#        self.logger.info('before creating connection to {}'.format(server_ip_port))                
         self.ws=create_connection(server_ip_port)
-#        self.logger.info('after creating connection to {}'.format(server_ip_port))      
         self.async=async
 
         self.receive_thread = None

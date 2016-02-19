@@ -106,8 +106,8 @@ class FaceTransformation(object):
         )
         formatter = logging.Formatter('%(asctime)-15s %(levelname)-8s %(processName)s %(message)s')   
         self.logger=logging.getLogger(__name__)
+        self.logger.setLevel(logging.INFO)        
         ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(logging.INFO)
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
         
@@ -242,8 +242,8 @@ class FaceTransformation(object):
             names = self.recognize_faces(None, frame, rois)
             
             self.logger.info('received server response.trying to create trackers...')    
-            trackers = create_trackers(frame, rois, dlib=True)
-#            trackers = create_trackers(frame, rois)
+#            trackers = create_trackers(frame, rois, dlib=True)
+            trackers = create_trackers(frame, rois)
             frame_available = True
             frame_cnt = 0
 
@@ -263,7 +263,7 @@ class FaceTransformation(object):
                                          int(new_roi.right()),
                                          int(new_roi.bottom()))
                         name = names[idx]                        
-                        self.logger.info('recognized faces {0} {1}'.format(idx, name))
+#                        self.logger.info('recognized faces {0} {1}'.format(idx, name))
                         face = FaceROI(cur_roi, name=name)
                         faces.append(face)
 
