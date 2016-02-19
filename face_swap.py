@@ -150,10 +150,9 @@ class FaceTransformation(object):
     def sync_faces(self, stop_event=None):
         while (not stop_event.is_set()):
             self.tracking_thread_idle_event.wait(1)
-            self.sync_face_event.wait(0.1)
-
-            # if (not self.tracking_thread_idle_event.is_set()):
-            #     continue
+#            self.sync_face_event.wait(0.1)
+            if (not self.tracking_thread_idle_event.is_set()):
+                continue
             if (not self.sync_face_event.is_set()):
                 continue
                 
@@ -242,8 +241,8 @@ class FaceTransformation(object):
             names = self.recognize_faces(None, frame, rois)
             
             self.logger.info('received server response.trying to create trackers...')    
-#            trackers = create_trackers(frame, rois, dlib=True)
-            trackers = create_trackers(frame, rois)
+            trackers = create_trackers(frame, rois, dlib=True)
+#            trackers = create_trackers(frame, rois)
             frame_available = True
             frame_cnt = 0
 
