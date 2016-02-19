@@ -142,6 +142,7 @@ class DummyVideoApp(AppProxyThread):
 #                transformer = FaceTransformation()
                 transformer.openface_client.reset()                
                 resp=self.gen_response(AppDataProtocol.TYPE_reset, True)
+                transformer.training=False
                 return resp
 
         if 'get_state' in header_dict:
