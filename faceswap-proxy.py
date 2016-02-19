@@ -44,7 +44,7 @@ import json
 #from scipy.ndimage import imread
 import cProfile, pstats, StringIO
 
-DEBUG = True
+DEBUG = False
 transformer = FaceTransformation()
 prev_timestamp = time.time()*1000
 

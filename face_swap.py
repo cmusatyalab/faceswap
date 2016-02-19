@@ -107,7 +107,7 @@ class FaceTransformation(object):
         formatter = logging.Formatter('%(asctime)-15s %(levelname)-8s %(processName)s %(message)s')   
         self.logger=logging.getLogger(__name__)
         ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(logging.DEBUG)
+        ch.setLevel(logging.INFO)
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
         
@@ -129,7 +129,7 @@ class FaceTransformation(object):
         self.logger.info('openface is training?{}'.format(self.training))
 
         mpl = multiprocessing.log_to_stderr()
-        mpl.setLevel(logging.DEBUG)        
+        mpl.setLevel(logging.INFO)        
         
         self.sync_face_event = multiprocessing.Event()
         self.sync_face_event.clear()
@@ -464,7 +464,7 @@ class FaceTransformation(object):
             (x1,y1,x2,y2) = rois[0]
             face_pixels = np.copy(frame[y1:y2+1, x1:x2+1]) 
 
-        face = FaceROI(rois[0], data=face_pixels)            
+        face = FaceROI(rois[0], data=face_pixels, name="training")            
         face_string = self.np_array_to_jpeg_data_url(face_pixels)
         
         # face_img = Image.fromarray(face)                        
