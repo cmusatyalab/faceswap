@@ -62,14 +62,9 @@ public class GabrielClientActivity extends Activity {
 	private static final int SETTINGS_ID = Menu.FIRST;
 	private static final int EXIT_ID = SETTINGS_ID + 1;
 	private static final int CHANGE_SETTING_CODE = 2;
-	private static final int LOCAL_OUTPUT_BUFF_SIZE = 1024 * 100;
 
 	public static final int VIDEO_STREAM_PORT = 9098;
-	public static final int ACC_STREAM_PORT = 9099;
-	public static final int GPS_PORT = 9100;
 	public static final int RESULT_RECEIVING_PORT = 9101;
-
-//	CameraConnector cameraRecorder;
 
 	VideoStreamingThread videoStreamingThread;
 	ResultReceivingThread resultThread;
@@ -78,9 +73,6 @@ public class GabrielClientActivity extends Activity {
 	private SharedPreferences sharedPref;
 	private boolean hasStarted;
 	private CameraPreview mPreview;
-
-	private BufferedOutputStream localOutputStream;
-	AlertDialog errorAlertDialog;
 
 	private DisplaySurface mDisplay;
 	private CameraOverlay cameraOverlay;
@@ -164,38 +156,6 @@ public class GabrielClientActivity extends Activity {
 
 		Const.ROOT_DIR.mkdirs();
 		Const.LATENCY_DIR.mkdirs();
-		// TextToSpeech.OnInitListener
-		if (this.errorAlertDialog == null) {
-			this.errorAlertDialog = new AlertDialog.Builder(GabrielClientActivity.this).create();
-			this.errorAlertDialog.setTitle("Error");
-			this.errorAlertDialog.setIcon(R.drawable.ic_launcher);
-		}
-
-//		if (cameraRecorder != null) {
-//			cameraRecorder.close();
-//			cameraRecorder = null;
-//		}
-
-//		if (localOutputStream != null) {
-//			try {
-//				localOutputStream.close();
-//			} catch (IOException e) {
-//			}
-//			localOutputStream = null;
-//		}
-
-//		if (cameraRecorder == null) {
-//			cameraRecorder = new CameraConnector();
-//			cameraRecorder.init();
-//			Log.d(LOG_TAG, "new cameraRecorder");
-//		}
-
-//		if (localOutputStream == null) {
-//			localOutputStream = new BufferedOutputStream(new FileOutputStream(
-//					cameraRecorder.getInputFileDescriptor()), LOCAL_OUTPUT_BUFF_SIZE);
-//
-//			Log.d(LOG_TAG, "new localoutputStream");
-//		}
 
 		hasStarted = true;
 	}
@@ -286,26 +246,10 @@ public class GabrielClientActivity extends Activity {
 	private PreviewCallback previewCallback = new PreviewCallback() {
 		public void onPreviewFrame(byte[] frame, Camera mCamera) {
 ///			Log.d(LOG_TAG, "onpreviewframe called. data transmitting");
-//			if (hasStarted && (localOutputStream != null)) {
 			if (hasStarted) {
 				Camera.Parameters parameters = mCamera.getParameters();
 				if (videoStreamingThread != null) {
 					videoStreamingThread.pushAsync(frame, parameters);
-
-					//convert to bitmap
-					//done in video streaming thread background
-//					Camera.Size cameraImageSize = parameters.getPreviewSize();
-//					YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
-//							cameraImageSize.height, null);
-//					ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
-//					image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90,
-//							tmpBuffer);
-//					if (curFrame == null){
-//						curFrame = BitmapFactory.decodeByteArray(tmpBuffer.toByteArray()
-//								, 0, tmpBuffer.size());
-//
-//					}
-
 				}
 			}
 		}

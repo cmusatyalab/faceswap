@@ -130,8 +130,6 @@ public class DemoFragment extends Fragment implements  AdapterView.OnItemSelecte
         fromSpinner = (Spinner) view.findViewById(R.id.fromSpinner);
         toSpinner = (Spinner) view.findViewById(R.id.toSpinner);
 
-//        trainedPeople.add("test1");
-//        trainedPeople.add("test2");
         spinnerAdapter = new ArrayAdapter<String>(getActivity(),
                 R.layout.support_simple_spinner_dropdown_item, spinnerList);
         spinnerAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);

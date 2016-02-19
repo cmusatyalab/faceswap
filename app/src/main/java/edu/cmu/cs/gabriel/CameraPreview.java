@@ -15,7 +15,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.Toast;
+//import android.widget.Toast;
 
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback{
     private static final String LOG_TAG = "CameraPreview";
@@ -88,8 +88,8 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 		} else {
                 //TODO: exit with warning "no camera hardware"
 			Log.e(LOG_TAG, "no camera hardware available");
-			Toast.makeText(getContext(), "no camera hardware available",
-					Toast.LENGTH_LONG).show();
+//			Toast.makeText(getContext(), "no camera hardware available",
+//					Toast.LENGTH_LONG).show();
 		}
 
 		mHolder = getHolder();

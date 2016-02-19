@@ -1,15 +1,23 @@
 package edu.cmu.cs.cloudletdemo;
 
+import android.app.Dialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.InputType;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +33,10 @@ public class CloudletDemoActivity extends AppCompatActivity {
     private ViewPager viewPager;
     public HashMap<String, String> faceTable;
     public Set<String> trainedPeople;
+
+    private static final String TAG = "cloudletDemoActivity";
+    private static final int DLG_EXAMPLE1 = 0;
+    private static final int TEXT_ID = 0;
 
     public boolean reset;
 
@@ -49,8 +61,8 @@ public class CloudletDemoActivity extends AppCompatActivity {
 
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(new CloudletFragment(), "cloudlet");
-        adapter.addFragment(new CloudFragment(), "cloud-EC2");
+        adapter.addFragment(new CloudletFragment(), "Face Swap Demo");
+//        adapter.addFragment(new CloudFragment(), "cloud-EC2");
         viewPager.setAdapter(adapter);
     }
 
@@ -69,7 +81,14 @@ public class CloudletDemoActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.setting_cloudlet_ip) {
+            Dialog settingDialog = createExampleDialog();
+            settingDialog.show();
+            return true;
+        }
+        if (id == R.id.setting_cloud_ip) {
+            Dialog settingDialog = createExampleDialog();
+            settingDialog.show();
             return true;
         }
 
@@ -103,5 +122,55 @@ public class CloudletDemoActivity extends AppCompatActivity {
         public CharSequence getPageTitle(int position) {
             return mFragmentTitleList.get(position);
         }
+    }
+
+    /**
+     * If a dialog has already been created,
+     * this is called to reset the dialog
+     * before showing it a 2nd time. Optional.
+     */
+    @Override
+    protected void onPrepareDialog(int id, Dialog dialog) {
+        switch (id) {
+            case DLG_EXAMPLE1:
+                // Clear the input box.
+                EditText text = (EditText) dialog.findViewById(TEXT_ID);
+                text.setText("");
+                break;
+        }
+    }
+
+
+    /**
+     * Create and return an example alert dialog with an edit text box.
+     */
+    private Dialog createExampleDialog() {
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Settings");
+        builder.setMessage("Enter Cloudlet IP:");
+
+        // Use an EditText view to get user input.
+        final EditText input = new EditText(this);
+        input.setId(TEXT_ID);
+        builder.setView(input);
+
+        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int whichButton) {
+                String value = input.getText().toString();
+                Log.d(TAG, "cloudlet ip: " + value);
+                return;
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                return;
+            }
+        });
+
+        return builder.create();
     }
 }

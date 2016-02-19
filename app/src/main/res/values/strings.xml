@@ -18,5 +18,7 @@
 
 <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="setting_cloudlet_ip">set cloudlet ip</string>
+    <string name="setting_cloud_ip">set cloud ip</string>
 
 </resources>
