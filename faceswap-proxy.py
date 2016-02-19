@@ -54,7 +54,8 @@ class AppDataProtocol(object):
     TYPE_detect = "detect"
     TYPE_img = "image"        
     TYPE_get_state = "get_state"
-    TYPE_load_state = "load_state"            
+    TYPE_load_state = "load_state"
+    TYPE_reset = "reset"                
 
 # bad idea to transfer image back using json
 class DummyVideoApp(AppProxyThread):
@@ -123,7 +124,6 @@ class DummyVideoApp(AppProxyThread):
         sys.stdout.write("processing: ")
         sys.stdout.write("%s\n" % header)
 
-
         if DEBUG:
             cur_timestamp = time.time()*1000
             interval = cur_timestamp - prev_timestamp
@@ -134,11 +134,15 @@ class DummyVideoApp(AppProxyThread):
 
         if 'reset' in header_dict:
             reset = header_dict['reset']
+#            pdb.set_trace()            
             print 'reset openface state'            
             if reset:
-                transformer.terminate()
-                time.sleep(2)
-                transformer = FaceTransformation()
+#                transformer.terminate()
+#                time.sleep(2)
+#                transformer = FaceTransformation()
+                transformer.openface_client.reset()                
+                resp=self.gen_response(AppDataProtocol.TYPE_reset, True)
+                return resp
 
         if 'get_state' in header_dict:
             get_state = header_dict['get_state']
@@ -159,6 +163,7 @@ class DummyVideoApp(AppProxyThread):
             return resp
                 
         if 'add_person' in header_dict:
+            print 'adding person'
             name = header_dict['add_person']
             if isinstance(name, basestring):
                 transformer.addPerson(name)
@@ -167,6 +172,7 @@ class DummyVideoApp(AppProxyThread):
             else:
                 raise TypeError('unsupported type for name of a person')
             resp=self.gen_response(AppDataProtocol.TYPE_add_person, name)
+            
         elif 'face_table' in header_dict:
             face_table_string = header_dict['face_table']
             print face_table_string

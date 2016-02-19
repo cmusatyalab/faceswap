@@ -63,6 +63,16 @@ class OpenFaceClient(object):
         self.ws.send(msg)
         return self.recv()
 
+    def reset(self):
+        msg = {
+            'type': 'ALL_STATE',
+            'images': {},
+            'people': [],
+            'training': False
+        }
+        msg = json.dumps(msg)
+        self.ws.send(msg)
+        
     def setState(self, state_string):
         # state_json = json.loads(state_string)
         # msg = {

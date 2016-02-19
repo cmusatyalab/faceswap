@@ -1,7 +1,7 @@
 #! /bin/bash
 
 echo -e "killing gabriel..."
-gabriel=( "gabriel-upnp" "gabriel_upnp_server" "gabriel_REST_server" "faceswap-proxy.py" "gabriel-ucomm" "gabriel-control" )
+gabriel=( "faceswap-proxy.py" "gabriel-upnp" "gabriel_upnp_server" "gabriel_REST_server" "gabriel-ucomm" "gabriel-control" "start_demo" )
 for i in "${gabriel[@]}"
 do
     echo $i

@@ -107,7 +107,7 @@ class FaceTransformation(object):
         formatter = logging.Formatter('%(asctime)-15s %(levelname)-8s %(processName)s %(message)s')   
         self.logger=logging.getLogger(__name__)
         ch = logging.StreamHandler(sys.stdout)
-        ch.setLevel(logging.INFO)
+        ch.setLevel(logging.DEBUG)
         ch.setFormatter(formatter)
         self.logger.addHandler(ch)
         
@@ -129,7 +129,7 @@ class FaceTransformation(object):
         self.logger.info('openface is training?{}'.format(self.training))
 
         mpl = multiprocessing.log_to_stderr()
-        mpl.setLevel(logging.INFO)        
+        mpl.setLevel(logging.DEBUG)        
         
         self.sync_face_event = multiprocessing.Event()
         self.sync_face_event.clear()
@@ -149,10 +149,11 @@ class FaceTransformation(object):
     # detection process signaled
     def sync_faces(self, stop_event=None):
         while (not stop_event.is_set()):
-            self.tracking_thread_idle_event.wait(1)            
-            if (not self.tracking_thread_idle_event.is_set()):
-                continue
-#            self.sync_face_event.wait(1)
+            self.tracking_thread_idle_event.wait(1)
+            self.sync_face_event.wait(0.1)
+
+            # if (not self.tracking_thread_idle_event.is_set()):
+            #     continue
             if (not self.sync_face_event.is_set()):
                 continue
                 
@@ -242,6 +243,7 @@ class FaceTransformation(object):
             
             self.logger.info('received server response.trying to create trackers...')    
             trackers = create_trackers(frame, rois, dlib=True)
+#            trackers = create_trackers(frame, rois)
             frame_available = True
             frame_cnt = 0
 
