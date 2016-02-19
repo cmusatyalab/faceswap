@@ -10,6 +10,7 @@ import MyUtils
 import threading
 import time
 import os
+import logging
 
 class OpenFaceClient(object):
     def __init__(self, server_ip=u"ws://128.2.211.75", server_port=9000, async=False):

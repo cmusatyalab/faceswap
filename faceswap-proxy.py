@@ -122,7 +122,7 @@ class DummyVideoApp(AppProxyThread):
         # PERFORM Cognitive Assistant Processing
         # header is a dict
         sys.stdout.write("processing: ")
-        sys.stdout.write("%s\n" % header[:20])
+        sys.stdout.write("%.20s\n" % header)
 
         if DEBUG:
             cur_timestamp = time.time()*1000
