@@ -45,7 +45,7 @@ import json
 import cProfile, pstats, StringIO
 
 DEBUG = False
-transformer = FaceTransformation()
+
 prev_timestamp = time.time()*1000
 
 class AppDataProtocol(object):
@@ -113,7 +113,6 @@ class DummyVideoApp(AppProxyThread):
 
         
         global prev_timestamp
-        global transformer
         global DEBUG
         
         # locking to make sure tracker update thread is not interrupting
@@ -122,7 +121,7 @@ class DummyVideoApp(AppProxyThread):
         # PERFORM Cognitive Assistant Processing
         # header is a dict
         sys.stdout.write("processing: ")
-        sys.stdout.write("%.20s\n" % header)
+        sys.stdout.write("%.50s\n" % header)
 
         if DEBUG:
             cur_timestamp = time.time()*1000
@@ -246,8 +245,7 @@ class DummyAccApp(AppProxyThread):
 
 
 if __name__ == "__main__":
-    global transformer
-    
+    transformer = FaceTransformation()    
     result_queue = list()
 
     sys.stdout.write("Discovery Control VM\n")
