@@ -55,7 +55,8 @@ class AppDataProtocol(object):
     TYPE_img = "image"        
     TYPE_get_state = "get_state"
     TYPE_load_state = "load_state"
-    TYPE_reset = "reset"                
+    TYPE_reset = "reset"
+    TYPE_remove_person = "remove_person"                    
 
 # bad idea to transfer image back using json
 class DummyVideoApp(AppProxyThread):
@@ -150,7 +151,6 @@ class DummyVideoApp(AppProxyThread):
             if get_state:
                 state_string = transformer.openface_client.getState()
                 resp=self.gen_response(AppDataProtocol.TYPE_get_state, state_string)
-
 #                print 'send out response {}'.format(resp[:10])
 #                sys.stdout.flush()
                 return resp
@@ -161,7 +161,19 @@ class DummyVideoApp(AppProxyThread):
             transformer.openface_client.setState(state_string)
             resp=self.gen_response(AppDataProtocol.TYPE_load_state, True)
             return resp
-                
+
+        if 'remove_person' in header_dict:
+            print 'removing person'
+            name = header_dict['remove_person']
+            remove_success=False
+            if isinstance(name, basestring):
+                remove_success=transformer.openface_client.removePerson(name)                
+                print 'removing person :{} success: {}'.format(name, remove_success)
+            else:
+                raise TypeError('unsupported type for name of a person')
+            resp=self.gen_response(AppDataProtocol.TYPE_remove_person, remove_success)
+            return resp
+            
         if 'add_person' in header_dict:
             print 'adding person'
             name = header_dict['add_person']

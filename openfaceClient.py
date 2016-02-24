@@ -112,6 +112,17 @@ class OpenFaceClient(object):
         msg = json.dumps(msg)
         self.ws.send(msg)
         return self.recv()
+
+    def removePerson(self,name):
+        msg = {
+            'type': 'REMOVE_PERSON',
+            'val': name
+        }
+        msg = json.dumps(msg)
+        self.ws.send(msg)
+        resp = self.recv()
+        resp = json.loads(resp)
+        return resp['success']
         
     def terminate(self):
         if None != self.receive_thread_running:

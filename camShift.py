@@ -31,15 +31,19 @@ class camshiftTracker(object):
         self.hist = hist.reshape(-1)
         
     def update(self, frame, converted=False, suggested_roi=None):
-        if not converted:
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        else:
-            hsv = frame
-        mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))        
-        prob = cv2.calcBackProject([hsv], [0], self.hist, [0, 180], 1)
-        prob &= mask
-        term_crit = ( cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1 )
-        retval, self.track_window = cv2.CamShift(prob, self.track_window, term_crit)
+        try:
+            if not converted:
+                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            else:
+                hsv = frame
+            mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))        
+            prob = cv2.calcBackProject([hsv], [0], self.hist, [0, 180], 1)
+            prob &= mask
+            term_crit = ( cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1 )
+            retval, self.track_window = cv2.CamShift(prob, self.track_window, term_crit)
+        except cv2.error as e:
+            sys.stdout.write('cv2 error in tracking')
+            self.track_window=(0,0,0,0)
 
     def get_position(self):
         track_rect = self.track_window
