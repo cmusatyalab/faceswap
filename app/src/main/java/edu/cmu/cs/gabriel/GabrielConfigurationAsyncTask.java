@@ -3,6 +3,8 @@ package edu.cmu.cs.gabriel;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
@@ -43,6 +45,12 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
     // TCP recv socket
     private Socket recvTcpSocket = null;
     private DataInputStream networkReader = null;
+    public AsyncResponse delegate =null;
+
+    // you may separate this or combined to caller class.
+    public interface AsyncResponse {
+        void processFinish(boolean output);
+    }
 
     public GabrielConfigurationAsyncTask(Activity activity,
                                          String IPString,
@@ -59,9 +67,18 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
         this.recvFromPort = recvFromPort;
     }
 
+    public GabrielConfigurationAsyncTask(Activity activity,
+                                         String IPString,
+                                         int sendToPort,
+                                         int recvFromPort,
+                                         AsyncResponse delegate) {
+        this(activity,IPString,sendToPort,recvFromPort);
+        this.delegate = delegate;
+    }
+
     @Override
     protected void onPreExecute() {
-        dialog.setMessage("Syncing Face Recognition Servers. Please wait.");
+        dialog.setMessage("Communicating to Backend Server ... Please wait");
         dialog.show();
     }
 
@@ -70,8 +87,12 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
         if (dialog.isShowing()) {
             dialog.dismiss();
         }
-        Toast.makeText(callingActivity.getApplicationContext(), "sync states success? "+bgResult,
-                Toast.LENGTH_LONG).show();
+        if (null != this.delegate){
+            delegate.processFinish(bgResult);
+        }
+        Log.i("configurationAsyncTask", "success: " + bgResult);
+//        Toast.makeText(callingActivity.getApplicationContext(), "async task success? "+bgResult,
+//                Toast.LENGTH_LONG).show();
     }
 
     private void setupConnection(InetAddress ip, int sendToPort, int recvFromPort)
@@ -103,12 +124,13 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
 
         tcpSocket = new Socket();
         tcpSocket.setTcpNoDelay(true);
-        tcpSocket.connect(new InetSocketAddress(ip, sendToPort), 5 * 1000);
+        tcpSocket.connect(new InetSocketAddress(ip, sendToPort), 3 * 1000);
         networkWriter = new DataOutputStream(tcpSocket.getOutputStream());
 
         recvTcpSocket = new Socket();
         recvTcpSocket.setTcpNoDelay(true);
-        recvTcpSocket.connect(new InetSocketAddress(ip, recvFromPort), 5 * 1000);
+        recvTcpSocket.setSoTimeout(3*1000);
+        recvTcpSocket.connect(new InetSocketAddress(ip, recvFromPort), 3 * 1000);
         networkReader = new DataInputStream(recvTcpSocket.getInputStream());
     }
 
@@ -134,6 +156,20 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
             headerJson.put("id", 0);
             headerJson.put("get_state", "True");
             Log.d(LOG_TAG, "send get_state request");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return headerJson.toString().getBytes();
+    }
+
+
+    private byte[] generateResetStateHeader() {
+        JSONObject headerJson = new JSONObject();
+        try{
+
+            headerJson.put("id", 0);
+            headerJson.put("reset", "True");
+            Log.d(LOG_TAG, "send reset request");
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -243,8 +279,26 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
                     e.printStackTrace();
                     Log.e(LOG_TAG, "IO exception sync state failed");
                 }
+            } else if (task.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
+                try{
+                    setupConnection(remoteIP, sendToPort, recvFromPort);
+                    //get state
+                    byte[] header= generateResetStateHeader();
+                    byte[] data= "dummpy".getBytes();
+                    sendPacket(header, data);
+                    String resp = receiveMsg(networkReader);
+                    String content =parseResponsePacket(resp).toLowerCase();
+                    if (content.equals("true")) {
+                        success = true;
+                    }
+                } catch (IOException e){
+                    e.printStackTrace();
+                    Log.e(LOG_TAG, "IO exception reset state failed");
+                }
             }
+
         }
         return success;
     }
+
 }

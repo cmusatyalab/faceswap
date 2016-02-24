@@ -8,7 +8,8 @@
 	
     <!-- Glass Launch-related strings. -->
     <string name="start_gabriel_voice_trigger">start Gabriel</string>
-    <string name="title_activity_cloudlet_demo">CloudletDemoActivity</string>
+
+    <string name="title_activity_cloudlet_demo">Cloudlet Demo</string>
 
     <string name="title_section1">Section 1</string>
     <string name="title_section2">Section 2</string>
@@ -20,5 +21,6 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="setting_cloudlet_ip">set cloudlet ip</string>
     <string name="setting_cloud_ip">set cloud ip</string>
+    <string name="setting_reset_openface_server">reset openface server</string>
 
 </resources>

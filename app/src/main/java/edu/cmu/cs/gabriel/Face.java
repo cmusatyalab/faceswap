@@ -10,7 +10,10 @@ import android.hardware.Camera;
 public class Face {
     private int[] roi;
     public int[] screenSizeRoi;
+    //image roi for display. is the result of swap
     public int[] imageRoi;
+    //original detected roi. before swap
+    public int[] realRoi;
     private byte[] img;
     public Bitmap bitmap;
     public Bitmap screenBitmap;
@@ -26,6 +29,8 @@ public class Face {
 
     public Face(int[] roi, byte[] img, String name) {
         this(roi, img);
+        this.realRoi=new int[roi.length];
+        System.arraycopy(this.roi, 0, this.realRoi, 0, this.roi.length);
         this.name=name;
     }
 

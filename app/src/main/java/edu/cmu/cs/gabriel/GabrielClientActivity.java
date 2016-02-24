@@ -442,7 +442,7 @@ public class GabrielClientActivity extends Activity {
 				String toPerson = faceTable.get(face.getName());
 				for (Face face2 : originalFaces) {
 					if (face2.getName().equals(toPerson)) {
-						face.imageRoi = face2.imageRoi;
+						face.imageRoi = face2.realRoi;
 						break;
 					}
 				}

@@ -73,6 +73,9 @@ public class VideoStreamingThread extends Thread {
     public volatile String state_string;
     public Bitmap curFrame=null;
 
+    private String connection_failure_msg = "Connecting to Gabriel Server Failed. " +
+            "Do you have a gabriel server running at: " + Const.GABRIEL_IP + "?";
+
 	public VideoStreamingThread(FileDescriptor fd,
 								String IPString,
 								int port,
@@ -186,7 +189,7 @@ public class VideoStreamingThread extends Thread {
         } catch (IOException e) {
             Log.e(LOG_TAG, Log.getStackTraceString(e));
             Log.e(LOG_TAG, "Error in initializing Data socket: " + e);
-            this.notifyError(Const.CONNECTION_FAILURE_MESSAGE);
+            this.notifyError(connection_failure_msg);
             this.is_running = false;
             return;
         }
@@ -214,7 +217,7 @@ public class VideoStreamingThread extends Thread {
 		} catch (IOException e) {
 		    Log.e(LOG_TAG, Log.getStackTraceString(e));
 			Log.e(LOG_TAG, "Error in initializing Data socket: " + e);
-			this.notifyError(Const.CONNECTION_FAILURE_MESSAGE);
+			this.notifyError(connection_failure_msg);
 			this.is_running = false;
 			return;
 		}

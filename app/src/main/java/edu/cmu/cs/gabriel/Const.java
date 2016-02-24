@@ -20,8 +20,9 @@ public class Const {
 	public static String GABRIEL_IP = "128.2.213.107";	// Cloudlet by default
 //	public static String GABRIEL_IP = "54.201.173.207";	// Amazon West
     public static String CLOUDLET_GABRIEL_IP = "128.2.213.107";	// Cloudlet
+//    public static String CLOUDLET_GABRIEL_IP = "128.2.13.107";	// Cloudlet
 //	public static String CLOUD_GABRIEL_IP = "54.200.101.84";	// Amazon West
-	public static String CLOUD_GABRIEL_IP = "54.185.43.252";	// Amazon West
+	public static String CLOUD_GABRIEL_IP = "54.189.165.75";	// Amazon West
 	
 	// Token
 	public static int MAX_TOKEN_SIZE = 1;
@@ -47,12 +48,11 @@ public class Const {
 	public static boolean DISPLAY_PREVIEW_ONLY=false;
 
     //display preview or img processed from gabriel server
-    public static String GABRIEL_CONFIGURATION_SYNC_STATE="syncState";
+	public static String GABRIEL_CONFIGURATION_SYNC_STATE="syncState";
+	public static String GABRIEL_CONFIGURATION_RESET_STATE="reset";
 
 	public static boolean FACE_DEMO_BOUNDING_BOX_ONLY=false;
 
-	public static String CONNECTION_FAILURE_MESSAGE = "Connecting to Gabriel Server Failed. " +
-			"Do you have a gabriel server running at: " + Const.GABRIEL_IP + "?";
     public static String CONNECTIVITY_NOT_AVAILABLE = "Not Connected to the Internet. Please enable " +
             "network connections first.";
 

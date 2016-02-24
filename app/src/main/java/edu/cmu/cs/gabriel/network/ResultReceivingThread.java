@@ -40,7 +40,9 @@ public class ResultReceivingThread extends Thread {
 	
 	private Handler returnMsgHandler;
 	private TokenController tokenController;
-	
+	private String connection_failure_msg = "Connecting to Gabriel Server Failed. " +
+			"Do you have a gabriel server running at: " + Const.GABRIEL_IP + "?";
+
 
 	public ResultReceivingThread(String GABRIEL_IP, int port, Handler returnMsgHandler, TokenController tokenController) {
 		is_running = false;
@@ -68,7 +70,7 @@ public class ResultReceivingThread extends Thread {
 		} catch (IOException e) {
 		    Log.e(LOG_TAG, Log.getStackTraceString(e));
 			Log.e(LOG_TAG, "Error in initializing Data socket: " + e);
-			this.notifyError(Const.CONNECTION_FAILURE_MESSAGE);
+			this.notifyError(connection_failure_msg);
 			this.is_running = false;
 			return;
 		}

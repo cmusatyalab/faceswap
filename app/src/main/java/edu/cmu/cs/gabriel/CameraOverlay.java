@@ -87,7 +87,7 @@ public class CameraOverlay extends View {
         }
         long time = System.currentTimeMillis();
         long elapse = time - timeStamp;
-        Log.d(DEBUG_TAG, "cameraOverlay updated! " + elapse + " ms");
+//        Log.d(DEBUG_TAG, "cameraOverlay updated! " + elapse + " ms");
     }
 
 
@@ -108,7 +108,6 @@ public class CameraOverlay extends View {
             this.imageSize = imageSize;
         }
         this.frame=curFrame;
-//        Log.d(DEBUG_TAG, "start creating face bitmap");
         if (!Const.FACE_DEMO_BOUNDING_BOX_ONLY && this.frame!=null){
             for (Face face: faces){
                 int[] roi = face.imageRoi;
