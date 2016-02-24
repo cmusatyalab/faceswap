@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -28,6 +29,7 @@ import java.util.concurrent.ExecutionException;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
+import edu.cmu.cs.gabriel.R;
 
 public class CloudletFragment extends DemoFragment implements CompoundButton.OnCheckedChangeListener {
     private final int LAUNCHCODE = 0;
@@ -99,7 +101,8 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
                         new GabrielConfigurationAsyncTask(getActivity(),
                         Const.CLOUDLET_GABRIEL_IP,
                         GabrielClientActivity.VIDEO_STREAM_PORT,
-                        GabrielClientActivity.RESULT_RECEIVING_PORT);
+                        GabrielClientActivity.RESULT_RECEIVING_PORT,
+                                Const.GABRIEL_CONFIGURATION_SYNC_STATE);
                 task.execute(Const.GABRIEL_CONFIGURATION_SYNC_STATE);
 
                 try {
@@ -206,7 +209,6 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         return builder.create();
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void addPersonUIRow(String name) {
         //create a new table row
         TableRow tr = new TableRow(getContext());
@@ -235,7 +237,6 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         );
         tlp2.column=1;
         tlp2.gravity=Gravity.CENTER_HORIZONTAL;
-//        sw.setShowText(true);
         sw.setTextOff("OFF");
         sw.setTextOn("ON");
         sw.setHeight(20);
@@ -251,18 +252,64 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
                 TableLayout.LayoutParams.MATCH_PARENT
         );
         tlp3.column=2;
-        subView.setLayoutParams(tlp1);
+        subView.setLayoutParams(tlp3);
         subView.setVisibility(View.INVISIBLE);
+
+        //create delete button
+        ImageView deleteView = new ImageView(getContext());
+        deleteView.setImageResource(R.drawable.ic_delete_black_24dp);
+        TableRow.LayoutParams tlp4 = new TableRow.LayoutParams(
+                TableLayout.LayoutParams.WRAP_CONTENT,
+                TableLayout.LayoutParams.MATCH_PARENT
+        );
+        tlp4.column=3;
+        deleteView.setLayoutParams(tlp4);
+        deleteView.setOnClickListener(new ImageView.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String toBeRemovedName=null;
+                PersonUIRow toBeRemovedRow=null;
+                //find the name of the person to be removed
+                for (PersonUIRow uiRow: personUIList){
+                    if (uiRow.deleteView == v){
+                        toBeRemovedName = (String) uiRow.nameView.getText();
+                        toBeRemovedRow = uiRow;
+                        break;
+                    }
+                }
+                if (null != toBeRemovedName){
+                    //TODO: send async request to server to remove
+                    GabrielConfigurationAsyncTask task =
+                            new GabrielConfigurationAsyncTask(getActivity(),
+                                    Const.CLOUDLET_GABRIEL_IP,
+                                    GabrielClientActivity.VIDEO_STREAM_PORT,
+                                    GabrielClientActivity.RESULT_RECEIVING_PORT,
+                                    Const.GABRIEL_CONFIGURATION_REMOVE_PERSON);
+                    task.execute(toBeRemovedName);
+                    trainedPeople.remove(toBeRemovedName);
+                }
+
+                //remove current line
+                if (null != toBeRemovedRow){
+                    personUIList.remove(toBeRemovedRow);
+                    tb.removeView(toBeRemovedRow.tr);
+                } else {
+                    Log.e(TAG, "delete icon clicked, but didn't find any row to remove");
+                }
+
+            }
+        });
 
         tr.addView(nameView);
         tr.addView(sw);
         tr.addView(subView);
+        tr.addView(deleteView);
 
         tb.addView(tr,
                 new TableLayout.LayoutParams(TableLayout.LayoutParams.MATCH_PARENT,
                         TableLayout.LayoutParams.WRAP_CONTENT));
 
-        PersonUIRow uiRow = new PersonUIRow(tr,nameView, sw, subView);
+        PersonUIRow uiRow = new PersonUIRow(tr,nameView, sw, subView, deleteView);
         personUIList.add(uiRow);
     }
 

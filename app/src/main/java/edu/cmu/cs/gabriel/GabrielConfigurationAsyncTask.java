@@ -46,6 +46,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
     private Socket recvTcpSocket = null;
     private DataInputStream networkReader = null;
     public AsyncResponse delegate =null;
+    private String action=null;
 
     // you may separate this or combined to caller class.
     public interface AsyncResponse {
@@ -55,7 +56,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
     public GabrielConfigurationAsyncTask(Activity activity,
                                          String IPString,
                                          int sendToPort,
-                                         int recvFromPort) {
+                                         int recvFromPort,
+                                         String action) {
         this.callingActivity =activity;
         dialog = new ProgressDialog(callingActivity);
         try {
@@ -65,14 +67,16 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
         }
         this.sendToPort = sendToPort;
         this.recvFromPort = recvFromPort;
+        this.action=action;
     }
 
     public GabrielConfigurationAsyncTask(Activity activity,
                                          String IPString,
                                          int sendToPort,
                                          int recvFromPort,
+                                         String action,
                                          AsyncResponse delegate) {
-        this(activity,IPString,sendToPort,recvFromPort);
+        this(activity, IPString, sendToPort, recvFromPort, action);
         this.delegate = delegate;
     }
 
@@ -129,7 +133,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
 
         recvTcpSocket = new Socket();
         recvTcpSocket.setTcpNoDelay(true);
-        recvTcpSocket.setSoTimeout(3*1000);
+        recvTcpSocket.setSoTimeout(3 * 1000);
         recvTcpSocket.connect(new InetSocketAddress(ip, recvFromPort), 3 * 1000);
         networkReader = new DataInputStream(recvTcpSocket.getInputStream());
     }
@@ -147,33 +151,6 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
         networkWriter.write(baos.toByteArray());
         networkWriter.flush();
         Log.d(LOG_TAG, "header size: " + header.length+ " data size: " +data.length);
-    }
-
-    private byte[] generateGetStateHeader(){
-        JSONObject headerJson = new JSONObject();
-        try{
-
-            headerJson.put("id", 0);
-            headerJson.put("get_state", "True");
-            Log.d(LOG_TAG, "send get_state request");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return headerJson.toString().getBytes();
-    }
-
-
-    private byte[] generateResetStateHeader() {
-        JSONObject headerJson = new JSONObject();
-        try{
-
-            headerJson.put("id", 0);
-            headerJson.put("reset", "True");
-            Log.d(LOG_TAG, "send reset request");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return headerJson.toString().getBytes();
     }
 
     private String receiveMsg(DataInputStream reader) throws IOException {
@@ -250,11 +227,51 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
         return headerJson.toString().getBytes();
     }
 
+    private byte[] generateGetStateHeader(){
+        JSONObject headerJson = new JSONObject();
+        try{
+
+            headerJson.put("id", 0);
+            headerJson.put("get_state", "True");
+            Log.d(LOG_TAG, "send get_state request");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return headerJson.toString().getBytes();
+    }
+
+
+    private byte[] generateHeader(String headerContent) {
+        JSONObject headerJson = new JSONObject();
+        try{
+
+            headerJson.put("id", 0);
+            headerJson.put(headerContent, "True");
+            Log.d(LOG_TAG, "send request: " + headerContent);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return headerJson.toString().getBytes();
+    }
+
+    private byte[] generateHeader(String header, String value) {
+        JSONObject headerJson = new JSONObject();
+        try{
+
+            headerJson.put("id", 0);
+            headerJson.put(header, value);
+            Log.d(LOG_TAG, "send request: " + header + " value: "+value);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return headerJson.toString().getBytes();
+    }
+
     @Override
     protected Boolean doInBackground(String... urls) {
         Boolean success =false;
         if (urls.length > 0) {
-            String task = urls[0];
+            String task = action;
             // task is to sync state
             if (task.equals(Const.GABRIEL_CONFIGURATION_SYNC_STATE)){
                 try{
@@ -283,7 +300,24 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
                 try{
                     setupConnection(remoteIP, sendToPort, recvFromPort);
                     //get state
-                    byte[] header= generateResetStateHeader();
+                    byte[] header= generateHeader("reset");
+                    byte[] data= "dummpy".getBytes();
+                    sendPacket(header, data);
+                    String resp = receiveMsg(networkReader);
+                    String content =parseResponsePacket(resp).toLowerCase();
+                    if (content.equals("true")) {
+                        success = true;
+                    }
+                } catch (IOException e){
+                    e.printStackTrace();
+                    Log.e(LOG_TAG, "IO exception reset state failed");
+                }
+            } else if (task.equals(Const.GABRIEL_CONFIGURATION_REMOVE_PERSON)){
+                try{
+                    setupConnection(remoteIP, sendToPort, recvFromPort);
+                    //get state
+                    String name = urls[0];
+                    byte[] header= generateHeader("remove_person", name);
                     byte[] data= "dummpy".getBytes();
                     sendPacket(header, data);
                     String resp = receiveMsg(networkReader);
@@ -300,5 +334,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
         }
         return success;
     }
+
+
 
 }

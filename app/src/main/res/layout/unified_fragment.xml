@@ -74,6 +74,9 @@
                 <TextView
                     android:text="Substituted By Person"
                     android:layout_column="2" />
+                <TextView
+                    android:text="Delete"
+                    android:layout_column="3" />
             </TableRow>
         </TableLayout>
     </LinearLayout>

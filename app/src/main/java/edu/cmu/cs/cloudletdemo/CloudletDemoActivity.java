@@ -125,8 +125,9 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                             remoteIP,
                             GabrielClientActivity.VIDEO_STREAM_PORT,
                             GabrielClientActivity.RESULT_RECEIVING_PORT,
+                            Const.GABRIEL_CONFIGURATION_RESET_STATE,
                             this);
-            task.execute(Const.GABRIEL_CONFIGURATION_RESET_STATE);
+            task.execute();
             Log.d(TAG, "send reset openface server request");
             childFragment.clearTrainedPeople();
         } else {
