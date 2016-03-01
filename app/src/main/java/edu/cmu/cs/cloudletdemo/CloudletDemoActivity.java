@@ -3,6 +3,7 @@ package edu.cmu.cs.cloudletdemo;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -30,7 +31,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
+import edu.cmu.cs.IO.DirectoryPicker;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
@@ -94,27 +97,34 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void processFinish(boolean output) {
-        String serverLocation ="";
-        if (curModId == R.id.setting_cloudlet_ip){
-            serverLocation="Cloudlet";
-        } else if (curModId == R.id.setting_cloud_ip){
-            serverLocation="Cloud";
+    public void processFinish(String action, boolean output, byte[] extra) {
+        if (action.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
+            String serverLocation ="";
+            if (curModId == R.id.setting_cloudlet_ip){
+                serverLocation="Cloudlet";
+            } else if (curModId == R.id.setting_cloud_ip){
+                serverLocation="Cloud";
+            }
+
+            if (!output){
+                createExampleDialog("Settings", "No Gabriel Server Found. \n" +
+                        "Please enter a Gabriel Server IP (" + serverLocation + "): ");
+            } else {
+                if (curModId == R.id.setting_cloudlet_ip){
+                    Const.CLOUDLET_GABRIEL_IP = inputDialogResult;
+                    Log.i(TAG, "cloudlet ip changed to : " + Const.CLOUDLET_GABRIEL_IP);
+                } else if (curModId == R.id.setting_cloud_ip){
+                    Const.CLOUD_GABRIEL_IP = inputDialogResult;
+                    Log.i(TAG, "cloudlet ip changed to : " + Const.CLOUD_GABRIEL_IP);
+                }
+                curModId = -1;
+            }
+        } else if (action.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE)){
+            Log.d(TAG, "let user select where to download open face state in");
+            Intent intent = new Intent(this, DirectoryPicker.class);
+            startActivityForResult(intent, DirectoryPicker.PICK_DIRECTORY);
         }
 
-        if (!output){
-            createExampleDialog("Settings", "No Gabriel Server Found. \n" +
-                    "Please enter a Gabriel Server IP (" + serverLocation + "): ");
-        } else {
-            if (curModId == R.id.setting_cloudlet_ip){
-                Const.CLOUDLET_GABRIEL_IP = inputDialogResult;
-                Log.i(TAG, "cloudlet ip changed to : " + Const.CLOUDLET_GABRIEL_IP);
-            } else if (curModId == R.id.setting_cloud_ip){
-                Const.CLOUD_GABRIEL_IP = inputDialogResult;
-                Log.i(TAG, "cloudlet ip changed to : " + Const.CLOUD_GABRIEL_IP);
-            }
-            curModId = -1;
-        }
     }
 
     public void sendOpenFaceResetRequest(String remoteIP){
@@ -136,6 +146,15 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == DirectoryPicker.PICK_DIRECTORY && resultCode == RESULT_OK) {
+            Bundle extras = data.getExtras();
+            String path = (String) extras.get(DirectoryPicker.CHOSEN_DIRECTORY);
+            Log.d(TAG, "path: " + path);
+        }
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -150,7 +169,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         }
         if (id == R.id.setting_cloud_ip) {
             createExampleDialog("Settings", "Enter Cloud IP:");
-//            settingDialog.show();
             curModId = R.id.setting_cloud_ip;
             return true;
         }
@@ -158,6 +176,38 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         if (id == R.id.setting_reset_openface_server) {
             //check wifi state
             sendOpenFaceResetRequest(Const.CLOUDLET_GABRIEL_IP);
+            return true;
+        }
+
+        if (id == R.id.setting_save_state) {
+            GabrielConfigurationAsyncTask task =
+                    new GabrielConfigurationAsyncTask(this,
+                            Const.CLOUDLET_GABRIEL_IP,
+                            GabrielClientActivity.VIDEO_STREAM_PORT,
+                            GabrielClientActivity.RESULT_RECEIVING_PORT,
+                            Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE);
+            task.execute(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE);
+            boolean success=false;
+            try {
+                task.get();
+                success=true;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
+            if (success) {
+                Intent intent = new Intent(this, DirectoryPicker.class);
+                startActivityForResult(intent, DirectoryPicker.PICK_DIRECTORY);
+
+            }
+            return true;
+        }
+
+        if (id == R.id.setting_load_state) {
+            //check wifi state
+            //load state
             return true;
         }
 

@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
@@ -16,13 +17,21 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
+import edu.cmu.cs.IO.DirectoryPicker;
 import edu.cmu.cs.gabriel.network.NetworkProtocol;
 import edu.cmu.cs.gabriel.network.VideoControlThread;
 
@@ -47,10 +56,13 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
     private DataInputStream networkReader = null;
     public AsyncResponse delegate =null;
     private String action=null;
+    private volatile String uiMsg=null;
+
+    private byte[] extra=null;
 
     // you may separate this or combined to caller class.
     public interface AsyncResponse {
-        void processFinish(boolean output);
+        void processFinish(String action, boolean output, byte[] extra);
     }
 
     public GabrielConfigurationAsyncTask(Activity activity,
@@ -80,27 +92,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
         this.delegate = delegate;
     }
 
-    @Override
-    protected void onPreExecute() {
-        dialog.setMessage("Communicating to Backend Server ... Please wait");
-        dialog.show();
-    }
-
-    @Override
-    protected void onPostExecute(Boolean bgResult) {
-        if (dialog.isShowing()) {
-            dialog.dismiss();
-        }
-        if (null != this.delegate){
-            delegate.processFinish(bgResult);
-        }
-        Log.i("configurationAsyncTask", "success: " + bgResult);
-//        Toast.makeText(callingActivity.getApplicationContext(), "async task success? "+bgResult,
-//                Toast.LENGTH_LONG).show();
-    }
-
-    private void setupConnection(InetAddress ip, int sendToPort, int recvFromPort)
-            throws IOException {
+    private void closeConnection(){
         if (tcpSocket != null) {
             try {
                 tcpSocket.close();
@@ -125,7 +117,11 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
             } catch (IOException e) {
             }
         }
+    }
 
+    private void setupConnection(InetAddress ip, int sendToPort, int recvFromPort)
+            throws IOException {
+        closeConnection();
         tcpSocket = new Socket();
         tcpSocket.setTcpNoDelay(true);
         tcpSocket.connect(new InetSocketAddress(ip, sendToPort), 3 * 1000);
@@ -133,7 +129,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
 
         recvTcpSocket = new Socket();
         recvTcpSocket.setTcpNoDelay(true);
-        recvTcpSocket.setSoTimeout(3 * 1000);
+        recvTcpSocket.setSoTimeout(5 * 1000 * 60);
         recvTcpSocket.connect(new InetSocketAddress(ip, recvFromPort), 3 * 1000);
         networkReader = new DataInputStream(recvTcpSocket.getInputStream());
     }
@@ -268,73 +264,163 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
     }
 
     @Override
+    protected void onPreExecute() {
+        dialog.setMessage("Communicating to Backend Server ... Please wait");
+        dialog.show();
+    }
+
+    @Override
+    protected void onPostExecute(Boolean bgResult) {
+        if (dialog.isShowing()) {
+            dialog.dismiss();
+        }
+        if (null != this.delegate){
+            delegate.processFinish(this.action, bgResult, extra);
+        }
+        if (null!=uiMsg){
+            Log.i("configurationAsyncTask", "success: " + bgResult + ". " + uiMsg);
+            Toast.makeText(callingActivity.getApplicationContext(),
+                    "success? "+bgResult + "\nmessage: " + uiMsg,
+                Toast.LENGTH_LONG).show();
+        } else {
+            Log.i("configurationAsyncTask", "success: " + bgResult);
+            Toast.makeText(callingActivity.getApplicationContext(),
+                    "success? "+bgResult,
+                    Toast.LENGTH_LONG).show();
+        }
+
+//        Toast.makeText(callingActivity.getApplicationContext(), "async task success? "+bgResult,
+//                Toast.LENGTH_LONG).show();
+    }
+
+    @Override
     protected Boolean doInBackground(String... urls) {
         Boolean success =false;
-        if (urls.length > 0) {
-            String task = action;
-            // task is to sync state
-            if (task.equals(Const.GABRIEL_CONFIGURATION_SYNC_STATE)){
-                try{
-                    setupConnection(remoteIP, sendToPort, recvFromPort);
-                    //get state
-                    byte[] header= generateGetStateHeader();
-                    byte[] data= "dummpy".getBytes();
-                    sendPacket(header, data);
-                    String resp = receiveMsg(networkReader);
-                    String openfaceState=parseResponsePacket(resp);
-                    //switch connection
-                    switchConnection();
-                    //load state
-                    byte[] loadStateHeader= generateLoadStateHeader(openfaceState);
-                    sendPacket(loadStateHeader, data);
-                    resp = receiveMsg(networkReader);
-                    String content =parseResponsePacket(resp).toLowerCase();
-                    if (content.equals("true")) {
-                        success = true;
-                    }
-                } catch (IOException e){
-                    e.printStackTrace();
-                    Log.e(LOG_TAG, "IO exception sync state failed");
+        String task = action;
+        // task is to sync state
+        if (task.equals(Const.GABRIEL_CONFIGURATION_SYNC_STATE)){
+            try{
+                setupConnection(remoteIP, sendToPort, recvFromPort);
+                //get state
+                byte[] header= generateGetStateHeader();
+                byte[] data= "dummpy".getBytes();
+                sendPacket(header, data);
+                String resp = receiveMsg(networkReader);
+                String openfaceState=parseResponsePacket(resp);
+                //switch connection
+                switchConnection();
+                //load state
+                byte[] loadStateHeader= generateLoadStateHeader(openfaceState);
+                sendPacket(loadStateHeader, data);
+                resp = receiveMsg(networkReader);
+                String content =parseResponsePacket(resp).toLowerCase();
+                if (content.equals("true")) {
+                    success = true;
                 }
-            } else if (task.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
-                try{
-                    setupConnection(remoteIP, sendToPort, recvFromPort);
-                    //get state
-                    byte[] header= generateHeader("reset");
-                    byte[] data= "dummpy".getBytes();
-                    sendPacket(header, data);
-                    String resp = receiveMsg(networkReader);
-                    String content =parseResponsePacket(resp).toLowerCase();
-                    if (content.equals("true")) {
-                        success = true;
-                    }
-                } catch (IOException e){
-                    e.printStackTrace();
-                    Log.e(LOG_TAG, "IO exception reset state failed");
-                }
-            } else if (task.equals(Const.GABRIEL_CONFIGURATION_REMOVE_PERSON)){
-                try{
-                    setupConnection(remoteIP, sendToPort, recvFromPort);
-                    //get state
-                    String name = urls[0];
-                    byte[] header= generateHeader("remove_person", name);
-                    byte[] data= "dummpy".getBytes();
-                    sendPacket(header, data);
-                    String resp = receiveMsg(networkReader);
-                    String content =parseResponsePacket(resp).toLowerCase();
-                    if (content.equals("true")) {
-                        success = true;
-                    }
-                } catch (IOException e){
-                    e.printStackTrace();
-                    Log.e(LOG_TAG, "IO exception reset state failed");
-                }
+            } catch (IOException e){
+                e.printStackTrace();
+                Log.e(LOG_TAG, "IO exception sync state failed");
             }
+        } else if (task.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
+            try{
+                setupConnection(remoteIP, sendToPort, recvFromPort);
+                //get state
+                byte[] header= generateHeader("reset");
+                byte[] data= "dummpy".getBytes();
+                sendPacket(header, data);
+                String resp = receiveMsg(networkReader);
+                String content =parseResponsePacket(resp).toLowerCase();
+                if (content.equals("true")) {
+                    success = true;
+                }
+            } catch (IOException e){
+                e.printStackTrace();
+                Log.e(LOG_TAG, "IO exception reset state failed");
+            }
+        } else if (task.equals(Const.GABRIEL_CONFIGURATION_REMOVE_PERSON)){
+            try{
+                setupConnection(remoteIP, sendToPort, recvFromPort);
+                //get state
+                String name = urls[0];
+                byte[] header= generateHeader("remove_person", name);
+                byte[] data= "dummpy".getBytes();
+                sendPacket(header, data);
+                String resp = receiveMsg(networkReader);
+                String content =parseResponsePacket(resp).toLowerCase();
+                if (content.equals("true")) {
+                    success = true;
+                }
+            } catch (IOException e){
+                e.printStackTrace();
+                Log.e(LOG_TAG, "IO exception reset state failed");
+            }
+        } else if (task.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE)){
+            try{
+                setupConnection(remoteIP, sendToPort, recvFromPort);
+                //get state
+                byte[] header= generateGetStateHeader();
+                byte[] data= "dummpy_long_enough_for_correctness".getBytes();
+                sendPacket(header, data);
+                String resp = receiveMsg(networkReader);
+                String openfaceState=parseResponsePacket(resp);
+                extra=openfaceState.getBytes();
+                try{
+                    Log.d(LOG_TAG, "saving openface state string to file...");
+                    if (isExternalStorageWritable()){
+                        // Get the directory for the user's public pictures directory.
+                        File root = new File(Environment.getExternalStorageDirectory(),
+                                Const.FILE_ROOT_PATH);
+//                        if (!root.mkdirs()) {
+//                            throw new FileNotFoundException("Directory cannot be created: "+root);
+//                        }
+                        root.mkdirs();
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("MM_dd_hh_mm_ss");
+                        GregorianCalendar cal = new GregorianCalendar();
+                        dateFormat.setTimeZone(cal.getTimeZone());
+                        File file = new File(root, "openface_"+ dateFormat.format(cal.getTime())
+                                +".txt");
+                        FileOutputStream f = new FileOutputStream(file);
+                        PrintWriter pw = new PrintWriter(f);
+                        pw.print(openfaceState);
+                        pw.flush();
+                        pw.close();
+                        f.close();
+                        success = true;
+                        uiMsg="saved state to: " + file;
+                    } else {
+                        uiMsg="No permission to write external storage";
+                    }
+                } catch (FileNotFoundException e){
+                    uiMsg=e.getMessage();
+                }
+            } catch (IOException e){
+                e.printStackTrace();
+                Log.e(LOG_TAG, "IO exception sync state failed");
+            }
+        } else if (task.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)){
 
         }
+        closeConnection();
         return success;
     }
 
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
+    }
 
+    /* Checks if external storage is available to at least read */
+    public boolean isExternalStorageReadable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
+            return true;
+        }
+        return false;
+    }
 
 }

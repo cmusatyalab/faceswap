@@ -136,8 +136,6 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-//        String name = data.getStringExtra("name");
-//        addTrainedPerson(name);
     }
 
     protected boolean checkName(String name){

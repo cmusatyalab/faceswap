@@ -48,6 +48,8 @@ public class Const {
 	public static boolean DISPLAY_PREVIEW_ONLY=false;
 
 	public static String GABRIEL_CONFIGURATION_SYNC_STATE="syncState";
+	public static String GABRIEL_CONFIGURATION_DOWNLOAD_STATE="downloadState";
+	public static String GABRIEL_CONFIGURATION_UPLOAD_STATE="uploadState";
 	public static String GABRIEL_CONFIGURATION_RESET_STATE="reset";
 	public static String GABRIEL_CONFIGURATION_REMOVE_PERSON="remove_person";
 
@@ -55,5 +57,7 @@ public class Const {
 
     public static String CONNECTIVITY_NOT_AVAILABLE = "Not Connected to the Internet. Please enable " +
             "network connections first.";
+
+	public static String FILE_ROOT_PATH = "OpenFaceState";
 
 }

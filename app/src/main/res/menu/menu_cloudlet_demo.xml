@@ -11,4 +11,12 @@
         android:title="@string/setting_reset_openface_server"
         android:orderInCategory="100"
         />
+    <item android:id="@+id/setting_load_state"
+        android:title="load Openface server state"
+        android:orderInCategory="100"
+        />
+    <item android:id="@+id/setting_save_state"
+        android:title="save Openface server state"
+        android:orderInCategory="100"
+        />
 </menu>
