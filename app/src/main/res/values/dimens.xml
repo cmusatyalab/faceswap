@@ -7,4 +7,8 @@
     <dimen name="tab_padding_bottom">16dp</dimen>
     <dimen name="tab_label">14sp</dimen>
     <dimen name="custom_tab_layout_height">72dp</dimen>
+
+    <dimen name="file_picker_lib_default_icon_size">24dp</dimen>
+    <dimen name="file_picker_lib_default_icon_padding">6dp</dimen>
+
 </resources>

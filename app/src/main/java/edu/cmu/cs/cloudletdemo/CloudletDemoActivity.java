@@ -15,22 +15,17 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.InputType;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
+
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import edu.cmu.cs.IO.DirectoryPicker;
@@ -38,6 +33,9 @@ import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
 import edu.cmu.cs.gabriel.R;
+import filepickerlibrary.FilePickerActivity;
+import filepickerlibrary.enums.Request;
+import filepickerlibrary.enums.Scope;
 
 public class CloudletDemoActivity extends AppCompatActivity implements
         GabrielConfigurationAsyncTask.AsyncResponse {
@@ -198,9 +196,22 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             }
 
             if (success) {
-                Intent intent = new Intent(this, DirectoryPicker.class);
-                startActivityForResult(intent, DirectoryPicker.PICK_DIRECTORY);
+                Intent filePickerActivity = new Intent(this, FilePickerActivity.class);
+                filePickerActivity.putExtra(FilePickerActivity.SCOPE, Scope.ALL);
+                filePickerActivity.putExtra(FilePickerActivity.REQUEST, Request.FILE);
+                filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_FAB_COLOR_ID,
+                        R.color.colorAccent);
+                filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_COLOR_ID,
+                        R.color.colorPrimary);
+                startActivityForResult(filePickerActivity, FilePickerActivity.REQUEST_FILE);
 
+//                Intent filePickerDialogIntent = new Intent(this, FilePickerActivity.class);
+//                filePickerDialogIntent.putExtra(FilePickerActivity.THEME_TYPE, ThemeType.DIALOG);
+//                filePickerDialogIntent.putExtra(FilePickerActivity.REQUEST, Request.FILE);
+//                startActivityForResult(filePickerDialogIntent, FilePickerActivity.REQUEST_FILE);
+
+//                Intent intent = new Intent(this, DirectoryPicker.class);
+//                startActivityForResult(intent, DirectoryPicker.PICK_DIRECTORY);
             }
             return true;
         }
