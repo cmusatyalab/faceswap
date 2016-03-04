@@ -2,12 +2,7 @@ package edu.cmu.cs.gabriel;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
-import android.content.Intent;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.Environment;
-import android.os.Handler;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -17,24 +12,13 @@ import org.json.JSONObject;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Objects;
 
-import edu.cmu.cs.IO.DirectoryPicker;
 import edu.cmu.cs.gabriel.network.NetworkProtocol;
-import edu.cmu.cs.gabriel.network.VideoControlThread;
 
 /**
  * Created by junjuew on 2/2/16.
@@ -63,7 +47,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
 
     // you may separate this or combined to caller class.
     public interface AsyncResponse {
-        void processFinish(String action, boolean output, byte[] extra);
+        void onGabrielConfigurationAsyncTaskFinish(String action, boolean output, byte[] extra);
     }
 
     public GabrielConfigurationAsyncTask(Activity activity,
@@ -277,7 +261,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
             dialog.dismiss();
         }
         if (null != this.delegate){
-            delegate.processFinish(this.action, bgResult, extra);
+            delegate.onGabrielConfigurationAsyncTaskFinish(this.action, bgResult, extra);
         }
         if (null!=uiMsg){
             Log.i("configurationAsyncTask", "success: " + bgResult + ". " + uiMsg);

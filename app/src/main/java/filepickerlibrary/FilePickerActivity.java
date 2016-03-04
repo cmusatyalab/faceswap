@@ -54,7 +54,7 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 
-import edu.cmu.cs.cloudletdemo.UIUtils;
+import edu.cmu.cs.utils.EditTextAlertDialog;
 import edu.cmu.cs.gabriel.R;
 import filepickerlibrary.adapter.FileListAdapter;
 import filepickerlibrary.enums.MimeType;
@@ -502,18 +502,27 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
                         GregorianCalendar cal = new GregorianCalendar();
                         dateFormat.setTimeZone(cal.getTimeZone());
                         String hint = "openface_"+ dateFormat.format(cal.getTime()) +".txt";
-                        UIUtils uiUtils = new UIUtils();
-                        uiUtils.createExampleDialog(mContext, "Save",
-                                "Please Enter a File Name", hint, new UIUtils.DialogEditTextResultListener() {
-                                    @Override
-                                    public void onDialogEditTextResult(String result) {
-                                        Intent returnIntent = new Intent();
-                                        File userInputFile = new File(currentFile, result);
-                                        returnIntent.putExtra(INTENT_EXTRA_ACTION_READ, actionRead);
-                                        returnIntent.putExtra(FILE_EXTRA_DATA_PATH, userInputFile.getAbsolutePath());
-                                        quitAcitivty(returnIntent);
-                                    }
-                                });
+                        new EditTextAlertDialog(mContext, new EditTextAlertDialog.DialogEditTextResultListener() {
+                            @Override
+                            public void onDialogEditTextResult(String result) {
+                                Intent returnIntent = new Intent();
+                                File userInputFile = new File(currentFile, result);
+                                returnIntent.putExtra(INTENT_EXTRA_ACTION_READ, actionRead);
+                                returnIntent.putExtra(FILE_EXTRA_DATA_PATH, userInputFile.getAbsolutePath());
+                                quitAcitivty(returnIntent);
+                            }
+                        }).createDialog("Save", "Please Enter a File Name", hint);
+//                        uiUtils.createExampleDialog(mContext, "Save",
+//                                "Please Enter a File Name", hint, new UIUtils.DialogEditTextResultListener() {
+//                                    @Override
+//                                    public void onDialogEditTextResult(String result) {
+//                                        Intent returnIntent = new Intent();
+//                                        File userInputFile = new File(currentFile, result);
+//                                        returnIntent.putExtra(INTENT_EXTRA_ACTION_READ, actionRead);
+//                                        returnIntent.putExtra(FILE_EXTRA_DATA_PATH, userInputFile.getAbsolutePath());
+//                                        quitAcitivty(returnIntent);
+//                                    }
+//                                });
                     } else {
                         if (currentFile.isDirectory()) {
                             curDirectory = currentFile;

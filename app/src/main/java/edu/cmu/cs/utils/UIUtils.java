@@ -1,9 +1,10 @@
-package edu.cmu.cs.cloudletdemo;
+package edu.cmu.cs.utils;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Environment;
 import android.util.Log;
 import android.view.View;
@@ -25,78 +26,42 @@ import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 
 import edu.cmu.cs.gabriel.Const;
+import edu.cmu.cs.gabriel.R;
+import filepickerlibrary.FilePickerActivity;
+import filepickerlibrary.enums.Request;
+import filepickerlibrary.enums.Scope;
 
 /**
  * Created by junjuew on 3/2/16.
  */
 public class UIUtils {
     private static final String TAG = "UIUtils";
-    private EditText dialogInputTextEdit;
-    public String inputDialogResult;
-    private DialogEditTextResultListener delegate;
 
     /**
-     * Create and return an example alert dialog with an edit text box.
+     * create an intent to start file picker activity
+     * @param m
+     * @param isRead
+     * @return
      */
-    public Dialog createExampleDialog(Context m, String title, String msg,
-                                      String hint,
-                                      DialogEditTextResultListener delegate) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(m);
-        builder.setTitle(title);
-        builder.setMessage(msg);
-
-        // Use an EditText view to get user input.
-        final EditText input = new EditText(m);
-        input.setText(hint);
-        dialogInputTextEdit = input;
-        inputDialogResult=null;
-        builder.setView(input);
-
-        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int whichButton) {
-            }
-        });
-
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                return;
-            }
-        });
-
-        this.delegate=delegate;
-        AlertDialog alertDialog = builder.create();
-        alertDialog.show();
-        Button customOkButton = alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
-        customOkButton.setOnClickListener(new CustomListener(alertDialog));
-        return alertDialog;
+    public static Intent prepareForResultIntentForFilePickerActivity(Context m, boolean isRead) {
+        Log.d(TAG, "starting file picker activity...");
+        Intent filePickerActivity = new Intent(m, FilePickerActivity.class);
+        filePickerActivity.putExtra(FilePickerActivity.SCOPE, Scope.ALL);
+        filePickerActivity.putExtra(FilePickerActivity.REQUEST, Request.FILE);
+        filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_FAB_COLOR_ID,
+                R.color.colorAccent);
+        filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_COLOR_ID,
+                R.color.colorPrimary);
+        filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_ACTION_READ,
+                isRead);
+        return filePickerActivity;
     }
 
-    class CustomListener implements View.OnClickListener {
-        private final Dialog dialog;
-        public CustomListener(Dialog dialog) {
-            this.dialog = dialog;
-        }
-        @Override
-        public void onClick(View v) {
-            inputDialogResult = dialogInputTextEdit.getText().toString();
-            Log.d(TAG, "user input: " + inputDialogResult);
-            if (null != delegate){
-                delegate.onDialogEditTextResult(inputDialogResult);
-            }
-            this.dialog.dismiss();
-            return;
-        }
-    }
 
-    public interface DialogEditTextResultListener {
-        void onDialogEditTextResult(String result);
-    }
 
 
     /* Checks if external storage is available for read and write */
-    public boolean isExternalStorageWritable() {
+    private static boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state)) {
             return true;
@@ -105,7 +70,7 @@ public class UIUtils {
     }
 
     /* Checks if external storage is available to at least read */
-    public boolean isExternalStorageReadable() {
+    private static boolean isExternalStorageReadable() {
         String state = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(state) ||
                 Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
@@ -114,7 +79,7 @@ public class UIUtils {
         return false;
     }
 
-    public byte[] loadFromFile(File file){
+    public static byte[] loadFromFile(File file){
         Log.d(TAG, "loading openface state string to file...");
         if (isExternalStorageReadable()) {
             if (file.exists() && file.isFile() && file.canRead()) {
@@ -142,7 +107,7 @@ public class UIUtils {
         return null;
     }
 
-    public boolean saveToFile(File file, byte[] val){
+    public static boolean saveToFile(File file, byte[] val){
         try{
             Log.d(TAG, "saving openface state string to file...");
             if (isExternalStorageWritable()){
