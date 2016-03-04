@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -24,6 +25,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -36,6 +38,9 @@ import edu.cmu.cs.gabriel.R;
 import filepickerlibrary.FilePickerActivity;
 import filepickerlibrary.enums.Request;
 import filepickerlibrary.enums.Scope;
+
+import static edu.cmu.cs.CustomExceptions.CustomExceptions.notifyError;
+import static edu.cmu.cs.cloudletdemo.NetworkUtils.isOnline;
 
 public class CloudletDemoActivity extends AppCompatActivity implements
         GabrielConfigurationAsyncTask.AsyncResponse {
@@ -54,13 +59,13 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     protected static final String
             IPV4Pattern = "(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])";
     protected static final String IPV6Pattern = "([0-9a-f]{1,4}:){7}([0-9a-f]){1,4}";
-
+    private byte[] asyncResponseExtra=null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (!isOnline()){
-            notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, true);
+        if (!isOnline(this)){
+            notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, true, this);
         } else {
             setContentView(R.layout.activity_cloudlet_demo);
 
@@ -95,7 +100,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void processFinish(String action, boolean output, byte[] extra) {
+    public void processFinish(String action, boolean success, byte[] extra) {
         if (action.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
             String serverLocation ="";
             if (curModId == R.id.setting_cloudlet_ip){
@@ -104,7 +109,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 serverLocation="Cloud";
             }
 
-            if (!output){
+            if (!success){
                 createExampleDialog("Settings", "No Gabriel Server Found. \n" +
                         "Please enter a Gabriel Server IP (" + serverLocation + "): ");
             } else {
@@ -118,15 +123,80 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 curModId = -1;
             }
         } else if (action.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE)){
-            Log.d(TAG, "let user select where to download open face state in");
-            Intent intent = new Intent(this, DirectoryPicker.class);
-            startActivityForResult(intent, DirectoryPicker.PICK_DIRECTORY);
+            Log.d(TAG, "download state finished. success? " + success);
+            if (success){
+                saveStateToFile(extra);
+            }
         }
-
     }
 
+    /**
+     * save downloaded save to file
+     * @param extra
+     */
+    private void saveStateToFile(byte[] extra){
+        Log.d(TAG, "let user select where to download open face state in");
+        asyncResponseExtra=extra;
+        Intent filePickerActivity = new Intent(this, FilePickerActivity.class);
+        filePickerActivity.putExtra(FilePickerActivity.SCOPE, Scope.ALL);
+        filePickerActivity.putExtra(FilePickerActivity.REQUEST, Request.FILE);
+        filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_FAB_COLOR_ID,
+                R.color.colorAccent);
+        filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_COLOR_ID,
+                R.color.colorPrimary);
+        startActivityForResult(filePickerActivity, FilePickerActivity.REQUEST_FILE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(requestCode == FilePickerActivity.REQUEST_FILE && resultCode==RESULT_OK){
+            Bundle extras = data.getExtras();
+            String path = (String) extras.get(FilePickerActivity.FILE_EXTRA_DATA_PATH);
+            Log.d(TAG, "path: " + path);
+            boolean isLoad=(boolean)extras.get(FilePickerActivity.INTENT_EXTRA_ACTION_READ);
+            UIUtils uiHelper=new UIUtils();
+            File file=new File(path);
+            if (isLoad){
+                byte[] stateData=uiHelper.loadFromFile(file);
+                if (stateData!=null){
+                    //send asyncrequest
+                    sendOpenFaceLoadStateRequest(stateData);
+                } else {
+                    Log.e(TAG, "wrong file format");
+                    Toast.makeText(this, "wrong file format", Toast.LENGTH_LONG).show();
+                }
+            } else {
+                if (this.asyncResponseExtra!=null){
+                    uiHelper.saveToFile(file, this.asyncResponseExtra);
+                }
+            }
+        }
+    }
+
+    /**
+     * send load state control request to OpenFaceServer
+     * @param stateData
+     */
+    private boolean sendOpenFaceLoadStateRequest(byte[] stateData) {
+        if (!checkOnline()){
+            return false;
+        }
+        //fire off upload state async task
+        //return value will be called into processFinish
+        GabrielConfigurationAsyncTask task =
+                new GabrielConfigurationAsyncTask(this,
+                        Const.CLOUDLET_GABRIEL_IP,
+                        GabrielClientActivity.VIDEO_STREAM_PORT,
+                        GabrielClientActivity.RESULT_RECEIVING_PORT,
+                        Const.GABRIEL_CONFIGURATION_UPLOAD_STATE,
+                        this);
+        task.execute(stateData);
+        return true;
+    }
+
+
     public void sendOpenFaceResetRequest(String remoteIP){
-        boolean online = isOnline();
+        boolean online = isOnline(this);
         if (online){
             GabrielConfigurationAsyncTask task =
                     new GabrielConfigurationAsyncTask(this,
@@ -139,17 +209,17 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             Log.d(TAG, "send reset openface server request");
             childFragment.clearTrainedPeople();
         } else {
-            notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, false);
+            notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, false, this);
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == DirectoryPicker.PICK_DIRECTORY && resultCode == RESULT_OK) {
-            Bundle extras = data.getExtras();
-            String path = (String) extras.get(DirectoryPicker.CHOSEN_DIRECTORY);
-            Log.d(TAG, "path: " + path);
+
+    private boolean checkOnline(){
+        if (isOnline(this)) {
+            return true;
         }
+        notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, false, this);
+        return false;
     }
 
     @Override
@@ -173,46 +243,56 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 
         if (id == R.id.setting_reset_openface_server) {
             //check wifi state
-            sendOpenFaceResetRequest(Const.CLOUDLET_GABRIEL_IP);
-            return true;
+            if(checkOnline()){
+                sendOpenFaceResetRequest(Const.CLOUDLET_GABRIEL_IP);
+                return true;
+            }
+            return false;
+        }
+
+        if (id==R.id.setting_load_state){
+            //check online
+            if (!checkOnline()){
+                return false;
+            }
+            //launch activity result to readin states
+            startloadStateProcedures();
         }
 
         if (id == R.id.setting_save_state) {
+            if (!checkOnline()){
+                return false;
+            }
+            //fire off download state async task
+            //return value will be called into processFinish
             GabrielConfigurationAsyncTask task =
                     new GabrielConfigurationAsyncTask(this,
                             Const.CLOUDLET_GABRIEL_IP,
                             GabrielClientActivity.VIDEO_STREAM_PORT,
                             GabrielClientActivity.RESULT_RECEIVING_PORT,
-                            Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE);
-            task.execute(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE);
-            boolean success=false;
-            try {
-                task.get();
-                success=true;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
-
-            if (success) {
-                Intent filePickerActivity = new Intent(this, FilePickerActivity.class);
-                filePickerActivity.putExtra(FilePickerActivity.SCOPE, Scope.ALL);
-                filePickerActivity.putExtra(FilePickerActivity.REQUEST, Request.FILE);
-                filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_FAB_COLOR_ID,
-                        R.color.colorAccent);
-                filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_COLOR_ID,
-                        R.color.colorPrimary);
-                startActivityForResult(filePickerActivity, FilePickerActivity.REQUEST_FILE);
-
-//                Intent filePickerDialogIntent = new Intent(this, FilePickerActivity.class);
-//                filePickerDialogIntent.putExtra(FilePickerActivity.THEME_TYPE, ThemeType.DIALOG);
-//                filePickerDialogIntent.putExtra(FilePickerActivity.REQUEST, Request.FILE);
-//                startActivityForResult(filePickerDialogIntent, FilePickerActivity.REQUEST_FILE);
-
-//                Intent intent = new Intent(this, DirectoryPicker.class);
-//                startActivityForResult(intent, DirectoryPicker.PICK_DIRECTORY);
-            }
+                            Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE,
+                            this);
+            task.execute();
+//            boolean success=false;
+//            try {
+//                task.get();
+//                success=true;
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            } catch (ExecutionException e) {
+//                e.printStackTrace();
+//            }
+//
+//            if (success) {
+//                Intent filePickerActivity = new Intent(this, FilePickerActivity.class);
+//                filePickerActivity.putExtra(FilePickerActivity.SCOPE, Scope.ALL);
+//                filePickerActivity.putExtra(FilePickerActivity.REQUEST, Request.FILE);
+//                filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_FAB_COLOR_ID,
+//                        R.color.colorAccent);
+//                filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_COLOR_ID,
+//                        R.color.colorPrimary);
+//                startActivityForResult(filePickerActivity, FilePickerActivity.REQUEST_FILE);
+//            }
             return true;
         }
 
@@ -225,20 +305,21 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         return super.onOptionsItemSelected(item);
     }
 
-    private void notifyError(String msg, final boolean terminate){
-        DialogInterface.OnClickListener error_listener =
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (terminate){
-                            finish();
-                        }
-                    }
-                };
-        new AlertDialog.Builder(this)
-                .setTitle("Error").setMessage(msg)
-                .setNegativeButton("close", error_listener).show();
+    private void startloadStateProcedures() {
+        Log.d(TAG, "ask user to select state file: ");
+        Intent filePickerActivity = new Intent(this, FilePickerActivity.class);
+        filePickerActivity.putExtra(FilePickerActivity.SCOPE, Scope.ALL);
+        filePickerActivity.putExtra(FilePickerActivity.REQUEST, Request.FILE);
+        filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_FAB_COLOR_ID,
+                R.color.colorAccent);
+        filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_COLOR_ID,
+                R.color.colorPrimary);
+        filePickerActivity.putExtra(FilePickerActivity.INTENT_EXTRA_ACTION_READ,
+                true);
+        startActivityForResult(filePickerActivity, FilePickerActivity.REQUEST_FILE);
+        //file path result will be returned in onActivityResult
     }
+
 
 //    private void notifyError(String msg, final boolean terminate){
 //        DialogInterface.OnClickListener error_listener =
@@ -255,12 +336,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 //                .setNegativeButton("close", error_listener).show();
 //    }
 
-    public boolean isOnline() {
-        ConnectivityManager connMgr = (ConnectivityManager)
-                getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        return (networkInfo != null && networkInfo.isConnected());
-    }
 
 
     class ViewPagerAdapter extends FragmentPagerAdapter {
@@ -370,5 +445,4 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             return;
         }
     }
-
 }

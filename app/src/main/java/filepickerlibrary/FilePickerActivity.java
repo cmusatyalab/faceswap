@@ -51,7 +51,10 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.devpaul.materiallibrary.views.MaterialFloatingActionButton;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.GregorianCalendar;
 
+import edu.cmu.cs.cloudletdemo.UIUtils;
 import edu.cmu.cs.gabriel.R;
 import filepickerlibrary.adapter.FileListAdapter;
 import filepickerlibrary.enums.MimeType;
@@ -64,7 +67,7 @@ import filepickerlibrary.enums.ThemeType;
  * Created by Paul Tsouchlos
  * Contains all the logic for selecting files or directories.
  */
-public class FilePickerActivity extends ListActivity implements NameFileDialogInterface {
+public class FilePickerActivity extends ListActivity implements NameFileDialogInterface{
 
     /**
      * Request code for when you want the file path to a specific file.
@@ -133,9 +136,20 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
      */
     public static final String MIME_TYPE = "mimeType";
     /**
+     * by default action is write
+     * write mode:
+     *   has save button, request user to enter in a file name
+     * read mode:
+     *   readfile content when user select it
+     */
+    public static final String INTENT_EXTRA_ACTION_READ = "actionRead";
+
+
+    /**
      * Request code for app permissions.
      */
     private static final int REQUEST_FOR_READ_EXTERNAL_STORAGE = 107;
+
     /**
      * Array of files
      */
@@ -226,6 +240,13 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
      * {@code int} used to store the drawable resource id sent as an extra to this activity.
      */
     private int drawableId;
+
+    /**
+     * indicate whether this activity is started for reading a file or writing a file
+     * This determines how a file path is returned
+     */
+    private boolean actionRead;
+
     /**
      * (@code int) saves the previous first visible item when scrolling, used to make the buttons
      * disappear
@@ -253,7 +274,7 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
 
         setThemeType(themeType);
 
-        areButtonsShowing = false;
+//        areButtonsShowing = false;
 
 //        try {
 //            getActionBar().setDisplayHomeAsUpEnabled(true);
@@ -271,10 +292,16 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
             mimeType = null;
         }
 
+
         //set up the animations
         setUpAnimations();
 
         Intent givenIntent = getIntent();
+
+        actionRead=false;
+        if (givenIntent.getExtras().containsKey(INTENT_EXTRA_ACTION_READ)){
+            actionRead= (boolean) givenIntent.getExtras().get(INTENT_EXTRA_ACTION_READ);
+        }
 
         //get the scope type and request code. Defaults are all files and request of a directory
         //path.
@@ -300,14 +327,14 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
                 if (areButtonsShowing) {
-                    if (Math.abs(firstVisibleItem - mLastFirstVisibleItem) >= 3) {
-                        hideButtons();
-                        adapter.setSelectedPosition(-1);
-                        mLastFirstVisibleItem = firstVisibleItem;
-                    } else if (firstVisibleItem > adapter.getSelectedPosition()) {
-                        hideButtons();
-                        adapter.setSelectedPosition(-1);
-                    }
+//                    if (Math.abs(firstVisibleItem - mLastFirstVisibleItem) >= 3) {
+//                        hideButtons();
+//                        adapter.setSelectedPosition(-1);
+//                        mLastFirstVisibleItem = firstVisibleItem;
+//                    } else if (firstVisibleItem > adapter.getSelectedPosition()) {
+//                        hideButtons();
+//                        adapter.setSelectedPosition(-1);
+//                    }
                 } else {
                     mLastFirstVisibleItem = firstVisibleItem;
                 }
@@ -368,6 +395,7 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
         } else {
             init();
         }
+        areButtonsShowing = true;
     }
 
     @Override
@@ -430,6 +458,10 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
         }
     }
 
+    private void quitAcitivty(Intent result){
+        this.setResult(RESULT_OK, result);
+        this.finish();
+    }
     /**
      * Initializes all the views in the layout of the activity.
      */
@@ -448,6 +480,9 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
             addButton.setButtonColor(getResources().getColor(fabColorId));
         }
         selectButton = (Button) findViewById(R.id.select_button);
+        if (actionRead){
+            selectButton.setText("load");
+        }
         selectButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -462,64 +497,93 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
                         Snackbar.make(getWindow().getDecorView(), R.string.file_picker_snackbar_select_directory_message, Snackbar.LENGTH_SHORT).show();
                     }
                 } else { //request code is for a file
-                    if (currentFile.isDirectory()) {
-                        curDirectory = currentFile;
-                        new UpdateFilesTask(FilePickerActivity.this).execute(curDirectory);
+                    if (!actionRead){
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("MM_dd_hh_mm_ss");
+                        GregorianCalendar cal = new GregorianCalendar();
+                        dateFormat.setTimeZone(cal.getTimeZone());
+                        String hint = "openface_"+ dateFormat.format(cal.getTime()) +".txt";
+                        UIUtils uiUtils = new UIUtils();
+                        uiUtils.createExampleDialog(mContext, "Save",
+                                "Please Enter a File Name", hint, new UIUtils.DialogEditTextResultListener() {
+                                    @Override
+                                    public void onDialogEditTextResult(String result) {
+                                        Intent returnIntent = new Intent();
+                                        File userInputFile = new File(currentFile, result);
+                                        returnIntent.putExtra(INTENT_EXTRA_ACTION_READ, actionRead);
+                                        returnIntent.putExtra(FILE_EXTRA_DATA_PATH, userInputFile.getAbsolutePath());
+                                        quitAcitivty(returnIntent);
+                                    }
+                                });
                     } else {
-                        if (!TextUtils.isEmpty(mimeType)) {
-                            MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
-                            String requiredExtension = "." + mimeTypeMap.getExtensionFromMimeType(mimeType);
-                            if (requiredExtension.equalsIgnoreCase(fileExt(currentFile.toString()))) {
+                        if (currentFile.isDirectory()) {
+                            curDirectory = currentFile;
+                            new UpdateFilesTask(FilePickerActivity.this).execute(curDirectory);
+                        } else {
+                            if (!TextUtils.isEmpty(mimeType)) {
+                                MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
+                                String requiredExtension = "." + mimeTypeMap.getExtensionFromMimeType(mimeType);
+                                if (requiredExtension.equalsIgnoreCase(fileExt(currentFile.toString()))) {
+                                    data = new Intent();
+                                    data.putExtra(FILE_EXTRA_DATA_PATH, currentFile.getAbsolutePath());
+                                    data.putExtra(INTENT_EXTRA_ACTION_READ, actionRead);
+                                    setResult(RESULT_OK, data);
+                                    finish();
+                                } else {
+                                    Snackbar.make(getWindow().getDecorView(),
+                                            String.format(getString(R.string.file_picker_snackbar_select_file_ext_message),
+                                                    requiredExtension), Snackbar.LENGTH_SHORT).show();
+                                }
+                            } else {
                                 data = new Intent();
                                 data.putExtra(FILE_EXTRA_DATA_PATH, currentFile.getAbsolutePath());
+                                data.putExtra(INTENT_EXTRA_ACTION_READ, actionRead);
                                 setResult(RESULT_OK, data);
                                 finish();
-                            } else {
-                                Snackbar.make(getWindow().getDecorView(), String.format(getString(R.string.file_picker_snackbar_select_file_ext_message), requiredExtension), Snackbar.LENGTH_SHORT).show();
                             }
-                        } else {
-                            data = new Intent();
-                            data.putExtra(FILE_EXTRA_DATA_PATH, currentFile.getAbsolutePath());
-                            setResult(RESULT_OK, data);
-                            finish();
                         }
                     }
                 }
             }
         });
 
-        openButton = (Button) findViewById(R.id.open_button);
-        openButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (currentFile.isDirectory()) {
-                    curDirectory = currentFile;
-                    directoryTitle.setText(curDirectory.getName());
 
-                    new UpdateFilesTask(FilePickerActivity.this).execute(curDirectory);
-                } else {
-                    Intent newIntent = new Intent(Intent.ACTION_VIEW);
-                    String file = currentFile.toString();
-                    if (file != null) {
-                        newIntent.setDataAndType(Uri.fromFile(currentFile), mimeType);
-                        newIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        try {
-                            startActivity(newIntent);
-                        } catch (ActivityNotFoundException e) {
-                            Snackbar.make(getWindow().getDecorView(), R.string.file_picker_snackbar_no_file_type_handler, Snackbar.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        Snackbar.make(getWindow().getDecorView(), R.string.file_picker_snackbar_no_read_type, Snackbar.LENGTH_SHORT).show();
-                    }
-
-                }
-            }
-        });
+//
+//        openButton = (Button) findViewById(R.id.open_button);
+//        openButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                openDirectory();
+//            }
+//        });
 
         buttonContainer = (LinearLayout) findViewById(R.id.button_container);
-        buttonContainer.setVisibility(View.INVISIBLE);
+//        buttonContainer.setVisibility(View.INVISIBLE);
 
         header = (RelativeLayout) findViewById(R.id.header_container);
+    }
+
+    private void openDirectory(){
+        if (currentFile.isDirectory()) {
+            curDirectory = currentFile;
+            directoryTitle.setText(curDirectory.getName());
+
+            new UpdateFilesTask(FilePickerActivity.this).execute(curDirectory);
+        } else {
+            Intent newIntent = new Intent(Intent.ACTION_VIEW);
+            String file = currentFile.toString();
+            if (file != null) {
+                newIntent.setDataAndType(Uri.fromFile(currentFile), mimeType);
+                newIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                try {
+                    startActivity(newIntent);
+                } catch (ActivityNotFoundException e) {
+                    Snackbar.make(getWindow().getDecorView(), R.string.file_picker_snackbar_no_file_type_handler, Snackbar.LENGTH_SHORT).show();
+                }
+            } else {
+                Snackbar.make(getWindow().getDecorView(), R.string.file_picker_snackbar_no_read_type, Snackbar.LENGTH_SHORT).show();
+            }
+
+        }
     }
 
     /**
@@ -598,11 +662,14 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
             currentFile = files[position - 1];
         }
         if (adapter.getSelectedPosition() == position) {
-            hideButtons();
+//            hideButtons();
             adapter.setSelectedPosition(-1);
         } else {
             adapter.setSelectedPosition(position - 1);
             showButtons();
+        }
+        if (currentFile.isDirectory()){
+            openDirectory();
         }
     }
 
@@ -656,6 +723,7 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
         }
     }
 
+
     /**
      * Class that updates the list view with a new array of files. Resets the adapter and the
      * directory title.
@@ -684,7 +752,7 @@ public class FilePickerActivity extends ListActivity implements NameFileDialogIn
             dialog.setMessage(getString(R.string.file_picker_progress_dialog_loading));
             dialog.setCancelable(false);
             dialog.show();
-            hideButtons();
+//            hideButtons();
             setListAdapter(null);
             super.onPreExecute();
         }

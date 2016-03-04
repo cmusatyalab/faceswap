@@ -32,7 +32,11 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        >
+
+    <!--        android:layout_height="match_parent"
+    -->
 
         <RelativeLayout
             android:id="@+id/header_container"
@@ -57,11 +61,31 @@
         </RelativeLayout>
 
 
+
+        <LinearLayout
+            android:id="@+id/button_container"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_gravity="bottom"
+            android:layout_alignParentBottom="true"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/select_button"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@color/card_background"
+                android:text="Save"
+                android:textColor="@android:color/primary_text_light_nodisable"/>
+        </LinearLayout>
+
         <ListView
             android:id="@android:id/list"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_below="@id/header_container"
+            android:layout_above="@id/button_container"
             android:animateLayoutChanges="true"
             android:choiceMode="singleChoice"
             android:divider="@null"
@@ -99,38 +123,26 @@
         fab:mat_fab_colorNormal="@android:color/holo_blue_bright"
         fab:mat_fab_size="mini"/>
 
-    <LinearLayout
-        android:id="@+id/button_container"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_gravity="bottom"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/open_button"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@android:color/white"
-            android:text="Open"
-            android:textColor="@android:color/primary_text_light_nodisable"/>
-
-        <View
-            android:layout_width="1dip"
-            android:layout_height="match_parent"
-            android:layout_gravity="center_vertical"
-            android:layout_marginBottom="8dp"
-            android:layout_marginTop="8dp"
-            android:background="@android:color/darker_gray"/>
-
-        <Button
-            android:id="@+id/select_button"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:background="@color/card_background"
-            android:text="Select"
-            android:textColor="@android:color/primary_text_light_nodisable"/>
-    </LinearLayout>
 
 </FrameLayout>
+
+<!--
+            <Button
+                android:id="@+id/open_button"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@android:color/white"
+                android:text="Open"
+                android:textColor="@android:color/primary_text_light_nodisable"/>
+
+            <View
+                android:layout_width="1dip"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="8dp"
+                android:background="@android:color/darker_gray"/>
+
+
+-->

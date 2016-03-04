@@ -58,6 +58,8 @@ public class Const {
     public static String CONNECTIVITY_NOT_AVAILABLE = "Not Connected to the Internet. Please enable " +
             "network connections first.";
 
+	//save openface state file
 	public static String FILE_ROOT_PATH = "OpenFaceState";
+	public static String OPENFACE_STATE_FILE_MAGIC_SEQUENCE="OpenFaceStateSequence\n";
 
 }

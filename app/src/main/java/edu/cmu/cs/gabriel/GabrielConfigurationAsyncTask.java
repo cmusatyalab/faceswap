@@ -30,6 +30,7 @@ import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Objects;
 
 import edu.cmu.cs.IO.DirectoryPicker;
 import edu.cmu.cs.gabriel.network.NetworkProtocol;
@@ -38,7 +39,7 @@ import edu.cmu.cs.gabriel.network.VideoControlThread;
 /**
  * Created by junjuew on 2/2/16.
  */
-public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Boolean>{
+public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Boolean>{
     private static final String LOG_TAG = "ConfigurationAsyncTask";
     private Activity callingActivity;
 
@@ -265,6 +266,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
 
     @Override
     protected void onPreExecute() {
+        Log.d(LOG_TAG, "async task: "+action);
         dialog.setMessage("Communicating to Backend Server ... Please wait");
         dialog.show();
     }
@@ -294,7 +296,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
     }
 
     @Override
-    protected Boolean doInBackground(String... urls) {
+    protected Boolean doInBackground(Object... inputData) {
         Boolean success =false;
         String task = action;
         // task is to sync state
@@ -341,7 +343,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
             try{
                 setupConnection(remoteIP, sendToPort, recvFromPort);
                 //get state
-                String name = urls[0];
+                String name = (String) inputData[0];
                 byte[] header= generateHeader("remove_person", name);
                 byte[] data= "dummpy".getBytes();
                 sendPacket(header, data);
@@ -364,63 +366,32 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<String, Integer, Bo
                 String resp = receiveMsg(networkReader);
                 String openfaceState=parseResponsePacket(resp);
                 extra=openfaceState.getBytes();
-                try{
-                    Log.d(LOG_TAG, "saving openface state string to file...");
-                    if (isExternalStorageWritable()){
-                        // Get the directory for the user's public pictures directory.
-                        File root = new File(Environment.getExternalStorageDirectory(),
-                                Const.FILE_ROOT_PATH);
-//                        if (!root.mkdirs()) {
-//                            throw new FileNotFoundException("Directory cannot be created: "+root);
-//                        }
-                        root.mkdirs();
-                        SimpleDateFormat dateFormat = new SimpleDateFormat("MM_dd_hh_mm_ss");
-                        GregorianCalendar cal = new GregorianCalendar();
-                        dateFormat.setTimeZone(cal.getTimeZone());
-                        File file = new File(root, "openface_"+ dateFormat.format(cal.getTime())
-                                +".txt");
-                        FileOutputStream f = new FileOutputStream(file);
-                        PrintWriter pw = new PrintWriter(f);
-                        pw.print(openfaceState);
-                        pw.flush();
-                        pw.close();
-                        f.close();
-                        success = true;
-                        uiMsg="saved state to: " + file;
-                    } else {
-                        uiMsg="No permission to write external storage";
-                    }
-                } catch (FileNotFoundException e){
-                    uiMsg=e.getMessage();
-                }
+                success=true;
             } catch (IOException e){
                 e.printStackTrace();
                 Log.e(LOG_TAG, "IO exception sync state failed");
             }
         } else if (task.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)){
-
+            byte[] stateData= (byte[]) inputData[0];
+            try{
+                setupConnection(remoteIP, sendToPort, recvFromPort);
+                //get state
+                byte[] header= generateHeader("load_state");
+                byte[] data=stateData;
+                sendPacket(header, data);
+                String resp = receiveMsg(networkReader);
+                String respVal=parseResponsePacket(resp);
+                if (respVal.toLowerCase().equals("true")){
+                    success=true;
+                }
+            } catch (IOException e){
+                e.printStackTrace();
+                Log.e(LOG_TAG, "IO exception sync state failed");
+            }
         }
         closeConnection();
         return success;
     }
 
-    /* Checks if external storage is available for read and write */
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
-    }
-
-    /* Checks if external storage is available to at least read */
-    public boolean isExternalStorageReadable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            return true;
-        }
-        return false;
-    }
 
 }

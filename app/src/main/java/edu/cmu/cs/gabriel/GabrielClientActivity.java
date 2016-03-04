@@ -54,6 +54,8 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import static edu.cmu.cs.CustomExceptions.CustomExceptions.notifyError;
+
 public class GabrielClientActivity extends Activity {
 
 	private static final String LOG_TAG = "GabrielClientActivity";
@@ -83,6 +85,7 @@ public class GabrielClientActivity extends Activity {
 	private HashMap<String, String> faceTable;
 	private boolean reset = false;
 	private Bitmap curFrame = null;
+	private Activity mActivity=null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -123,11 +126,18 @@ public class GabrielClientActivity extends Activity {
         boolean online = isOnline();
         if (!online){
             Log.d(LOG_TAG, "no internet connectivity");
-            notifyError(Const.CONNECTIVITY_NOT_AVAILABLE);
+			notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					terminate();
+					finish();
+				}
+			},mActivity);
         } else {
             init_once();
             init_experiement();
         }
+		mActivity=this;
 	}
 
     public boolean isOnline() {
@@ -327,20 +337,20 @@ public class GabrielClientActivity extends Activity {
 		}
 	}
 
-    private void notifyError(String msg){
-        DialogInterface.OnClickListener error_listener =
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        terminate();
-                        finish();
-                    }
-                };
-
-        new AlertDialog.Builder(this)
-                .setTitle("Error").setMessage(msg)
-                .setNegativeButton("close", error_listener).show();
-    }
+//    private void notifyError(String msg){
+//        DialogInterface.OnClickListener error_listener =
+//                new DialogInterface.OnClickListener() {
+//                    @Override
+//                    public void onClick(DialogInterface dialog, int which) {
+//                        terminate();
+//                        finish();
+//                    }
+//                };
+//
+//        new AlertDialog.Builder(this)
+//                .setTitle("Error").setMessage(msg)
+//                .setNegativeButton("close", error_listener).show();
+//    }
 
 	private Handler returnMsgHandler = new Handler() {
 		public void handleMessage(Message msg) {
@@ -348,7 +358,13 @@ public class GabrielClientActivity extends Activity {
 				Bundle data = msg.getData();
 				String message = data.getString("message");
 				stopStreaming();
-                notifyError(message);
+                notifyError(message, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+                        terminate();
+                        finish();
+					}
+				},mActivity);
 			}
 
 			//handled by resultReceivingThread!!!
