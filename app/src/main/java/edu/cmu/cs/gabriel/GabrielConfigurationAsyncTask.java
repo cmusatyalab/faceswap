@@ -158,6 +158,15 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         return result;
     }
 
+    private String parseGetPersonResponseData(String response) throws JSONException {
+        JSONObject obj;
+        obj = new JSONObject(response);
+        String result = null;
+        result = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_PERSON);
+        Log.d(LOG_TAG, "resp: " + result.substring(0, Math.min(result.length(), 10)));
+        return result;
+    }
+
     private String parseResponsePacket(String recvData){
         // convert the message to JSON
         JSONObject obj;
@@ -355,22 +364,40 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 e.printStackTrace();
                 Log.e(LOG_TAG, "IO exception sync state failed");
             }
-        } else if (task.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)){
-            byte[] stateData= (byte[]) inputData[0];
+        } else if (task.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)) {
+            byte[] stateData = (byte[]) inputData[0];
+            try {
+                setupConnection(remoteIP, sendToPort, recvFromPort);
+                //get state
+                byte[] header = generateHeader("load_state");
+                byte[] data = stateData;
+                sendPacket(header, data);
+                String resp = receiveMsg(networkReader);
+                String respVal = parseResponsePacket(resp);
+                if (respVal.toLowerCase().equals("true")) {
+                    success = true;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e(LOG_TAG, "IO exception sync state failed");
+            }
+        } else if (task.equals(Const.GABRIEL_CONFIGURATION_GET_PERSON)) {
             try{
                 setupConnection(remoteIP, sendToPort, recvFromPort);
                 //get state
-                byte[] header= generateHeader("load_state");
-                byte[] data=stateData;
+                byte[] header= generateHeader("get_person");
+                byte[] data= "dummpy_long_enough_for_correctness".getBytes();
                 sendPacket(header, data);
                 String resp = receiveMsg(networkReader);
-                String respVal=parseResponsePacket(resp);
-                if (respVal.toLowerCase().equals("true")){
-                    success=true;
-                }
+                String openfaceState=parseResponsePacket(resp);
+                String people=parseGetPersonResponseData(openfaceState);
+                extra=people.getBytes();
+                success=true;
             } catch (IOException e){
                 e.printStackTrace();
                 Log.e(LOG_TAG, "IO exception sync state failed");
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
         }
         closeConnection();

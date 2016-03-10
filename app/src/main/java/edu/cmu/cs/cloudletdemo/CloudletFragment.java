@@ -62,6 +62,7 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             updateCurrentServerIp();
+            getMyAcitivty().sendOpenFaceGetPersonRequest(getMyAcitivty().currentServerIp);
         }
         @Override
         public void onNothingSelected(AdapterView<?> parent) {
@@ -313,6 +314,22 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         });
         builder.setNegativeButton("Cancel", cancelAction);
         return builder.create();
+    }
+
+
+    private String stripQuote(String input){
+        String output = input.replaceAll("^\"|\"$", "");
+        return output;
+    }
+
+    public void populatePersonTable(String[] people){
+        for (String person:people){
+            person=stripQuote(person);
+            if (!trainedPeople.contains(person)){
+                addPersonUIRow(person);
+                trainedPeople.add(person);
+            }
+        }
     }
 
     private void addPersonUIRow(String name) {

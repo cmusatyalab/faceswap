@@ -52,6 +52,7 @@ public class Const {
 	public static String GABRIEL_CONFIGURATION_UPLOAD_STATE="uploadState";
 	public static String GABRIEL_CONFIGURATION_RESET_STATE="reset";
 	public static String GABRIEL_CONFIGURATION_REMOVE_PERSON="remove_person";
+	public static String GABRIEL_CONFIGURATION_GET_PERSON="get_person";
 
 	public static boolean FACE_DEMO_BOUNDING_BOX_ONLY=false;
 

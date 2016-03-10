@@ -20,6 +20,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
@@ -203,7 +204,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                                                       byte[] extra) {
 
         if (action.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
-
             String serverLocation ="";
             if (curModId == R.id.setting_cloudlet_ip){
                 serverLocation="Cloudlet";
@@ -242,10 +242,21 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 Intent intent = prepareForResultIntentForFilePickerActivity(this, false);
                 startActivityForResult(intent, FilePickerActivity.REQUEST_FILE);
             }
+        } else if (action.equals(Const.GABRIEL_CONFIGURATION_GET_PERSON)){
+            Log.d(TAG, "download person finished. success? " + success);
+            if (success){
+                asyncResponseExtra=extra;
+                String peopleString=new String(asyncResponseExtra);
+                Log.i(TAG, "people : " + new String(asyncResponseExtra));
+                //remove bracket
+                String peopleStringNoBracket=peopleString.substring(1,peopleString.length()-1);
+                if (!peopleStringNoBracket.isEmpty()){
+                    String[] people=peopleStringNoBracket.split(",");
+                    childFragment.populatePersonTable(people);
+                }
+            }
         }
-    }
-
-
+}
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -306,6 +317,24 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             task.execute();
             Log.d(TAG, "send reset openface server request to "+ currentServerIp);
             childFragment.clearTrainedPeople();
+        } else {
+            notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, false, this);
+        }
+    }
+
+    //TODO: need to check if there is a gabriel server or not
+    public void sendOpenFaceGetPersonRequest(String remoteIP) {
+        boolean online = isOnline(this);
+        if (online){
+            GabrielConfigurationAsyncTask task =
+                    new GabrielConfigurationAsyncTask(this,
+                            remoteIP,
+                            GabrielClientActivity.VIDEO_STREAM_PORT,
+                            GabrielClientActivity.RESULT_RECEIVING_PORT,
+                            Const.GABRIEL_CONFIGURATION_GET_PERSON,
+                            this);
+            task.execute();
+            Log.d(TAG, "send get person openface server request to "+ currentServerIp);
         } else {
             notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, false, this);
         }

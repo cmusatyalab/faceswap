@@ -22,6 +22,8 @@ public class NetworkProtocol {
 	public static final String CUSTOM_DATA_MESSAGE_TYPE_LOAD_STATE = "load_state";
 	public static final String CUSTOM_DATA_MESSAGE_TYPE_IMG = "image";
 	public static final String CUSTOM_DATA_MESSAGE_VALUE= "value";
+	public static final String CUSTOM_DATA_MESSAGE_TYPE_PERSON= "people";
+
 
 
 	public static final String CUSTOM_DATA_MESSAGE_NUM = "num";
