@@ -44,7 +44,7 @@ import json
 #from scipy.ndimage import imread
 import cProfile, pstats, StringIO
 
-DEBUG = False
+DEBUG = True
 
 prev_timestamp = time.time()*1000
 
@@ -129,6 +129,7 @@ class DummyVideoApp(AppProxyThread):
             interval = cur_timestamp - prev_timestamp
             sys.stdout.write("packet interval: %d\n"%interval)
             start = time.time()
+            sys.stdout.flush()
         
         header_dict = header
 
@@ -147,21 +148,29 @@ class DummyVideoApp(AppProxyThread):
 
         if 'get_state' in header_dict:
             get_state = header_dict['get_state']
-            print 'get openface state'            
+            print 'get openface state'
+            sys.stdout.flush()            
             if get_state:
                 state_string = transformer.openface_client.getState()
                 resp=self.gen_response(AppDataProtocol.TYPE_get_state, state_string)
-#                print 'send out response {}'.format(resp[:10])
-#                sys.stdout.flush()
+                print 'send out response {}'.format(resp[:10])
+                sys.stdout.flush()
                 return resp
 
         if 'load_state' in header_dict:
-            state_string = header_dict['load_state']
-            print 'loading openface state'            
-            transformer.openface_client.setState(state_string)
-            resp=self.gen_response(AppDataProtocol.TYPE_load_state, True)
+            is_load_state = header_dict['load_state']
+            if is_load_state:
+                sys.stdout.write('loading openface state')
+                sys.stdout.write(data)
+                sys.stdout.flush()
+                state_string = data
+                transformer.openface_client.setState(state_string)
+                resp=self.gen_response(AppDataProtocol.TYPE_load_state, True)
+            else:
+                sys.stdout.write('error: has load_state in header, but the value is false')
+                resp=self.gen_response(AppDataProtocol.TYPE_load_state, False)
             return resp
-
+            
         if 'remove_person' in header_dict:
             print 'removing person'
             name = header_dict['remove_person']
