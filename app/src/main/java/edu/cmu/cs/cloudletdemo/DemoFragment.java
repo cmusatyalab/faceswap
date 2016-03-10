@@ -15,6 +15,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TextView;
@@ -47,6 +49,10 @@ public class DemoFragment extends Fragment implements  AdapterView.OnItemSelecte
     protected Button removeRuleButton;
     protected Button resetButton;
     protected Button getStateButton;
+    protected RadioGroup typeRadioGroup;
+    protected RadioButton cloudletRadioButton;
+    protected RadioButton cloudRadioButton;
+    protected Spinner selectServerSpinner;
 
     protected View view;
     protected List<String> spinnerList;
@@ -88,8 +94,15 @@ public class DemoFragment extends Fragment implements  AdapterView.OnItemSelecte
         ipEditText=(EditText)view.findViewById(R.id.cloudletIPEditTextView);
         nameEditText=(EditText)view.findViewById(R.id.nameEditText);
 
+        typeRadioGroup=(RadioGroup)view.findViewById(R.id.type_radiogroup);
+        cloudletRadioButton=(RadioButton)view.findViewById(R.id.radio_cloudlet);
+        cloudRadioButton=(RadioButton)view.findViewById(R.id.radio_cloud);
+        typeRadioGroup.check(R.id.radio_cloudlet);
+
+        selectServerSpinner=(Spinner) view.findViewById(R.id.select_server_spinner);
+
         cloudletRunDemoButton =(Button)view.findViewById(R.id.cloudletRunDemoButton);
-        cloudRunDemoButton =(Button)view.findViewById(R.id.cloudRunDemoButton);
+//        cloudRunDemoButton =(Button)view.findViewById(R.id.cloudRunDemoButton);
 
         addPersonButton = (Button)view.findViewById(R.id.addPersonButton);
         addRuleButton=(Button)view.findViewById(R.id.addSwapRuleButton);

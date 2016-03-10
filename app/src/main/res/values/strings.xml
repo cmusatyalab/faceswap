@@ -44,6 +44,10 @@
 
     <!-- Strings related to Settings -->
     <string name="shared_preference_file_key">edu.cmu.cs.faceswap</string>
+    <string name="shared_preference_cloudlet_ip_dict">shared_preferences_cloudlet_ip_names</string>
+    <string name="shared_preference_cloud_ip_dict">shared_preferences_cloud_ip_names</string>
+    <string name="type_cloudlet">cloudlet</string>
+    <string name="type_cloud">cloud</string>
 
 
 

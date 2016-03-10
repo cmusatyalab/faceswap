@@ -52,6 +52,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     public SharedPreferences mSharedPreferences= null;
 
     private byte[] asyncResponseExtra=null;
+    public String currentServerIp=null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,7 +72,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             tabLayout.setupWithViewPager(viewPager);
             curModId=R.id.setting_cloudlet_ip;
             inputDialogResult = Const.CLOUDLET_GABRIEL_IP;
-            sendOpenFaceResetRequest(Const.CLOUDLET_GABRIEL_IP);
+//            sendOpenFaceResetRequest(currentServerIp);
             mSharedPreferences=getSharedPreferences(getString(R.string.shared_preference_file_key),
                     MODE_PRIVATE);
         }
@@ -252,7 +253,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             String path = (String) extras.get(FilePickerActivity.FILE_EXTRA_DATA_PATH);
             Log.d(TAG, "path: " + path);
             boolean isLoad=(boolean)extras.get(FilePickerActivity.INTENT_EXTRA_ACTION_READ);
-//            UIUtils uiHelper=new UIUtils();
             File file=new File(path);
             if (isLoad){
                 byte[] stateData= UIUtils.loadFromFile(file);
@@ -303,7 +303,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                             Const.GABRIEL_CONFIGURATION_RESET_STATE,
                             this);
             task.execute();
-            Log.d(TAG, "send reset openface server request");
+            Log.d(TAG, "send reset openface server request to "+ currentServerIp);
             childFragment.clearTrainedPeople();
         } else {
             notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, false, this);
@@ -337,7 +337,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         if (id == R.id.setting_reset_openface_server) {
             //check wifi state
             if(checkOnline(this)){
-                sendOpenFaceResetRequest(Const.CLOUDLET_GABRIEL_IP);
+                sendOpenFaceResetRequest(currentServerIp);
                 return true;
             }
             return false;

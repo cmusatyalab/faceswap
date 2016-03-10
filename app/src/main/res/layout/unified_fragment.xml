@@ -2,6 +2,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="false">
+<!--
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -10,36 +11,96 @@
     tools:context="edu.cmu.cs.cloudletdemo.CloudletFragment"
     android:id="@+id/fragmentRelativeLayout"
     >
+-->
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        tools:context="edu.cmu.cs.cloudletdemo.CloudletFragment"
+        android:id="@+id/fragmentRelativeLayout"
+        >
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1. Select Server Type"
+            android:id="@+id/step_1"
+            android:textSize="25dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true" />
 
+        <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/type_radiogroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingLeft="40dp">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="1. Add Training Images"
-        android:id="@+id/step1"
-        android:textSize="25dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true" />
+            <RadioButton android:id="@+id/radio_cloudlet"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/type_cloudlet"
+                android:buttonTint="@color/colorPrimary"/>
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Add Person"
-        android:id="@+id/addPersonButton"
-        android:layout_below="@+id/step1"
-        android:layout_centerHorizontal="true"
+            <RadioButton android:id="@+id/radio_cloud"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/type_cloud"
+                android:buttonTint="@color/colorPrimary"/>
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="2. Choose a Specific Server"
+            android:id="@+id/step_2"
+            android:textSize="25dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="(Use Setting 'Manage Server' to add Server)"
+            android:id="@+id/step_2_2"
+            android:textSize="15dp"
+            />
+
+        <Spinner
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/select_server_spinner"
+            android:spinnerMode="dialog"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="3. Add Training Images"
+            android:id="@+id/step_3"
+            android:textSize="25dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Person"
+            android:id="@+id/addPersonButton"
+            android:layout_gravity="center"
         />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="2. Choose Who to Substitute"
-        android:id="@+id/step2"
-        android:layout_marginTop="50dp"
+        android:text="4. Choose Who to Substitute"
+        android:id="@+id/step_4"
+        android:layout_marginTop="30dp"
         android:textSize="25dp"
         android:layout_alignParentLeft="true"
-        android:layout_below="@+id/addPersonButton"
         />
 
     <LinearLayout
@@ -47,7 +108,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="left"
-        android:layout_below="@+id/step2"
         android:orientation="horizontal"
         android:layout_marginBottom="20dp">
 
@@ -84,12 +144,11 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="3. Choose a Place to Run Demo"
-        android:id="@+id/step3"
-        android:layout_marginTop="50dp"
+        android:text="5. Run Demo"
+        android:id="@+id/step_5"
+        android:layout_marginTop="30dp"
         android:textSize="25dp"
         android:layout_alignParentLeft="true"
-        android:layout_below="@+id/personLinearLayout"
         />
 
 <!--
@@ -107,20 +166,10 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Cloudlet"
+        android:text="Run Demo"
         android:id="@+id/cloudletRunDemoButton"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_marginLeft="66dp" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Cloud"
-        android:id="@+id/cloudRunDemoButton"
-        android:layout_below="@+id/step3"
-        android:layout_alignRight="@+id/step2" />
+        android:layout_gravity="center"/>
 
 
-</RelativeLayout>
+</LinearLayout>
 </ScrollView>

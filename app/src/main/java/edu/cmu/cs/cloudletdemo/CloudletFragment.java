@@ -11,10 +11,16 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.Spinner;
+import android.widget.SpinnerAdapter;
 import android.widget.Switch;
 import android.widget.TableLayout;
 import android.widget.TableRow;
@@ -52,34 +58,41 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         super.onCreate(savedInstanceState);
     }
 
+
+    Spinner.OnItemSelectedListener spinnerSelectedListener = new Spinner.OnItemSelectedListener(){
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            updateCurrentServerIp();
+        }
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
+            // do nothing
+        }
+    };
+
+    private void updateCurrentServerIp(){
+        String currentIpName=selectServerSpinner.getSelectedItem().toString();
+        getMyAcitivty().currentServerIp=getMyAcitivty().mSharedPreferences.getString(currentIpName,
+                Const.CLOUDLET_GABRIEL_IP);
+        Log.d(TAG, "current ip changed to: " +getMyAcitivty().currentServerIp);
+        Toast.makeText(getContext(),
+                "current ip: "+getMyAcitivty().currentServerIp,
+                Toast.LENGTH_SHORT).show();
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        View view = super.onCreateView(inflater, container, savedInstanceState);
-//        titleTextView.setText("cloudlet ip");
-//        ipTextView.setText(Const.CLOUDLET_GABRIEL_IP);
-//        resetIPButton.setOnClickListener(new Button.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                String input = String.valueOf(ipEditText.getText());
-//                if (isIpAddress(input)) {
-//                    ipTextView.setText(input);
-//                    Const.CLOUDLET_GABRIEL_IP = input;
-//                } else {
-//                    new AlertDialog.Builder(getContext())
-//                            .setTitle("Invalid")
-//                            .setMessage("Please Enter a Valid IP Address")
-//                            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-//                                public void onClick(DialogInterface dialog, int which) {
-//                                    // do nothing
-//                                }
-//                            })
-//                            .setIcon(android.R.drawable.ic_dialog_alert)
-//                            .show();
-//                }
-//            }
-//        });
+        final View view = super.onCreateView(inflater, container, savedInstanceState);
+        populateSelectServerSpinner();
+
+        typeRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                populateSelectServerSpinner();
+            }
+        });
 
         cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
             @Override
@@ -92,31 +105,31 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
             }
         });
 
-        cloudRunDemoButton.setOnClickListener(new Button.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                GabrielConfigurationAsyncTask task =
-                        new GabrielConfigurationAsyncTask(getActivity(),
-                        Const.CLOUDLET_GABRIEL_IP,
-                        GabrielClientActivity.VIDEO_STREAM_PORT,
-                        GabrielClientActivity.RESULT_RECEIVING_PORT,
-                                Const.GABRIEL_CONFIGURATION_SYNC_STATE);
-                task.execute(Const.GABRIEL_CONFIGURATION_SYNC_STATE);
-
-                try {
-                    task.get();
-                    Const.GABRIEL_IP=Const.CLOUD_GABRIEL_IP;
-                    Intent intent = new Intent(getContext(), GabrielClientActivity.class);
-                    intent.putExtra("faceTable", faceTable);
-                    startActivity(intent);
-                    Toast.makeText(getContext(), "initializing demo", Toast.LENGTH_SHORT).show();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
+//        cloudRunDemoButton.setOnClickListener(new Button.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                GabrielConfigurationAsyncTask task =
+//                        new GabrielConfigurationAsyncTask(getActivity(),
+//                        Const.CLOUDLET_GABRIEL_IP,
+//                        GabrielClientActivity.VIDEO_STREAM_PORT,
+//                        GabrielClientActivity.RESULT_RECEIVING_PORT,
+//                                Const.GABRIEL_CONFIGURATION_SYNC_STATE);
+//                task.execute(Const.GABRIEL_CONFIGURATION_SYNC_STATE);
+//
+//                try {
+//                    task.get();
+//                    Const.GABRIEL_IP=Const.CLOUD_GABRIEL_IP;
+//                    Intent intent = new Intent(getContext(), GabrielClientActivity.class);
+//                    intent.putExtra("faceTable", faceTable);
+//                    startActivity(intent);
+//                    Toast.makeText(getContext(), "initializing demo", Toast.LENGTH_SHORT).show();
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                } catch (ExecutionException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
 
         addPersonButton.setOnClickListener(new Button.OnClickListener() {
             @Override
@@ -134,6 +147,51 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+
+    private void populateSelectServerSpinner(){
+        //initilize spinner
+        int checkedId=typeRadioGroup.getCheckedRadioButtonId();
+        RadioButton rb= (RadioButton) view.findViewById(checkedId);
+        String type=rb.getText().toString();
+        List<String> spinnerItems=getIpNamesByType(type);
+        selectServerSpinner.setAdapter(createSpinnerAdapterFromList(spinnerItems));
+        selectServerSpinner.setOnItemSelectedListener(spinnerSelectedListener);
+        updateCurrentServerIp();
+    }
+
+    private SpinnerAdapter createSpinnerAdapterFromList(List<String> items){
+        ArrayAdapter<String> spinnerAdapter =
+                new ArrayAdapter<String>(getContext(),
+                        android.R.layout.simple_spinner_item, items);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        return spinnerAdapter;
+    }
+
+    /**
+     * return ip names by type (cloudlet or cloud)
+     * @param type
+     * @return
+     */
+    private List<String> getIpNamesByType(String type){
+        SharedPreferences mSharedPreferences=getMyAcitivty().mSharedPreferences;
+        Set<String> ipNameSet = new HashSet<String>();
+        if (type.equals(getString(R.string.type_cloudlet))){
+            ipNameSet=mSharedPreferences.getStringSet(
+                    getString(R.string.shared_preference_cloudlet_ip_dict),
+                    new HashSet<String>());
+        } else if (type.equals(getString(R.string.type_cloud))){
+            ipNameSet=mSharedPreferences.getStringSet(
+                    getString(R.string.shared_preference_cloud_ip_dict),
+                    new HashSet<String>());
+        } else {
+            Log.e(TAG,"invalid type selected");
+        }
+        //add set to spinner
+        List<String> ipNames=new ArrayList<String>();
+        ipNames.addAll(ipNameSet);
+        return ipNames;
     }
 
     protected boolean checkName(String name){
