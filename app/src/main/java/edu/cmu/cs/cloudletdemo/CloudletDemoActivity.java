@@ -49,7 +49,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     private EditText dialogInputTextEdit;
     int curModId = -1;
 
-    private SharedPreferences mSharedPreferences= null;
+    public SharedPreferences mSharedPreferences= null;
 
     private byte[] asyncResponseExtra=null;
 

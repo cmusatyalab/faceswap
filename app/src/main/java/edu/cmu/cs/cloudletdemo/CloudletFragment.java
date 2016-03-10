@@ -3,6 +3,7 @@ package edu.cmu.cs.cloudletdemo;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
@@ -21,7 +22,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import edu.cmu.cs.gabriel.Const;
@@ -38,9 +41,6 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
 
     private List<PersonUIRow> personUIList = new ArrayList<PersonUIRow>();
 
-    public CloudletFragment() {
-
-    }
 
     private CloudletDemoActivity getMyAcitivty(){
         CloudletDemoActivity a = (CloudletDemoActivity) getActivity();
@@ -167,6 +167,60 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         return true;
     }
 
+    DialogInterface.OnClickListener launchTrainingActivityAction=new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            String name = inputDialogResult;
+            if (checkName(name)) {
+                Log.d(TAG, name);
+                trainedPeople.add(name);
+                addPersonUIRow(name);
+                Log.d(TAG, "add name :" + name);
+                String ipName= SelectServerAlertDialog
+                        .getItemArrayWithoutPrefix()[which]
+                        .toString();
+                Log.d(TAG, "selected ip name:" + ipName);
+                SharedPreferences mSharedPreferences=getMyAcitivty().mSharedPreferences;
+                String ip=mSharedPreferences.getString(ipName, Const.CLOUD_GABRIEL_IP);
+                //get ip from preference
+                startGabrielActivity(name, ip);
+            }
+            return;
+        }
+    };
+
+    DialogInterface.OnClickListener cancelAction =new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            return;
+        }
+    };
+
+    private CharSequence[] getAllIps(){
+        SharedPreferences mSharedPreferences=getMyAcitivty().mSharedPreferences;
+        String[] dictNames=getResources().getStringArray(R.array.shared_preference_ip_dict_names);
+        List<String> allNames=new ArrayList<String>();
+        for (int idx=0; idx<dictNames.length;idx++){
+            String sharedPreferenceIpDictName=dictNames[idx];
+            Set<String> existingNames =
+                    mSharedPreferences.getStringSet(sharedPreferenceIpDictName,
+                            new HashSet<String>());
+            String prefix=getResources().
+                    getStringArray(R.array.add_ip_places_spinner_array)[idx]+
+                    SelectServerAlertDialog.IP_NAME_PREFIX_DELIMITER;
+            for (String name:existingNames){
+                allNames.add(prefix+name);
+            }
+        }
+        CharSequence[] result = allNames.toArray(new CharSequence[allNames.size()]);
+        return result;
+    }
+    /**
+     * alert dialog when add Person is clicked
+     * @param title
+     * @param msg
+     * @return
+     */
     public Dialog createAddPersonDialog(String title, String msg) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getMyAcitivty());
         builder.setTitle(title);
@@ -183,25 +237,18 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
                 String value = input.getText().toString();
                 Log.d(TAG, "user input: " + value);
                 inputDialogResult = value;
-                String name = inputDialogResult;
-                if (checkName(name)) {
-                    Log.d(TAG, name);
-                    trainedPeople.add(name);
-                    addPersonUIRow(name);
-                    Log.d(TAG, "add name :" + name);
-                    startGabrielActivity(name);
-                }
-                return;
+                AlertDialog dg =
+                        SelectServerAlertDialog.createDialog(
+                                getContext(),
+                                "Pick a Server",
+                                getAllIps(),
+                                launchTrainingActivityAction,
+                                cancelAction,
+                                true);
+                dg.show();
             }
         });
-
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                return;
-            }
-        });
-
+        builder.setNegativeButton("Cancel", cancelAction);
         return builder.create();
     }
 
@@ -309,9 +356,9 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         personUIList.add(uiRow);
     }
 
-    private void startGabrielActivity(String name) {
+    private void startGabrielActivity(String name, String ip) {
         //TODO: how to handle sync faces between cloud and cloudlet?
-        Const.GABRIEL_IP = Const.CLOUDLET_GABRIEL_IP;
+        Const.GABRIEL_IP = ip;
         Intent intent = new Intent(getContext(), GabrielClientActivity.class);
         intent.putExtra("name", name);
         startActivityForResult(intent, LAUNCHCODE);

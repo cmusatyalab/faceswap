@@ -89,7 +89,7 @@ public class GabrielClientActivity extends Activity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		Log.d(DEBUG_TAG, "on onCreate");
+		Log.d(DEBUG_TAG, "on onCreate. Gabriel IP: "+Const.GABRIEL_IP);
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		rly = (RelativeLayout) findViewById(R.id.camera_relative_layout);

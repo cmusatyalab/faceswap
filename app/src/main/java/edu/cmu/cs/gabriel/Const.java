@@ -61,5 +61,4 @@ public class Const {
 	//save openface state file
 	public static String FILE_ROOT_PATH = "OpenFaceState";
 	public static String OPENFACE_STATE_FILE_MAGIC_SEQUENCE="OpenFaceStateSequence\n";
-
 }
