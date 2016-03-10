@@ -22,6 +22,13 @@ public class SelectServerAlertDialog {
     //whether or not current alertdialog has prefix added to its items
     public static boolean hasPrefix=false;
 
+    public static DialogInterface.OnClickListener cancelAction =new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            return;
+        }
+    };
+
     public static CharSequence[] getItemArrayWithoutPrefix(){
         CharSequence[] noPrefix = new CharSequence[itemArray.length];
         for (int idx=0; idx<noPrefix.length;idx++){

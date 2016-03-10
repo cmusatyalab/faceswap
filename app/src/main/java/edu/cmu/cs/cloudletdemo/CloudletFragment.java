@@ -252,32 +252,8 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         }
     };
 
-    DialogInterface.OnClickListener cancelAction =new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog, int which) {
-            return;
-        }
-    };
 
-    private CharSequence[] getAllIps(){
-        SharedPreferences mSharedPreferences=getMyAcitivty().mSharedPreferences;
-        String[] dictNames=getResources().getStringArray(R.array.shared_preference_ip_dict_names);
-        List<String> allNames=new ArrayList<String>();
-        for (int idx=0; idx<dictNames.length;idx++){
-            String sharedPreferenceIpDictName=dictNames[idx];
-            Set<String> existingNames =
-                    mSharedPreferences.getStringSet(sharedPreferenceIpDictName,
-                            new HashSet<String>());
-            String prefix=getResources().
-                    getStringArray(R.array.add_ip_places_spinner_array)[idx]+
-                    SelectServerAlertDialog.IP_NAME_PREFIX_DELIMITER;
-            for (String name:existingNames){
-                allNames.add(prefix+name);
-            }
-        }
-        CharSequence[] result = allNames.toArray(new CharSequence[allNames.size()]);
-        return result;
-    }
+
     /**
      * alert dialog when add Person is clicked
      * @param title
@@ -312,7 +288,7 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
 //                dg.show();
             }
         });
-        builder.setNegativeButton("Cancel", cancelAction);
+        builder.setNegativeButton("Cancel", SelectServerAlertDialog.cancelAction);
         return builder.create();
     }
 

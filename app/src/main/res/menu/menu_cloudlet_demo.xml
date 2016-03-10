@@ -17,12 +17,18 @@
         android:title="@string/setting_reset_openface_server"
         android:orderInCategory="100"
         />
+
+    <item android:id="@+id/setting_copy_server_state"
+        android:title="Copy State from Another Server"
+        android:orderInCategory="100"
+        />
+
     <item android:id="@+id/setting_load_state"
-        android:title="load Openface server state"
+        android:title="Load Server State from File"
         android:orderInCategory="100"
         />
     <item android:id="@+id/setting_save_state"
-        android:title="save Openface server state"
+        android:title="Save Server State to File"
         android:orderInCategory="100"
         />
 </menu>

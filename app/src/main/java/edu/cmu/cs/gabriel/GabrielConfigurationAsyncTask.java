@@ -293,26 +293,29 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         Boolean success =false;
         String task = action;
         // task is to sync state
-        if (task.equals(Const.GABRIEL_CONFIGURATION_SYNC_STATE)){
-            try{
-                setupConnection(remoteIP, sendToPort, recvFromPort);
+        if (task.equals(Const.GABRIEL_CONFIGURATION_SYNC_STATE)) {
+            try {
+                String copyFromIp = (String) inputData[0];
+                InetAddress copyFrom = InetAddress.getByName(copyFromIp);
+                setupConnection(copyFrom, sendToPort, recvFromPort);
                 //get state
-                byte[] header= generateGetStateHeader();
-                byte[] data= "dummpy".getBytes();
+                byte[] header = generateGetStateHeader();
+                byte[] data = "dummpy".getBytes();
                 sendPacket(header, data);
                 String resp = receiveMsg(networkReader);
-                String openfaceState=parseResponsePacket(resp);
+                String openfaceState = parseResponsePacket(resp);
                 //switch connection
-                switchConnection();
+                closeConnection();
+                setupConnection(remoteIP,sendToPort,recvFromPort);
                 //load state
-                byte[] loadStateHeader= generateLoadStateHeader(openfaceState);
+                byte[] loadStateHeader = generateLoadStateHeader(openfaceState);
                 sendPacket(loadStateHeader, data);
                 resp = receiveMsg(networkReader);
-                String content =parseResponsePacket(resp).toLowerCase();
+                String content = parseResponsePacket(resp).toLowerCase();
                 if (content.equals("true")) {
                     success = true;
                 }
-            } catch (IOException e){
+            } catch (IOException e) {
                 e.printStackTrace();
                 Log.e(LOG_TAG, "IO exception sync state failed");
             }

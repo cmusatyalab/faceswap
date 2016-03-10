@@ -1,5 +1,6 @@
 package edu.cmu.cs.cloudletdemo;
 
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,6 +10,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -20,8 +22,10 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
@@ -41,8 +45,8 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     private Toolbar toolbar;
     private TabLayout tabLayout;
     private ViewPager viewPager;
-
     private static final String TAG = "cloudletDemoActivity";
+
     private static final int DLG_EXAMPLE1 = 0;
     private static final int TEXT_ID = 999;
     public String inputDialogResult;
@@ -54,6 +58,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 
     private byte[] asyncResponseExtra=null;
     public String currentServerIp=null;
+    private Activity mActivity=null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +83,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                     MODE_PRIVATE);
         }
         Log.d(TAG,"on create");
+        mActivity=this;
     }
 
 
@@ -204,13 +210,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                                                       byte[] extra) {
 
         if (action.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
-            String serverLocation ="";
-            if (curModId == R.id.setting_cloudlet_ip){
-                serverLocation="Cloudlet";
-            } else if (curModId == R.id.setting_cloud_ip){
-                serverLocation="Cloud";
-            }
-
             if (!success){
                 String errorMsg=
                         "No Gabriel Server Found. \n" +
@@ -222,9 +221,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                         dialog.dismiss();
                     }
                 },this);
-//                new EditTextAlertDialog(this, this).createDialog("Settings",
-//                        "No Gabriel Server Found. \n" +
-//                                "Please enter a Gabriel Server IP (" + serverLocation + "): ", "");
             } else {
                 if (curModId == R.id.setting_cloudlet_ip){
                     Const.CLOUDLET_GABRIEL_IP = inputDialogResult;
@@ -258,6 +254,12 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         }
 }
 
+    /**
+     * file picker activie result
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(requestCode == FilePickerActivity.REQUEST_FILE && resultCode==RESULT_OK){
@@ -315,7 +317,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                             Const.GABRIEL_CONFIGURATION_RESET_STATE,
                             this);
             task.execute();
-            Log.d(TAG, "send reset openface server request to "+ currentServerIp);
+            Log.d(TAG, "send reset openface server request to " + currentServerIp);
             childFragment.clearTrainedPeople();
         } else {
             notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, false, this);
@@ -340,13 +342,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         }
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
 //        //noinspection SimplifiableIfStatement
 //        if (id == R.id.setting_cloudlet_ip) {
 //            Intent i = new Intent(this, IPSettingActivity.class);
@@ -359,54 +354,113 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 //            return true;
 //        }
 
-        if (id==R.id.manage_servers){
-            Intent i = new Intent(this, IPSettingActivity.class);
-            startActivity(i);
-        }
 
-        if (id == R.id.setting_reset_openface_server) {
-            //check wifi state
-            if(checkOnline(this)){
-                sendOpenFaceResetRequest(currentServerIp);
-                return true;
+    /**
+     * get all avaiable servers names
+     * @return
+     */
+    private CharSequence[] getAllServerNames(){
+        String[] dictNames=getResources().getStringArray(R.array.shared_preference_ip_dict_names);
+        List<String> allNames=new ArrayList<String>();
+        for (int idx=0; idx<dictNames.length;idx++){
+            String sharedPreferenceIpDictName=dictNames[idx];
+            Set<String> existingNames =
+                    mSharedPreferences.getStringSet(sharedPreferenceIpDictName,
+                            new HashSet<String>());
+            String prefix=getResources().
+                    getStringArray(R.array.add_ip_places_spinner_array)[idx]+
+                    SelectServerAlertDialog.IP_NAME_PREFIX_DELIMITER;
+            for (String name:existingNames){
+                allNames.add(prefix+name);
             }
-            return false;
         }
-
-        if (id==R.id.setting_load_state){
-            //check online
-            if (!checkOnline(this)){
-                return false;
-            }
-            //launch activity result to readin states
-            Intent intent=prepareForResultIntentForFilePickerActivity(this,true);
-            startActivityForResult(intent, FilePickerActivity.REQUEST_FILE);
-        }
-
-        if (id == R.id.setting_save_state) {
-            if (!checkOnline(this)){
-                return false;
-            }
-            //fire off download state async task
-            //return value will be called into onGabrielConfigurationAsyncTaskFinish
-            GabrielConfigurationAsyncTask task =
-                    new GabrielConfigurationAsyncTask(this,
-                            Const.CLOUDLET_GABRIEL_IP,
-                            GabrielClientActivity.VIDEO_STREAM_PORT,
-                            GabrielClientActivity.RESULT_RECEIVING_PORT,
-                            Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE,
-                            this);
-            task.execute();
-            return true;
-        }
-        if (id == R.id.setting_load_state) {
-            //check wifi state
-            //load state
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+        CharSequence[] result = allNames.toArray(new CharSequence[allNames.size()]);
+        return result;
     }
 
+    DialogInterface.OnClickListener launchCopyStateAsyncTaskAction=
+            new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int which) {
+            String ipName= SelectServerAlertDialog
+                    .getItemArrayWithoutPrefix()[which]
+                    .toString();
+            Log.d(TAG, "selected ip name:" + ipName);
+            String copyFromIp=mSharedPreferences.getString(ipName, Const.CLOUDLET_GABRIEL_IP);
+            //send current ip and copy from ip to async task
 
+            //fire off copy from ip async task
+            //return value will be called into onGabrielConfigurationAsyncTaskFinish
+            GabrielConfigurationAsyncTask task =
+                    new GabrielConfigurationAsyncTask(mActivity,
+                            currentServerIp,
+                            GabrielClientActivity.VIDEO_STREAM_PORT,
+                            GabrielClientActivity.RESULT_RECEIVING_PORT,
+                            Const.GABRIEL_CONFIGURATION_SYNC_STATE,
+                            (CloudletDemoActivity)mActivity);
+            task.execute(copyFromIp);
+            return;
+        }
+    };
+
+    //TODO: move check online to async task?
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        switch (id) {
+            case R.id.manage_servers:
+                Intent i = new Intent(this, IPSettingActivity.class);
+                startActivity(i);
+                return true;
+            case R.id.setting_reset_openface_server:
+                //check wifi state
+                if (checkOnline(this)) {
+                    sendOpenFaceResetRequest(currentServerIp);
+                    return true;
+                }
+                return false;
+            case R.id.setting_copy_server_state:
+                //TODO: alertdialog let user select which server to copy from
+                AlertDialog dg =SelectServerAlertDialog.createDialog(
+                        mActivity,
+                        "Pick a Server",
+                        getAllServerNames(),
+                        launchCopyStateAsyncTaskAction,
+                        SelectServerAlertDialog.cancelAction,
+                        true);
+                dg.show();
+                return true;
+
+            case R.id.setting_load_state:
+                //check online
+                if (!checkOnline(this)) {
+                    return false;
+                }
+                //launch activity result to readin states
+                Intent intent = prepareForResultIntentForFilePickerActivity(this, true);
+                startActivityForResult(intent, FilePickerActivity.REQUEST_FILE);
+                return true;
+            case R.id.setting_save_state:
+                if (!checkOnline(this)) {
+                    return false;
+                }
+                //fire off download state async task
+                //return value will be called into onGabrielConfigurationAsyncTaskFinish
+                GabrielConfigurationAsyncTask task =
+                        new GabrielConfigurationAsyncTask(this,
+                                Const.CLOUDLET_GABRIEL_IP,
+                                GabrielClientActivity.VIDEO_STREAM_PORT,
+                                GabrielClientActivity.RESULT_RECEIVING_PORT,
+                                Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE,
+                                this);
+                task.execute();
+                return true;
+            default:
+                return false;
+        }
+    }
 
 }
