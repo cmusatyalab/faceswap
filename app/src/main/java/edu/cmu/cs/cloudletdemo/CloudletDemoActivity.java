@@ -76,8 +76,9 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             mSharedPreferences=getSharedPreferences(getString(R.string.shared_preference_file_key),
                     MODE_PRIVATE);
         }
-
+        Log.d(TAG,"on create");
     }
+
 
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());

@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
@@ -81,11 +80,18 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
     }
 
     @Override
+    public void onResume(){
+        super.onResume();
+        Log.d(TAG, "on resume");
+        populateSelectServerSpinner();
+        //TODO: need to repopulate person UI row
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         final View view = super.onCreateView(inflater, container, savedInstanceState);
-        populateSelectServerSpinner();
 
         typeRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
@@ -97,7 +103,7 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Const.GABRIEL_IP=Const.CLOUDLET_GABRIEL_IP;
+                Const.GABRIEL_IP=getMyAcitivty().currentServerIp;
                 Intent intent = new Intent(getContext(), GabrielClientActivity.class);
                 intent.putExtra("faceTable", faceTable);
                 startActivity(intent);
@@ -225,24 +231,22 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         return true;
     }
 
+    private void launchTrainingActivity(){
+        String name = inputDialogResult;
+        if (checkName(name)) {
+            Log.d(TAG, name);
+            trainedPeople.add(name);
+            addPersonUIRow(name);
+            Log.d(TAG, "add name :" + name);
+            //get ip from preference
+            startGabrielActivityForTraining(name, getMyAcitivty().currentServerIp);
+        }
+    }
+
     DialogInterface.OnClickListener launchTrainingActivityAction=new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialog, int which) {
-            String name = inputDialogResult;
-            if (checkName(name)) {
-                Log.d(TAG, name);
-                trainedPeople.add(name);
-                addPersonUIRow(name);
-                Log.d(TAG, "add name :" + name);
-                String ipName= SelectServerAlertDialog
-                        .getItemArrayWithoutPrefix()[which]
-                        .toString();
-                Log.d(TAG, "selected ip name:" + ipName);
-                SharedPreferences mSharedPreferences=getMyAcitivty().mSharedPreferences;
-                String ip=mSharedPreferences.getString(ipName, Const.CLOUD_GABRIEL_IP);
-                //get ip from preference
-                startGabrielActivity(name, ip);
-            }
+            launchTrainingActivity();
             return;
         }
     };
@@ -295,15 +299,16 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
                 String value = input.getText().toString();
                 Log.d(TAG, "user input: " + value);
                 inputDialogResult = value;
-                AlertDialog dg =
-                        SelectServerAlertDialog.createDialog(
-                                getContext(),
-                                "Pick a Server",
-                                getAllIps(),
-                                launchTrainingActivityAction,
-                                cancelAction,
-                                true);
-                dg.show();
+                launchTrainingActivity();
+//                AlertDialog dg =
+//                        SelectServerAlertDialog.createDialog(
+//                                getContext(),
+//                                "Pick a Server",
+//                                getAllIps(),
+//                                launchTrainingActivityAction,
+//                                cancelAction,
+//                                true);
+//                dg.show();
             }
         });
         builder.setNegativeButton("Cancel", cancelAction);
@@ -414,7 +419,7 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         personUIList.add(uiRow);
     }
 
-    private void startGabrielActivity(String name, String ip) {
+    private void startGabrielActivityForTraining(String name, String ip) {
         //TODO: how to handle sync faces between cloud and cloudlet?
         Const.GABRIEL_IP = ip;
         Intent intent = new Intent(getContext(), GabrielClientActivity.class);
