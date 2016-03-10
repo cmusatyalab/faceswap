@@ -1,4 +1,5 @@
 <resources>
+
     <style name="MyGabrielMaterialTheme" parent="MyGabrielMaterialTheme.Base">
         <item name="android:windowContentTransitions">true</item>
         <item name="android:windowAllowEnterTransitionOverlap">true</item>

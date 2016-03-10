@@ -2,6 +2,7 @@ package edu.cmu.cs.cloudletdemo;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
@@ -24,15 +25,12 @@ import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
 import edu.cmu.cs.gabriel.R;
-import edu.cmu.cs.utils.DoubleEditTextAlertDialog;
 import edu.cmu.cs.utils.EditTextAlertDialog;
-import edu.cmu.cs.utils.GenericEditTextAlertDialog;
 import edu.cmu.cs.utils.UIUtils;
 import filepickerlibrary.FilePickerActivity;
 
 import static edu.cmu.cs.CustomExceptions.CustomExceptions.notifyError;
 import static edu.cmu.cs.utils.NetworkUtils.checkOnline;
-import static edu.cmu.cs.utils.NetworkUtils.isIpAddress;
 import static edu.cmu.cs.utils.NetworkUtils.isOnline;
 import static edu.cmu.cs.utils.UIUtils.prepareForResultIntentForFilePickerActivity;
 
@@ -50,6 +48,8 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     private CloudletFragment childFragment;
     private EditText dialogInputTextEdit;
     int curModId = -1;
+
+    private SharedPreferences mSharedPreferences= null;
 
     private byte[] asyncResponseExtra=null;
 
@@ -72,6 +72,8 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             curModId=R.id.setting_cloudlet_ip;
             inputDialogResult = Const.CLOUDLET_GABRIEL_IP;
             sendOpenFaceResetRequest(Const.CLOUDLET_GABRIEL_IP);
+            mSharedPreferences=getSharedPreferences(getString(R.string.shared_preference_file_key),
+                    MODE_PRIVATE);
         }
 
     }
@@ -199,6 +201,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                                                       byte[] extra) {
 
         if (action.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
+
             String serverLocation ="";
             if (curModId == R.id.setting_cloudlet_ip){
                 serverLocation="Cloudlet";
@@ -314,32 +317,21 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.setting_cloudlet_ip) {
-//            createExampleDialog("Settings", "Enter Cloudlet IP:");
-            new DoubleEditTextAlertDialog(this,
-                    new GenericEditTextAlertDialog.DialogEditTextResultListener() {
-                @Override
-                public void onDialogEditTextResult(String... result) {
-                    //need to force user to input a valid ip address
-                    if (result.length !=2){
-                        Log.e(TAG, "dialog edit returned wrong number of results");
-                        String cloudletName=result[0];
-                        String cloudletIp=result[1];
-                        if (!isIpAddress(cloudletIp)){
+//        //noinspection SimplifiableIfStatement
+//        if (id == R.id.setting_cloudlet_ip) {
+//            Intent i = new Intent(this, IPSettingActivity.class);
+//            startActivity(i);
+//            curModId = R.id.setting_cloudlet_ip;
+//            return true;
+//        }
+//        if (id == R.id.setting_cloud_ip) {
+//            curModId = R.id.setting_cloud_ip;
+//            return true;
+//        }
 
-                        }
-                    }
-                }
-            }).createDialog("Settings", "Cloudlet Name", "", "Cloudlet IP", "");
-
-            curModId = R.id.setting_cloudlet_ip;
-            return true;
-        }
-        if (id == R.id.setting_cloud_ip) {
-//            createExampleDialog("Settings", "Enter Cloud IP:");
-            curModId = R.id.setting_cloud_ip;
-            return true;
+        if (id==R.id.manage_servers){
+            Intent i = new Intent(this, IPSettingActivity.class);
+            startActivity(i);
         }
 
         if (id == R.id.setting_reset_openface_server) {

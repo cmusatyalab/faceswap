@@ -10,5 +10,6 @@
 
     <dimen name="file_picker_lib_default_icon_size">24dp</dimen>
     <dimen name="file_picker_lib_default_icon_padding">6dp</dimen>
+    <dimen name="fab_margin">16dp</dimen>
 
 </resources>

@@ -17,8 +17,7 @@
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->
     </style>
 
-    <style name="MyGabrielMaterialTheme" parent="MyGabrielMaterialTheme.Base">
-    </style>
+    <style name="MyGabrielMaterialTheme" parent="MyGabrielMaterialTheme.Base"></style>
 
     <style name="MyGabrielMaterialTheme.Base" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="windowNoTitle">true</item>
@@ -50,6 +49,10 @@
         <item name="android:textColor">@android:color/darker_gray</item>
         <item name="android:textStyle">italic</item>
     </style>
+
+    <style name="MyGabrielMaterialTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="MyGabrielMaterialTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
 
 </resources>
