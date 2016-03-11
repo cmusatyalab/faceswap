@@ -134,14 +134,18 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         print("WebSocket connection open.")
 
     def onMessage(self, payload, isBinary):
-        raw = payload.decode('utf8')
+        raw = payload.decode('utf-8')
+        print raw
         msg = json.loads(raw)
         print("Received {} message of length {}.".format(
             msg['type'], len(raw)))
         if msg['type'] == "ALL_STATE":
+            print msg
             self.loadState(msg['images'], msg['training'], msg['people'])
         elif msg['type'] == "GET_STATE":
             self.getState()
+        elif msg['type'] == "GET_PEOPLE":
+            self.getPeople()
         elif msg['type'] == "NULL":
             self.sendMessage('{"type": "NULL"}')
         elif msg['type'] == "FRAME":
@@ -164,6 +168,19 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 if os.path.exists(person_dir):
                     shutil.rmtree(person_dir)
                 os.makedirs(person_dir)                
+        elif msg['type'] == "REMOVE_PERSON":
+            name = msg['val'].encode('ascii', 'ignore')
+            # remove identities from self.images
+            try:
+                remove_identity = self.people.index(name)
+                self.people.remove(name)
+                self.images ={h:face for h,face in self.images.iteritems() if face.identity != remove_identity}
+                self.trainSVM()
+                self.sendMessage('{"success": "True"}')                
+            except ValueError:
+                print('error: Name to be removed is not found')                    
+                self.sendMessage('{"success": "False"}')
+            print(self.people)
             
         elif msg['type'] == "UPDATE_IDENTITY":
             h = msg['hash'].encode('ascii', 'ignore')
@@ -228,6 +245,13 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         }
         self.sendMessage(json.dumps(msg))
 
+    def getPeople(self):
+        # format it such that json can serialize
+        msg ={
+            'people': self.people
+        }
+        self.sendMessage(json.dumps(msg))
+        
     def getData(self):
         X = []
         y = []

@@ -50,6 +50,7 @@ prev_timestamp = time.time()*1000
 
 class AppDataProtocol(object):
     TYPE_add_person = "add_person"
+    TYPE_get_person = "get_person"    
     TYPE_train = "train"    
     TYPE_detect = "detect"
     TYPE_img = "image"        
@@ -181,6 +182,19 @@ class DummyVideoApp(AppProxyThread):
             else:
                 raise TypeError('unsupported type for name of a person')
             resp=self.gen_response(AppDataProtocol.TYPE_remove_person, remove_success)
+            return resp
+
+        if 'get_person' in header_dict:
+            print 'get person'            
+            is_get_person = header_dict['get_person']
+            if is_get_person:
+                state_string = transformer.openface_client.getPeople()
+                resp=self.gen_response(AppDataProtocol.TYPE_get_person, state_string)
+                print 'send out response {}'.format(resp[:10])
+                sys.stdout.flush()
+            else:
+                sys.stdout.write('error: has get_person in header, but the value is false')
+                resp=self.gen_response(AppDataProtocol.TYPE_get_person, False)
             return resp
             
         if 'add_person' in header_dict:

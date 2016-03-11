@@ -101,6 +101,14 @@ class OpenFaceClient(object):
         msg = json.dumps(msg)
         self.ws.send(msg)
         return self.recv()        
+
+    def getPeople(self):
+        msg = {
+            'type': 'GET_PEOPLE'
+        }
+        out = json.dumps(msg)
+        self.ws.send(out)
+        return self.recv()        
         
     # current processing frame
     def addFrame(self, data_url, name):
