@@ -10,6 +10,7 @@ import numpy as np
 import cv2
 import dlib
 import MyUtils
+import sys
 
 class camshiftTracker(object):
     def __init__(self):
