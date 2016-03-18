@@ -62,7 +62,7 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
             updateCurrentServerIp();
-            getMyAcitivty().sendOpenFaceGetPersonRequest(getMyAcitivty().currentServerIp);
+
         }
         @Override
         public void onNothingSelected(AdapterView<?> parent) {
@@ -74,6 +74,9 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         String currentIpName=selectServerSpinner.getSelectedItem().toString();
         getMyAcitivty().currentServerIp=getMyAcitivty().mSharedPreferences.getString(currentIpName,
                 Const.CLOUDLET_GABRIEL_IP);
+        getMyAcitivty().sendOpenFaceGetPersonRequest(getMyAcitivty().currentServerIp);
+        //update PersonUIRow
+        clearPersonTable();
         Log.d(TAG, "current ip changed to: " +getMyAcitivty().currentServerIp);
         Toast.makeText(getContext(),
                 "current ip: "+getMyAcitivty().currentServerIp,
@@ -85,7 +88,6 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         super.onResume();
         Log.d(TAG, "on resume");
         populateSelectServerSpinner();
-        //TODO: need to repopulate person UI row
     }
 
     @Override
@@ -163,9 +165,9 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         RadioButton rb= (RadioButton) view.findViewById(checkedId);
         String type=rb.getText().toString();
         List<String> spinnerItems=getIpNamesByType(type);
-        selectServerSpinner.setAdapter(createSpinnerAdapterFromList(spinnerItems));
         selectServerSpinner.setOnItemSelectedListener(spinnerSelectedListener);
-        updateCurrentServerIp();
+        selectServerSpinner.setAdapter(createSpinnerAdapterFromList(spinnerItems));
+//        updateCurrentServerIp();
     }
 
     private SpinnerAdapter createSpinnerAdapterFromList(List<String> items){
@@ -377,7 +379,6 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
                     }
                 }
                 if (null != toBeRemovedName){
-                    //TODO: send async request to server to remove
                     GabrielConfigurationAsyncTask task =
                             new GabrielConfigurationAsyncTask(getActivity(),
                                     Const.CLOUDLET_GABRIEL_IP,
@@ -434,14 +435,21 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
             }
         }
         final PersonUIRow curUIRow = searchUIRow;
-
+        String curName=curUIRow.nameView.getText().toString();
         if (isChecked){
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
             builder.setTitle("Make your selection");
 //            ArrayList<String> copyTrainedPeople = new ArrayList<String>(trainedPeople);
 //            copyTrainedPeople.remove(curUIRow.nameView.getText());
-            final String[] itemArray= new String[trainedPeople.size()];
-            trainedPeople.toArray(itemArray);
+            final String[] itemArray= new String[trainedPeople.size()-1];
+            int idx=0;
+            for (String name:trainedPeople){
+                if (!name.equals(curName)){
+                    itemArray[idx]=name;
+                    idx++;
+                }
+            }
+//            trainedPeople.toArray(itemArray);
 
             builder.setItems(itemArray, new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int item) {
@@ -482,7 +490,7 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         }
     }
 
-    public void clearTrainedPeople(){
+    public void clearPersonTable(){
         if (null != trainedPeople){
             trainedPeople.clear();
             for (PersonUIRow uiRow: personUIList){

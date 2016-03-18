@@ -6,6 +6,7 @@ public class NetworkProtocol {
 	public static final int NETWORK_RET_RESULT = 2;
 	public static final int NETWORK_RET_CONFIG = 3;
 	public static final int NETWORK_RET_TOKEN = 4;
+	public static final int NETWORK_MEASUREMENT = 4;
 	
 	public static final String HEADER_MESSAGE_CONTROL = "control";
 	public static final String HEADER_MESSAGE_RESULT = "result";

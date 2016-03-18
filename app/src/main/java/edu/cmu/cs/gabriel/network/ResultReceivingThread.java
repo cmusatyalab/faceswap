@@ -149,6 +149,7 @@ public class ResultReceivingThread extends Thread {
 			this.tokenController.tokenHandler.sendMessage(msg);
 		}
 		if (injectedToken > 0){
+			Log.d(LOG_TAG,"injected token: "+ injectedToken);
 			this.tokenController.increaseTokens(injectedToken);
 		}
 	}

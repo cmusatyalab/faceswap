@@ -14,6 +14,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -230,7 +231,12 @@ public class VideoStreamingThread extends Thread {
 //					Log.d(LOG_TAG, "waiting");
 					continue;
 				}
-				
+
+                //measurement
+                Message msg = Message.obtain();
+                msg.what = NetworkProtocol.NETWORK_MEASUREMENT;
+                networkHander.sendMessage(msg);
+
 				// get data
 				byte[] data = null;
 				long dataTime = 0;
@@ -267,13 +273,6 @@ public class VideoStreamingThread extends Thread {
                             headerJson.put("add_person", this.name);
                             headerJson.put("training", this.name);
                             hasSentInitialization = true;
-/*
-                            //training case
-                            header = ("{\"id\":" + sendingFrameID +
-                                    ", \"add_person\":" + "\"" + this.name + "\"" + ","
-                                    + "\"training\":" + "\"" + this.name + "\""
-                                    + "}").getBytes();
-*/
                         } else if (null != this.faceTable) {
                             //detecting case
                             JSONObject faceTableJson = new JSONObject();
@@ -319,13 +318,20 @@ public class VideoStreamingThread extends Thread {
 		        	packet_firstUpdateTime = System.currentTimeMillis();
 		        }
 		        packet_currentUpdateTime = System.currentTimeMillis();
-		        packet_count++;
-		        packet_totalsize += data.length;
-//		        if (packet_count % 10 == 0) {
-//		        	Log.d(LOG_TAG, "(NET)\t" + "BW: " + 8.0*packet_totalsize / (packet_currentUpdateTime-packet_firstUpdateTime)/1000 +
-//		        			" Mbps\tCurrent FPS: " + 8.0*data.length/(packet_currentUpdateTime - packet_prevUpdateTime)/1000 + " Mbps\t" +
-//		        			"FPS: " + 1000.0*packet_count/(packet_currentUpdateTime-packet_firstUpdateTime));
-//				}
+                packet_count++;
+                packet_totalsize += data.length;
+                if (packet_count % 10 == 0) {
+                    double currentFPS =
+                            1000.0 * packet_count / (packet_currentUpdateTime - packet_firstUpdateTime);
+                    Log.d(LOG_TAG, "(NET)\t" + "BW: "
+                            + 8.0*packet_totalsize / (packet_currentUpdateTime-packet_firstUpdateTime)/1000
+                            + " Mbps\tCurrent BW: "
+                            + 8.0*data.length/(packet_currentUpdateTime - packet_prevUpdateTime)/1000
+                            + " Mbps\t"
+                            + "FPS: "
+                            + currentFPS);
+
+				}
 		        packet_prevUpdateTime = packet_currentUpdateTime;
 			} catch (IOException e) {
 				Log.e(LOG_TAG, e.getMessage());
@@ -347,12 +353,12 @@ public class VideoStreamingThread extends Thread {
 			udpSocket.close();
 			udpSocket = null;
 		}
-//		if (cameraInputStream != null) {
-//			try {
-//				cameraInputStream.close();
-//			} catch (IOException e) {
-//			}
-//		}
+		if (cameraInputStream != null) {
+			try {
+				cameraInputStream.close();
+			} catch (IOException e) {
+			}
+		}
 		if (tcpSocket != null) {
 			try {
 				tcpSocket.close();

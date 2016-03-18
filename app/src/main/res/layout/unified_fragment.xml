@@ -74,6 +74,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/select_server_spinner"
             android:spinnerMode="dialog"
+            android:paddingBottom="10dp"
             />
 
         <TextView

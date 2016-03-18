@@ -1,15 +1,9 @@
 package edu.cmu.cs.gabriel;
 
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileDescriptor;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import edu.cmu.cs.gabriel.network.NetworkProtocol;
 import edu.cmu.cs.gabriel.network.ResultReceivingThread;
@@ -23,22 +17,15 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Rect;
-import android.graphics.YuvImage;
 import android.hardware.Camera;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.hardware.Camera.PreviewCallback;
 import android.net.ConnectivityManager;
-import android.net.Network;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
-import android.speech.tts.TextToSpeech;
 import android.util.Base64;
 import android.util.Log;
 import android.util.TypedValue;
@@ -46,7 +33,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -79,13 +65,14 @@ public class GabrielClientActivity extends Activity {
 	private DisplaySurface mDisplay;
 	private CameraOverlay cameraOverlay;
 	private RelativeLayout rly;
-	private TextView cnt_view;
+	private TextView auxView;
 
 	private String name = null;
 	private HashMap<String, String> faceTable;
 	private boolean reset = false;
 	private Bitmap curFrame = null;
 	private Activity mActivity=null;
+	private boolean isTraining=false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -99,22 +86,25 @@ public class GabrielClientActivity extends Activity {
 
 		Intent intent = getIntent();
 		reset = intent.getExtras().getBoolean("reset");
+
+		//auxilliary view for displaying info
+		auxView = new TextView(getApplicationContext());
+		auxView.setTextColor(Color.RED);
+		auxView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 25);
+		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
+				RelativeLayout.LayoutParams.WRAP_CONTENT,
+				RelativeLayout.LayoutParams.WRAP_CONTENT
+		);
+		lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+		lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+		auxView.setLayoutParams(lp);
+		rly.addView(auxView);
+
 		if (intent.hasExtra("name")) {
 			this.name = String.valueOf(intent.getStringExtra("name"));
 			//add training overlay for count
-			cnt_view = new TextView(getApplicationContext());
-			cnt_view.setText("0");
-			cnt_view.setTextColor(Color.RED);
-			cnt_view.setTextSize(TypedValue.COMPLEX_UNIT_SP, 25);
-			RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
-					RelativeLayout.LayoutParams.WRAP_CONTENT,
-					RelativeLayout.LayoutParams.WRAP_CONTENT
-			);
-			lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-			lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-			cnt_view.setLayoutParams(lp);
-			rly.addView(cnt_view);
-
+			auxView.setText("0");
+			isTraining=true;
 			Intent reply = new Intent();
 			reply.putExtra("name", name);
 			setResult(RESULT_OK, reply);
@@ -352,6 +342,11 @@ public class GabrielClientActivity extends Activity {
 //                .setNegativeButton("close", error_listener).show();
 //    }
 
+	private double timeStamp=System.currentTimeMillis();
+	private double totalDelay=0;
+	private double packetFirstUpdateTime=0;
+	private long packtCnt=0;
+
 	private Handler returnMsgHandler = new Handler() {
 		public void handleMessage(Message msg) {
 			if (msg.what == NetworkProtocol.NETWORK_RET_FAILED) {
@@ -367,11 +362,32 @@ public class GabrielClientActivity extends Activity {
 				},mActivity);
 			}
 
+			if (msg.what==NetworkProtocol.NETWORK_MEASUREMENT){
+				if (!isTraining){
+					if (0==packtCnt){
+						packetFirstUpdateTime=System.currentTimeMillis();
+					}
+					timeStamp=System.currentTimeMillis();
+					packtCnt++;
+				}
+			}
+
 			//handled by resultReceivingThread!!!
+			//is measuring time different between two adjcent packet right now?
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
 				String response = (String) msg.obj;
-//                Log.d(LOG_TAG, "received response");
-//                Log.d(LOG_TAG, response);
+				double prevTimeStamp=timeStamp;
+//				timeStamp=System.currentTimeMillis();
+				double latency=System.currentTimeMillis()-prevTimeStamp;
+				Log.d(LOG_TAG, "latency for above packet " + latency);
+				totalDelay+=latency;
+				if (packtCnt % 10 ==0){
+					double avgLatency=totalDelay/10;
+					double fps=(double)packtCnt/((System.currentTimeMillis()-packetFirstUpdateTime)/1000);
+					String info=String.format("Latency: %.2f ms, FPS: %.2f",avgLatency,fps);
+					totalDelay=0;
+					auxView.setText(info);
+				}
 
 				if (Const.RESPONSE_JSON) {
 					try {
@@ -395,7 +411,7 @@ public class GabrielClientActivity extends Activity {
 							JSONObject cnt_json = new JSONObject(value);
 							String cnt = cnt_json.getString("cnt");
 //                            Log.d(LOG_TAG, "gabriel server training cnt: " + cnt);
-							cnt_view.setText(String.valueOf(cnt));
+							auxView.setText(String.valueOf(cnt));
 						}
 
 						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_DETECT)) {

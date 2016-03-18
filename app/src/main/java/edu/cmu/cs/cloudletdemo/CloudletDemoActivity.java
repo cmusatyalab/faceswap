@@ -127,64 +127,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     }
 
 
-
-//    /**
-//     * Create and return an example alert dialog with an edit text box.
-//     */
-//    public Dialog createExampleDialog(String title, String msg) {
-//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        builder.setTitle(title);
-//        builder.setMessage(msg);
-//
-//        // Use an EditText view to get user input.
-//        final EditText input = new EditText(this);
-//        input.setText("");
-//        dialogInputTextEdit = input;
-//        inputDialogResult=null;
-//        builder.setView(input);
-//
-//        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int whichButton) {
-//            }
-//        });
-//
-//        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int which) {
-//                return;
-//            }
-//        });
-//
-//        AlertDialog alertDialog = builder.create();
-//        alertDialog.show();
-//        Button customOkButton = alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
-//        customOkButton.setOnClickListener(new CustomListener(alertDialog));
-//        return alertDialog;
-//    }
-//
-//    class CustomListener implements View.OnClickListener {
-//        private final Dialog dialog;
-//        public CustomListener(Dialog dialog) {
-//            this.dialog = dialog;
-//        }
-//        @Override
-//        public void onClick(View v) {
-//            String value = dialogInputTextEdit.getText().toString();
-//            Log.d(TAG, "user input: " + value);
-//            if (!isIpAddress(value)) {
-//                Toast.makeText(getApplicationContext(),
-//                        "Invalid IP address", Toast.LENGTH_SHORT).show();
-//            } else {
-//                sendOpenFaceResetRequest(value);
-//                inputDialogResult = value;
-//                dialog.dismiss();
-//            }
-//            return;
-//        }
-//    }
-
-
     //activity menu
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -246,10 +188,14 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 Log.i(TAG, "people : " + new String(asyncResponseExtra));
                 //remove bracket
                 String peopleStringNoBracket=peopleString.substring(1,peopleString.length()-1);
+                childFragment.clearPersonTable();
                 if (!peopleStringNoBracket.isEmpty()){
                     String[] people=peopleStringNoBracket.split(",");
                     childFragment.populatePersonTable(people);
                 }
+            } else {
+                //clear UI
+                childFragment.clearPersonTable();
             }
         }
 }
@@ -318,7 +264,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                             this);
             task.execute();
             Log.d(TAG, "send reset openface server request to " + currentServerIp);
-            childFragment.clearTrainedPeople();
+            childFragment.clearPersonTable();
         } else {
             notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, false, this);
         }
@@ -342,17 +288,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         }
     }
 
-//        //noinspection SimplifiableIfStatement
-//        if (id == R.id.setting_cloudlet_ip) {
-//            Intent i = new Intent(this, IPSettingActivity.class);
-//            startActivity(i);
-//            curModId = R.id.setting_cloudlet_ip;
-//            return true;
-//        }
-//        if (id == R.id.setting_cloud_ip) {
-//            curModId = R.id.setting_cloud_ip;
-//            return true;
-//        }
 
 
     /**
@@ -464,3 +399,61 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     }
 
 }
+
+
+
+//    /**
+//     * Create and return an example alert dialog with an edit text box.
+//     */
+//    public Dialog createExampleDialog(String title, String msg) {
+//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+//        builder.setTitle(title);
+//        builder.setMessage(msg);
+//
+//        // Use an EditText view to get user input.
+//        final EditText input = new EditText(this);
+//        input.setText("");
+//        dialogInputTextEdit = input;
+//        inputDialogResult=null;
+//        builder.setView(input);
+//
+//        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int whichButton) {
+//            }
+//        });
+//
+//        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialog, int which) {
+//                return;
+//            }
+//        });
+//
+//        AlertDialog alertDialog = builder.create();
+//        alertDialog.show();
+//        Button customOkButton = alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
+//        customOkButton.setOnClickListener(new CustomListener(alertDialog));
+//        return alertDialog;
+//    }
+//
+//    class CustomListener implements View.OnClickListener {
+//        private final Dialog dialog;
+//        public CustomListener(Dialog dialog) {
+//            this.dialog = dialog;
+//        }
+//        @Override
+//        public void onClick(View v) {
+//            String value = dialogInputTextEdit.getText().toString();
+//            Log.d(TAG, "user input: " + value);
+//            if (!isIpAddress(value)) {
+//                Toast.makeText(getApplicationContext(),
+//                        "Invalid IP address", Toast.LENGTH_SHORT).show();
+//            } else {
+//                sendOpenFaceResetRequest(value);
+//                inputDialogResult = value;
+//                dialog.dismiss();
+//            }
+//            return;
+//        }
+//    }

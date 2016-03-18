@@ -33,11 +33,11 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
     private int recvFromPort;
 
     // TCP send socket
-    private Socket tcpSocket = null;
+    private static Socket tcpSocket = null;
     private DataOutputStream networkWriter = null;
 
     // TCP recv socket
-    private Socket recvTcpSocket = null;
+    private static Socket recvTcpSocket = null;
     private DataInputStream networkReader = null;
     public AsyncResponse delegate =null;
     private String action=null;
@@ -55,6 +55,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                                          int sendToPort,
                                          int recvFromPort,
                                          String action) {
+        closeConnection();
         this.callingActivity =activity;
         dialog = new ProgressDialog(callingActivity);
         try {
@@ -65,6 +66,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         this.sendToPort = sendToPort;
         this.recvFromPort = recvFromPort;
         this.action=action;
+        Log.d(LOG_TAG,"async task created");
     }
 
     public GabrielConfigurationAsyncTask(Activity activity,
@@ -114,7 +116,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
 
         recvTcpSocket = new Socket();
         recvTcpSocket.setTcpNoDelay(true);
-        recvTcpSocket.setSoTimeout(5 * 1000 * 60);
+        //3 min read time out
+        recvTcpSocket.setSoTimeout(30*1000*5);
         recvTcpSocket.connect(new InetSocketAddress(ip, recvFromPort), 3 * 1000);
         networkReader = new DataInputStream(recvTcpSocket.getInputStream());
     }
@@ -204,18 +207,6 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         Log.d(LOG_TAG, "switching host: " + remoteIP + " changed to " + ip);
     }
 
-    private byte[] generateLoadStateHeader(String openfaceState) {
-        JSONObject headerJson = new JSONObject();
-        try{
-
-            headerJson.put("id", 0);
-            headerJson.put("load_state", openfaceState);
-            Log.d(LOG_TAG, "send load_state request");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return headerJson.toString().getBytes();
-    }
 
     private byte[] generateGetStateHeader(){
         JSONObject headerJson = new JSONObject();
@@ -266,9 +257,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
 
     @Override
     protected void onPostExecute(Boolean bgResult) {
-        if (dialog.isShowing()) {
-            dialog.dismiss();
-        }
+        dialog.dismiss();
         if (null != this.delegate){
             delegate.onGabrielConfigurationAsyncTaskFinish(this.action, bgResult, extra);
         }
@@ -276,12 +265,12 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
             Log.i("configurationAsyncTask", "success: " + bgResult + ". " + uiMsg);
             Toast.makeText(callingActivity.getApplicationContext(),
                     "success? "+bgResult + "\nmessage: " + uiMsg,
-                Toast.LENGTH_LONG).show();
+                Toast.LENGTH_SHORT).show();
         } else {
             Log.i("configurationAsyncTask", "success: " + bgResult);
-            Toast.makeText(callingActivity.getApplicationContext(),
-                    "success? "+bgResult,
-                    Toast.LENGTH_LONG).show();
+//            Toast.makeText(callingActivity.getApplicationContext(),
+//                    "success? "+bgResult,
+//                    Toast.LENGTH_LONG).show();
         }
 
 //        Toast.makeText(callingActivity.getApplicationContext(), "async task success? "+bgResult,
@@ -300,7 +289,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 setupConnection(copyFrom, sendToPort, recvFromPort);
                 //get state
                 byte[] header = generateGetStateHeader();
-                byte[] data = "dummpy".getBytes();
+                byte[] data = "dummpy_long_enough".getBytes();
                 sendPacket(header, data);
                 String resp = receiveMsg(networkReader);
                 String openfaceState = parseResponsePacket(resp);
@@ -308,7 +297,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 closeConnection();
                 setupConnection(remoteIP,sendToPort,recvFromPort);
                 //load state
-                byte[] loadStateHeader = generateLoadStateHeader(openfaceState);
+                byte[] loadStateHeader = generateHeader("load_state");
+                data=openfaceState.getBytes();
                 sendPacket(loadStateHeader, data);
                 resp = receiveMsg(networkReader);
                 String content = parseResponsePacket(resp).toLowerCase();
@@ -318,13 +308,15 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e(LOG_TAG, "IO exception sync state failed");
+            } finally {
+                closeConnection();
             }
         } else if (task.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
             try{
                 setupConnection(remoteIP, sendToPort, recvFromPort);
                 //get state
                 byte[] header= generateHeader("reset");
-                byte[] data= "dummpy".getBytes();
+                byte[] data= "dummpy_long_enough".getBytes();
                 sendPacket(header, data);
                 String resp = receiveMsg(networkReader);
                 String content =parseResponsePacket(resp).toLowerCase();
@@ -334,6 +326,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
             } catch (IOException e){
                 e.printStackTrace();
                 Log.e(LOG_TAG, "IO exception reset state failed");
+            } finally {
+                closeConnection();
             }
         } else if (task.equals(Const.GABRIEL_CONFIGURATION_REMOVE_PERSON)){
             try{
@@ -351,6 +345,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
             } catch (IOException e){
                 e.printStackTrace();
                 Log.e(LOG_TAG, "IO exception reset state failed");
+            } finally {
+                closeConnection();
             }
         } else if (task.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE)){
             try{
@@ -366,6 +362,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
             } catch (IOException e){
                 e.printStackTrace();
                 Log.e(LOG_TAG, "IO exception sync state failed");
+            } finally {
+                closeConnection();
             }
         } else if (task.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)) {
             byte[] stateData = (byte[]) inputData[0];
@@ -383,6 +381,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e(LOG_TAG, "IO exception sync state failed");
+            } finally {
+                closeConnection();
             }
         } else if (task.equals(Const.GABRIEL_CONFIGURATION_GET_PERSON)) {
             try{
@@ -401,9 +401,10 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 Log.e(LOG_TAG, "IO exception sync state failed");
             } catch (JSONException e) {
                 e.printStackTrace();
+            } finally {
+                closeConnection();
             }
         }
-        closeConnection();
         return success;
     }
 
