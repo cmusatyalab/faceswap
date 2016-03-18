@@ -16,6 +16,9 @@
 
 import os
 import sys
+
+import time
+
 fileDir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(fileDir, "..", ".."))
 import pdb
@@ -48,7 +51,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-
+from NetworkProtocol import *
 import openface
 DEBUG = True
 STORE_IMG_DEBUG = False
@@ -139,23 +142,29 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         msg = json.loads(raw)
         print("Received {} message of length {}.".format(
             msg['type'], len(raw)))
-        if msg['type'] == "ALL_STATE":
+        if msg['type'] == FaceRecognitionServerProtocol.TYPE_set_state:
             print msg
-            self.loadState(msg['images'], msg['training'], msg['people'])
-        elif msg['type'] == "GET_STATE":
-            self.getState()
-        elif msg['type'] == "GET_PEOPLE":
-            self.getPeople()
+            self.loadState(msg['images'],
+                           msg['training'],
+                           msg['people'])
+        elif msg['type'] == FaceRecognitionServerProtocol.TYPE_get_state:
+            msg=self.getState()
+            self.sendMessage(json.dumps(msg))
+        elif msg['type'] == FaceRecognitionServerProtocol.TYPE_get_people:
+            msg=self.getPeople()
+            self.sendMessage(json.dumps(msg))
         elif msg['type'] == "NULL":
             self.sendMessage('{"type": "NULL"}')
-        elif msg['type'] == "FRAME":
-            self.processFrame(msg['dataURL'], msg['name'])
-#            self.sendMessage('{"type": "PROCESSED"}')
-        elif msg['type'] == "TRAINING":
+        elif msg['type'] == FaceRecognitionServerProtocol.TYPE_frame:
+            resp=self.processFrame(msg['dataURL'], msg['name'])
+            if 'id' in msg:
+                resp['id']=msg['id']
+            self.sendMessage(json.dumps(resp))
+        elif msg['type'] == FaceRecognitionServerProtocol.TYPE_set_training:
             self.training = msg['val']
             if not self.training:
                 self.trainSVM()
-        elif msg['type'] == "ADD_PERSON":
+        elif msg['type'] == FaceRecognitionServerProtocol.TYPE_add_person:
             name = msg['val'].encode('ascii', 'ignore')
             if name not in self.people:
                 self.people.append(name)
@@ -168,7 +177,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 if os.path.exists(person_dir):
                     shutil.rmtree(person_dir)
                 os.makedirs(person_dir)                
-        elif msg['type'] == "REMOVE_PERSON":
+        elif msg['type'] == FaceRecognitionServerProtocol.TYPE_remove_person:
             name = msg['val'].encode('ascii', 'ignore')
             # remove identities from self.images
             try:
@@ -176,34 +185,23 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 self.people.remove(name)
                 self.images ={h:face for h,face in self.images.iteritems() if face.identity != remove_identity}
                 self.trainSVM()
-                self.sendMessage('{"success": "True"}')                
+                msg={
+                    'type':FaceRecognitionServerProtocol.TYPE_remove_person_resp,
+                    'val':True
+                }
+                self.sendMessage(msg)
             except ValueError:
-                print('error: Name to be removed is not found')                    
-                self.sendMessage('{"success": "False"}')
+                print('error: Name to be removed is not found')
+                msg={
+                    'type':FaceRecognitionServerProtocol.TYPE_remove_person_resp,
+                    'val':False
+                }
+                self.sendMessage(msg)
             print(self.people)
-            
-        elif msg['type'] == "UPDATE_IDENTITY":
-            h = msg['hash'].encode('ascii', 'ignore')
-            if h in self.images:
-                self.images[h].identity = msg['idx']
-                if not self.training:
-                    self.trainSVM()
-            else:
-                print("Image not found.")
-        elif msg['type'] == "REMOVE_IMAGE":
-            h = msg['hash'].encode('ascii', 'ignore')
-            if h in self.images:
-                del self.images[h]
-                if not self.training:
-                    self.trainSVM()
-            else:
-                print("Image not found.")
-        elif msg['type'] == 'REQ_TSNE':
-            self.sendTSNE(msg['people'])
-        elif msg['type'] == 'GET_TRAINING':
+        elif msg['type'] == FaceRecognitionServerProtocol.TYPE_get_training:
             resp = {
-                'type':'IS_TRAINING',
-                "training": self.training
+                'type':FaceRecognitionServerProtocol.TYPE_get_training_resp,
+                'val': self.training
             }
             self.sendMessage(json.dumps(resp))
         else:
@@ -238,19 +236,23 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 'identity':face.identity
                 })
         msg ={
-            'type': 'ALL_STATE',
+            'type': FaceRecognitionServerProtocol.TYPE_get_state_resp,
             'images': images_serializable,
             'people': self.people,
-            'training': self.training
+            'training': self.training,
+            'val':True
         }
-        self.sendMessage(json.dumps(msg))
+        return msg
+
 
     def getPeople(self):
         # format it such that json can serialize
         msg ={
+            'type':FaceRecognitionServerProtocol.TYPE_get_people_resp,
             'people': self.people
         }
-        self.sendMessage(json.dumps(msg))
+        return msg
+
         
     def getData(self):
         X = []
@@ -337,7 +339,14 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
     def processFrame(self, dataURL, name):
         head = "data:image/jpeg;base64,"
-        assert(dataURL.startswith(head))
+        if (not dataURL.startswith(head)):
+            print('received wrong dataURL. not a jpeg image')
+            msg={
+                'type':FaceRecognitionServerProtocol.TYPE_frame_resp,
+                'success':False
+            }
+            return msg
+
         imgdata = base64.b64decode(dataURL[len(head):])
         imgF = StringIO.StringIO()
         imgF.write(imgdata)
@@ -361,7 +370,6 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 #            if cv2.waitKey(1) & 0xFF == ord('q'):
 #                return
 
-        identities = []
         # bbs = align.getAllFaceBoundingBoxes(rgbFrame)
 #        bb = align.getLargestFaceBoundingBox(rgbFrame)
 
@@ -369,106 +377,110 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         # therefore the detected bounding box is just the whole image it self
 
         bb = dlib.rectangle(left=0, top=0, right=img_width-1, bottom=img_height-1)
-        
-        bbs = [bb] if bb is not None else []
-        for bb in bbs:
-            # print(len(bbs))
-            # landmarks = align.findLandmarks(rgbFrame, bb)
-            
-            # alignedFace = align.align(args.imgDim, rgbFrame, bb,
-            #                           landmarks=landmarks,
-            #                           landmarkIndices=openface.AlignDlib.OUTER_EYES_AND_NOSE)
+        resp=None
 
-            # TODO: not providing bb will make openface to detect face again...
-            # double detection here!
-            alignedFace = align.align(args.imgDim, rgbFrame, bb=bb,
-                                      landmarkIndices=openface.AlignDlib.OUTER_EYES_AND_NOSE)
-            
-            if alignedFace is None:
-                if self.training:
-                    msg = {
-                        "type": "NEW_IMAGE",
-                        "success": False
-                    }
-                    self.sendMessage(json.dumps(msg))
-                print 'no face found. skip'
-                continue
-                
-            aligned_img= Image.fromarray(alignedFace)
-            phash = str(imagehash.phash(aligned_img))
-            try:
-                identity = self.people.index(name)
-            except ValueError:
-                identity = -1
-                
-            if phash in self.images:
-                identity = self.images[phash].identity
-                if self.training:
-                    msg = {
-                        "type": "NEW_IMAGE",
-                        "success": False
-                    }
-                    self.sendMessage(json.dumps(msg))
-            else:
-                rep = net.forward(alignedFace)
-                
-                if STORE_IMG_DEBUG:
-                    global rep_file
-                    print >> rep_file, str(phash)+':\n'
-                    print >> rep_file, str(rep)+'\n'
-                    rep_file.flush()
-                    
-                if self.training:
-                    self.images[phash] = Face(rep, identity)
-                    msg = {
-                        "type": "NEW_IMAGE",
-                        "identity": identity,
-                        "success": True                        
-                    }
-                    self.sendMessage(json.dumps(msg))
-                    if STORE_IMG_DEBUG:
-                        output_file = EXPERIMENT + '/' +str(name) +'/'+ phash + '.jpg'
-                        img.save(output_file)
-                        output_file_aligned = EXPERIMENT + '/' +str(name) +'/'+ phash + '_aligned.jpg'
-                        aligned_img.save(output_file_aligned)                        
-                        
-                else:
-                    print "detecting"
-                    if len(self.people) == 0:
-                        identity = -1
-                    elif len(self.people) == 1:
-                        identity = 0
-                    elif self.svm:
-                        identity = self.svm.predict(rep)[0]
-                        print "svm result: {}".format(identity)
-                    else:
-                        print "hhh"
-                        identity = -1
-                    if identity not in identities:
-                        identities.append(identity)
+        # print(len(bbs))
+        # landmarks = align.findLandmarks(rgbFrame, bb)
 
-            if not self.training:
-                if identity == -1:
-                    if len(self.people) == 1:
-                        name = self.people[0]
-                    else:
-                        name = "Unknown"
-                else:
-                    name = self.people[identity]
+        # alignedFace = align.align(args.imgDim, rgbFrame, bb,
+        #                           landmarks=landmarks,
+        #                           landmarkIndices=openface.AlignDlib.OUTER_EYES_AND_NOSE)
 
+        # TODO: not providing bb will make openface to detect face again...
+        # double detection here!
+        alignedFace = align.align(args.imgDim, rgbFrame, bb=bb,
+                                  landmarkIndices=openface.AlignDlib.OUTER_EYES_AND_NOSE)
+
+        if alignedFace is None:
+            msg = {
+                "type": FaceRecognitionServerProtocol.TYPE_frame_resp,
+                "success": False
+            }
+            print('no face found. skip')
+            return  msg
+
+        aligned_img= Image.fromarray(alignedFace)
+        phash = str(imagehash.phash(aligned_img))
+
+        try:
+            identity = self.people.index(name)
+        except ValueError:
+            identity = -1
+
+        if phash in self.images:
+            identity = self.images[phash].identity
+            if self.training:
                 msg = {
-                    "type": "name",
-#                    "identities": identities
-                    "name": name                    
+                    "type": FaceRecognitionServerProtocol.TYPE_frame_resp,
+                    "success": False
                 }
-                self.sendMessage(json.dumps(msg))
-                global test_idx
-                print "svm result {0}: {1}".format(test_idx, name)
+                resp=msg
+        else:
+            if DEBUG:
+                start =time.time()
+
+            rep = net.forward(alignedFace)
+
+            if DEBUG:
+                print('net forward time: {} ms'.format((time.time()-start)*1000))
+
+            if STORE_IMG_DEBUG:
+                global rep_file
+                print >> rep_file, str(phash)+':\n'
+                print >> rep_file, str(rep)+'\n'
+                rep_file.flush()
+
+            if self.training:
+                self.images[phash] = Face(rep, identity)
+                msg = {
+                    "type": FaceRecognitionServerProtocol.TYPE_frame_resp,
+                    "identity": identity,
+                    "success": True
+                }
+                resp=msg
                 if STORE_IMG_DEBUG:
-                    output_file = str(EXPERIMENT+'/test') +'/'+ str(test_idx) + '.jpg'
+                    output_file = EXPERIMENT + '/' +str(name) +'/'+ phash + '.jpg'
                     img.save(output_file)
-                    test_idx +=1
-                
+                    output_file_aligned = EXPERIMENT + '/' +str(name) +'/'+ phash + '_aligned.jpg'
+                    aligned_img.save(output_file_aligned)
+
+            else:
+                print "detecting"
+                if len(self.people) == 0:
+                    identity = -1
+                elif len(self.people) == 1:
+                    identity = 0
+                elif self.svm:
+                    identity = self.svm.predict(rep)[0]
+                    print "svm result: {}".format(identity)
+                else:
+                    print "No SVM trained"
+                    identity = -1
+
+        if not self.training:
+            if identity == -1:
+                if len(self.people) == 1:
+                    name = self.people[0]
+                else:
+                    name = "Unknown"
+            else:
+                name = self.people[identity]
+
+            msg = {
+                "type": FaceRecognitionServerProtocol.TYPE_frame_resp,
+                'success':True,
+                "name": name
+            }
+            resp=msg
+
+            global test_idx
+            print "svm result {0}: {1}".format(test_idx, name)
+            if STORE_IMG_DEBUG:
+                output_file = str(EXPERIMENT+'/test') +'/'+ str(test_idx) + '.jpg'
+                img.save(output_file)
+                test_idx +=1
+        return resp
+
                 # bl = (bb.left(), bb.bottom())
                 # tr = (bb.right(), bb.top())
                 # cv2.rectangle(annotatedFrame, bl, tr, color=(153, 255, 204),

@@ -43,21 +43,13 @@ import numpy as np
 import json
 #from scipy.ndimage import imread
 import cProfile, pstats, StringIO
+from NetworkProtocol import *
+import cv2
 
 DEBUG = True
 
 prev_timestamp = time.time()*1000
 
-class AppDataProtocol(object):
-    TYPE_add_person = "add_person"
-    TYPE_get_person = "get_person"    
-    TYPE_train = "train"    
-    TYPE_detect = "detect"
-    TYPE_img = "image"        
-    TYPE_get_state = "get_state"
-    TYPE_load_state = "load_state"
-    TYPE_reset = "reset"
-    TYPE_remove_person = "remove_person"                    
 
 # bad idea to transfer image back using json
 class DummyVideoApp(AppProxyThread):
@@ -122,15 +114,15 @@ class DummyVideoApp(AppProxyThread):
         
         # PERFORM Cognitive Assistant Processing
         # header is a dict
-        sys.stdout.write("processing: ")
-        sys.stdout.write("%.50s\n" % header)
+        # sys.stdout.write("processing: ")
+        # sys.stdout.write("%.50s\n" % header)
 
         if DEBUG:
             cur_timestamp = time.time()*1000
             interval = cur_timestamp - prev_timestamp
             sys.stdout.write("packet interval: %d\n"%interval)
             start = time.time()
-            sys.stdout.flush()
+#            sys.stdout.flush()
         
         header_dict = header
 
@@ -177,10 +169,11 @@ class DummyVideoApp(AppProxyThread):
             name = header_dict['remove_person']
             remove_success=False
             if isinstance(name, basestring):
-                remove_success=transformer.openface_client.removePerson(name)                
+                resp=transformer.openface_client.removePerson(name)
+                remove_success=json.loads(resp)['val']
                 print 'removing person :{} success: {}'.format(name, remove_success)
             else:
-                raise TypeError('unsupported type for name of a person')
+                print ('unsupported type for name of a person')
             resp=self.gen_response(AppDataProtocol.TYPE_remove_person, remove_success)
             return resp
 
@@ -224,10 +217,18 @@ class DummyVideoApp(AppProxyThread):
             name=header_dict['training']
 
         # operate on client data
-        image_raw = Image.open(io.BytesIO(data))
-        image = np.array(image_raw)
-
-
+        # image_raw = Image.open(io.BytesIO(data))
+        # image = np.asarray(image_raw)
+        # hopefully it will hit cache but not memory
+        fake_file = '/tmp/image.jpg'
+        fh=open(fake_file,'wb')
+#        fh.write(data.decode('base64'))
+        fh.write(data)
+        fh.close()
+        bgr_img = cv2.imread(fake_file)
+        b,g,r = cv2.split(bgr_img)       # get b,g,r
+        image = cv2.merge([r,g,b])     # switch it to rgb
+        
         if training:
             cnt, face_json = transformer.train(image, name)
             if face_json is not None:
