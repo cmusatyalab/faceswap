@@ -55,6 +55,9 @@ public class Const {
 	public static String GABRIEL_CONFIGURATION_GET_PERSON="get_person";
 
 	public static boolean FACE_DEMO_BOUNDING_BOX_ONLY=false;
+	//true: use the face snippets received in the packet
+	//false: use the bx received to crop current frame
+	public static boolean FACE_DEMO_DISPLAY_RECEIVED_FACES=true;
 
     public static String CONNECTIVITY_NOT_AVAILABLE = "Not Connected to the Internet. Please enable " +
             "network connections first.";

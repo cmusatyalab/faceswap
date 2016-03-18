@@ -395,22 +395,24 @@ public class VideoStreamingThread extends Thread {
 
         @Override
         protected void onPostExecute(byte[] buffer){
-            if (curFrame==null){
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inMutable=true;
-                curFrame = BitmapFactory.decodeByteArray(buffer,
-                        0,
-                        buffer.length,options);
-                Log.i(LOG_TAG, "created current frame bitmap");
-            } else {
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inBitmap=curFrame;
-                options.inMutable=true;
-                curFrame=BitmapFactory.decodeByteArray(buffer,
-                        0,
-                        buffer.length,
-                        options);
+            if (!Const.FACE_DEMO_DISPLAY_RECEIVED_FACES){
+                if (curFrame==null){
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    options.inMutable=true;
+                    curFrame = BitmapFactory.decodeByteArray(buffer,
+                            0,
+                            buffer.length,options);
+                    Log.i(LOG_TAG, "created current frame bitmap");
+                } else {
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    options.inBitmap=curFrame;
+                    options.inMutable=true;
+                    curFrame=BitmapFactory.decodeByteArray(buffer,
+                            0,
+                            buffer.length,
+                            options);
 //                Log.d(LOG_TAG, "reused current bitmap");
+                }
             }
         }
 

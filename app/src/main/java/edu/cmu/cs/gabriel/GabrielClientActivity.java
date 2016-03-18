@@ -283,9 +283,15 @@ public class GabrielClientActivity extends Activity {
 			);
 
 			byte[] img = null;
+
 			if (obj.has(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG)) {
 				String img_string = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG);
 				img = Base64.decode(img_string, Base64.DEFAULT);
+				Log.d(LOG_TAG, "parsed face snippets" + img);
+			} else {
+				if (Const.FACE_DEMO_DISPLAY_RECEIVED_FACES){
+					Log.e(LOG_TAG, "No face snippets in the packet!");
+				}
 			}
 
 			int[] roi = new int[]{roi_x1, roi_y1, roi_x2, roi_y2};
@@ -417,6 +423,7 @@ public class GabrielClientActivity extends Activity {
 						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_DETECT)) {
 							long time = System.currentTimeMillis();
 							String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
+//							Log.d(LOG_TAG, "received msg " + value);
 							Face[] faces = parseFaceSnippets(value);
 							swapFaces(faces);
 							if (null != videoStreamingThread) {

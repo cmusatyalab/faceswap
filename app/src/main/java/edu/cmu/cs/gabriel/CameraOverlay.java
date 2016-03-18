@@ -108,20 +108,32 @@ public class CameraOverlay extends View {
             this.imageSize = imageSize;
         }
         this.frame=curFrame;
-        if (!Const.FACE_DEMO_BOUNDING_BOX_ONLY && this.frame!=null){
+        if (Const.FACE_DEMO_BOUNDING_BOX_ONLY){
+
+        } else if (Const.FACE_DEMO_DISPLAY_RECEIVED_FACES){
+            //set screen bitmap to be created from face.img byte array has been done
+            // by scale operation
             for (Face face: faces){
-                int[] roi = face.imageRoi;
-                face.bitmap = Bitmap.createBitmap(this.frame,
-                        roi[0],
-                        roi[1],
-                        Math.min((roi[2]-roi[0]+1), this.frame.getWidth() - roi[0]),
-                        Math.min((roi[3]-roi[1]+1),this.frame.getHeight() - roi[1]));
-                face.screenBitmap=Bitmap.createScaledBitmap(
-                        face.bitmap,
-                        (face.screenSizeRoi[2] - face.screenSizeRoi[0] + 1),
-                        (face.screenSizeRoi[3] - face.screenSizeRoi[1] + 1),
-                        false
-                );
+                face.screenBitmap=face.bitmap;
+            }
+            Log.d(DEBUG_TAG, "display bitmap is the same as bitmap");
+        } else {
+            //get faces by
+            if (this.frame!=null){
+                for (Face face: faces){
+                    int[] roi = face.imageRoi;
+                    face.bitmap = Bitmap.createBitmap(this.frame,
+                            roi[0],
+                            roi[1],
+                            Math.min((roi[2]-roi[0]+1), this.frame.getWidth() - roi[0]),
+                            Math.min((roi[3]-roi[1]+1),this.frame.getHeight() - roi[1]));
+                    face.screenBitmap=Bitmap.createScaledBitmap(
+                            face.bitmap,
+                            (face.screenSizeRoi[2] - face.screenSizeRoi[0] + 1),
+                            (face.screenSizeRoi[3] - face.screenSizeRoi[1] + 1),
+                            false
+                    );
+                }
             }
         }
 //        Log.d(DEBUG_TAG, "end creating face bitmap");
