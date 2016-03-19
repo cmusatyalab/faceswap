@@ -36,6 +36,9 @@ import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
+import org.opencv.imgcodecs.Imgcodecs;
 
 public class VideoStreamingThread extends Thread {
 
@@ -384,6 +387,11 @@ public class VideoStreamingThread extends Thread {
     private long frame_prevUpdateTime = 0, frame_currentUpdateTime = 0;
     private long frame_totalsize = 0;
 
+    /**
+     * receive frame from camera preview
+     * @param frame
+     * @param parameters
+     */
     public void pushAsync(byte[] frame, Parameters parameters) {
         Object frameObj = frame;
         Object param = parameters;
@@ -391,8 +399,74 @@ public class VideoStreamingThread extends Thread {
         new PushTask().execute(inputAsync);
     }
 
-    private class PushTask extends AsyncTask<Object, Void, byte[]> {
+    /**
+     * receive frame from opencv camera preview
+     * @param frame
+     */
+    public void pushCVFrame(Mat frame) {
+        Log.d(LOG_TAG, "pushed CV frame for compression");
+        new PushCVFrameAsyncTask().execute(frame);
+    }
 
+    private class PushCVFrameAsyncTask extends AsyncTask<Mat, Void, byte[]> {
+        @Override
+        protected void onPostExecute(byte[] buffer) {
+            //TODO: implement this if you still want to draw segments based on image but not
+            // from packet
+//            if (!Const.FACE_DEMO_DISPLAY_RECEIVED_FACES) {
+//                if (curFrame == null) {
+//                    BitmapFactory.Options options = new BitmapFactory.Options();
+//                    options.inMutable = true;
+//                    curFrame = BitmapFactory.decodeByteArray(buffer,
+//                            0,
+//                            buffer.length, options);
+//                    Log.i(LOG_TAG, "created current frame bitmap");
+//                } else {
+//                    BitmapFactory.Options options = new BitmapFactory.Options();
+//                    options.inBitmap = curFrame;
+//                    options.inMutable = true;
+//                    curFrame = BitmapFactory.decodeByteArray(buffer,
+//                            0,
+//                            buffer.length,
+//                            options);
+//                }
+//            }
+            return;
+        }
+
+        @Override
+        protected byte[] doInBackground(Mat... frames) {
+            Mat frame=frames[0];
+            if (frame_firstUpdateTime == 0) {
+                frame_firstUpdateTime = System.currentTimeMillis();
+            }
+            frame_currentUpdateTime = System.currentTimeMillis();
+
+            int datasize = 0;
+            MatOfByte jpgByteMat = new MatOfByte();
+            Imgcodecs.imencode(".jpg", frame, jpgByteMat);
+            byte[] jpgByteArray = jpgByteMat.toArray();
+            synchronized (frameLock) {
+                frameBuffer = jpgByteArray;
+                frameGeneratedTime = System.currentTimeMillis();
+                frameID++;
+                frameLock.notify();
+            }
+            datasize = jpgByteArray.length;
+            frame_count++;
+            frame_totalsize += datasize;
+            if (frame_count % 50 == 0) {
+                Log.d(LOG_TAG, "(IMG)\t" +
+                        "BW: " + 8.0 * frame_totalsize / (frame_currentUpdateTime - frame_firstUpdateTime) / 1000 +
+                        " Mbps\tCurrent FPS: " + 8.0 * datasize / (frame_currentUpdateTime - frame_prevUpdateTime) / 1000 + " Mbps\t" +
+                        "FPS: " + 1000.0 * frame_count / (frame_currentUpdateTime - frame_firstUpdateTime));
+            }
+            frame_prevUpdateTime = frame_currentUpdateTime;
+            return jpgByteArray;
+        }
+    }
+
+    private class PushTask extends AsyncTask<Object, Void, byte[]> {
         @Override
         protected void onPostExecute(byte[] buffer){
             if (!Const.FACE_DEMO_DISPLAY_RECEIVED_FACES){

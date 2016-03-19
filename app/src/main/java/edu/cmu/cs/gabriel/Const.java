@@ -30,6 +30,7 @@ public class Const {
 	// image size and frame rate
 	public static int MIN_FPS = 10;
 	public static int IMAGE_WIDTH = 640;
+	public static int IMAGE_HEIGHT = 480;
 	//640x480
 	//800x600
 	//1024x960
