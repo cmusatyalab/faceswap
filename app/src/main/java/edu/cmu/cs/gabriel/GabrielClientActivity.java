@@ -39,6 +39,10 @@ import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
 
 import static edu.cmu.cs.CustomExceptions.CustomExceptions.notifyError;
 
@@ -73,6 +77,24 @@ public class GabrielClientActivity extends Activity {
 	private Bitmap curFrame = null;
 	private Activity mActivity=null;
 	private boolean isTraining=false;
+	private CameraBridgeViewBase mOpenCvCameraView;
+
+	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+		@Override
+		public void onManagerConnected(int status) {
+			switch (status) {
+				case LoaderCallbackInterface.SUCCESS:
+				{
+					Log.i(LOG_TAG, "OpenCV loaded successfully");
+					mOpenCvCameraView.enableView();
+				} break;
+				default:
+				{
+					super.onManagerConnected(status);
+				} break;
+			}
+		}
+	};
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -140,19 +162,21 @@ public class GabrielClientActivity extends Activity {
 	private void init_once() {
 		Log.d(DEBUG_TAG, "on init once");
 
-		cameraOverlay = (CameraOverlay) findViewById(R.id.display_surface);
-		cameraOverlay.bringToFront();
+		mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.cv_camera_view);
+		mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
+		mOpenCvCameraView.setCvCameraViewListener(new CVRenderer());
 
-		mPreview = (CameraPreview) findViewById(R.id.camera_preview);
-		if (Const.DISPLAY_PREVIEW_ONLY) {
-			RelativeLayout.LayoutParams invisibleLayout = new RelativeLayout.LayoutParams(0, 0);
-			mDisplay.setLayoutParams(invisibleLayout);
-			mDisplay.setVisibility(View.INVISIBLE);
-			mDisplay.setZOrderMediaOverlay(false);
-		}
-
-		mPreview.setPreviewCallback(previewCallback);
-		cameraOverlay.setImageSize(mPreview.imageSize);
+//		cameraOverlay = (CameraOverlay) findViewById(R.id.display_surface);
+//		cameraOverlay.bringToFront();
+//		mPreview = (CameraPreview) findViewById(R.id.camera_preview);
+//		if (Const.DISPLAY_PREVIEW_ONLY) {
+//			RelativeLayout.LayoutParams invisibleLayout = new RelativeLayout.LayoutParams(0, 0);
+//			mDisplay.setLayoutParams(invisibleLayout);
+//			mDisplay.setVisibility(View.INVISIBLE);
+//			mDisplay.setZOrderMediaOverlay(false);
+//		}
+//		mPreview.setPreviewCallback(previewCallback);
+//		cameraOverlay.setImageSize(mPreview.imageSize);
 
 		Const.ROOT_DIR.mkdirs();
 		Const.LATENCY_DIR.mkdirs();
@@ -207,12 +231,21 @@ public class GabrielClientActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
+		if (!OpenCVLoader.initDebug()) {
+			Log.d(LOG_TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+			OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
+		} else {
+			Log.d(LOG_TAG, "OpenCV library found inside package. Using it!");
+			mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+		}
 		Log.d(DEBUG_TAG, "on resume");
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
+		if (mOpenCvCameraView != null)
+			mOpenCvCameraView.disableView();
 		Log.d(DEBUG_TAG, "on pause");
 		this.terminate();
 		finish();
@@ -610,7 +643,6 @@ public class GabrielClientActivity extends Activity {
 
 	private void terminate() {
 		Log.d(DEBUG_TAG, "on terminate");
-
 //		if (cameraRecorder != null) {
 //			cameraRecorder.close();
 //			cameraRecorder = null;
@@ -642,5 +674,7 @@ public class GabrielClientActivity extends Activity {
 			cameraOverlay.destroyDrawingCache();
 			cameraOverlay = null;
 		}
+		if (mOpenCvCameraView != null)
+			mOpenCvCameraView.disableView();
 	}
 }
