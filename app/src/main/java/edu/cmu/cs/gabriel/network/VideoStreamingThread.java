@@ -431,6 +431,8 @@ public class VideoStreamingThread extends Thread {
                     cameraImageSize.height, null);
             ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
             image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90, tmpBuffer);
+            Log.d(LOG_TAG, "compression took: "
+                    + (System.currentTimeMillis()-frame_currentUpdateTime));
             synchronized (frameLock) {
                 frameBuffer = tmpBuffer.toByteArray();
                 frameGeneratedTime = System.currentTimeMillis();
