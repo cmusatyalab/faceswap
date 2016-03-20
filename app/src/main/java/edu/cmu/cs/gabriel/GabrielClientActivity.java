@@ -334,7 +334,7 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 			if (obj.has(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG)) {
 				String img_string = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG);
 				img = Base64.decode(img_string, Base64.DEFAULT);
-				Log.d(LOG_TAG, "parsed face snippets" + img);
+//				Log.d(LOG_TAG, "parsed face snippets" + img);
 			} else {
 				if (Const.FACE_DEMO_DISPLAY_RECEIVED_FACES){
 					Log.e(LOG_TAG, "No face snippets in the packet!");
@@ -430,6 +430,7 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 						packetFirstUpdateTime=System.currentTimeMillis();
 					}
 					timeStamp=System.currentTimeMillis();
+                    Log.d(LOG_TAG, "token available. starting timer for frame");
 					packtCnt++;
 				}
 			}
@@ -438,10 +439,10 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 			//is measuring time different between two adjcent packet right now?
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
 				String response = (String) msg.obj;
-				double prevTimeStamp=timeStamp;
+//				double prevTimeStamp=timeStamp;
 //				timeStamp=System.currentTimeMillis();
-				double latency=System.currentTimeMillis()-prevTimeStamp;
-				Log.d(LOG_TAG, "latency for above packet " + latency);
+				double latency=System.currentTimeMillis()-timeStamp;
+                Log.d(LOG_TAG, "latency for above packet " + latency);
 				totalDelay+=latency;
 				if (packtCnt % 10 ==0){
 					double avgLatency=totalDelay/10;

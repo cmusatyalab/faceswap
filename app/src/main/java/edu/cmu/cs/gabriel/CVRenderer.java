@@ -66,8 +66,8 @@ public class CVRenderer implements CameraBridgeViewBase.CvCameraViewListener2{
                 if (face.isRenderring){
                     int[] roi = face.realRoi;
                     Log.d("debug", "roi : " + roi[0] + ", " + roi[2] + ", "+ roi[1] + ", " + roi[3]);
-                    Log.d("debug", " frame width : " + displayFrame.width()
-                        + " frame height: " + displayFrame.height());
+//                    Log.d("debug", " frame width : " + displayFrame.width()
+//                        + " frame height: " + displayFrame.height());
                     Mat pRoi=displayFrame.submat(roi[1],roi[1] + face.argbMat.width(),
                             roi[0],roi[0]+face.argbMat.height());
                     face.argbMat.copyTo(pRoi);
@@ -75,7 +75,7 @@ public class CVRenderer implements CameraBridgeViewBase.CvCameraViewListener2{
 //                int[] roi = face.realRoi;
             }
         }
-
+        Log.d(LOG_TAG, "rendered");
         return displayFrame;
 //                Mat pRoi=mRgba.submat(10,10+replaceImg.width(),10,10+replaceImg.height());
 //                Log.d("debug", "mat width: " + pRoi.width() + " height: " + pRoi.height());

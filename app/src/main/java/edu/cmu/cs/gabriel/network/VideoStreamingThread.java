@@ -36,8 +36,10 @@ import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
+import org.opencv.core.MatOfInt;
 import org.opencv.imgcodecs.Imgcodecs;
 
 public class VideoStreamingThread extends Thread {
@@ -235,10 +237,13 @@ public class VideoStreamingThread extends Thread {
 					continue;
 				}
 
+                long time=System.currentTimeMillis();
                 //measurement
-                Message msg = Message.obtain();
-                msg.what = NetworkProtocol.NETWORK_MEASUREMENT;
-                networkHander.sendMessage(msg);
+//                if (Const.MEASURE_LATENCY){
+//                    Message msg = Message.obtain();
+//                    msg.what = NetworkProtocol.NETWORK_MEASUREMENT;
+//                    networkHander.sendMessage(msg);
+//                }
 
 				// get data
 				byte[] data = null;
@@ -256,7 +261,8 @@ public class VideoStreamingThread extends Thread {
 					sendingFrameID = this.frameID;
 					this.frameBuffer = null;
 				}
-				
+                Log.d(LOG_TAG, "wait for framebuffer : " + (System.currentTimeMillis()-time));
+
 				// make it as a single packet
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		        DataOutputStream dos=new DataOutputStream(baos);
@@ -270,6 +276,7 @@ public class VideoStreamingThread extends Thread {
                         headerJson.put("reset", "True");
                         reset = false;
                     }
+
                     //initilization packet for training and detecting
                     if (!hasSentInitialization) {
                         if (null != this.name) {
@@ -399,11 +406,13 @@ public class VideoStreamingThread extends Thread {
         new PushTask().execute(inputAsync);
     }
 
+//    long time = System.currentTimeMillis();
     /**
      * receive frame from opencv camera preview
      * @param frame
      */
     public void pushCVFrame(Mat frame) {
+//        time=System.currentTimeMillis();
         Log.d(LOG_TAG, "pushed CV frame for compression");
         new PushCVFrameAsyncTask().execute(frame);
     }
@@ -412,6 +421,7 @@ public class VideoStreamingThread extends Thread {
         @Override
         protected void onPostExecute(byte[] buffer) {
             //TODO: implement this if you still want to draw segments based on image but not
+//            Log.d(LOG_TAG, "compression finsihed "+ (System.currentTimeMillis()- time));
             // from packet
 //            if (!Const.FACE_DEMO_DISPLAY_RECEIVED_FACES) {
 //                if (curFrame == null) {
@@ -434,6 +444,7 @@ public class VideoStreamingThread extends Thread {
             return;
         }
 
+
         @Override
         protected byte[] doInBackground(Mat... frames) {
             Mat frame=frames[0];
@@ -442,10 +453,24 @@ public class VideoStreamingThread extends Thread {
             }
             frame_currentUpdateTime = System.currentTimeMillis();
 
+            long time = System.currentTimeMillis();
+
+            //android compression version
+//            int datasize = 0;
+//            Bitmap bmp = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.RGB_565);
+//            Utils.matToBitmap(frame, bmp);
+//            ByteArrayOutputStream bos=new ByteArrayOutputStream();
+//            bmp.compress(Bitmap.CompressFormat.JPEG, 70, bos);
+//            byte[] jpgByteArray=bos.toByteArray();
+
+            //opencv compression version
             int datasize = 0;
             MatOfByte jpgByteMat = new MatOfByte();
-            Imgcodecs.imencode(".jpg", frame, jpgByteMat);
+            MatOfInt params = new MatOfInt(Imgcodecs.IMWRITE_JPEG_QUALITY, 80);
+            Imgcodecs.imencode(".jpg", frame, jpgByteMat, params);
+            Log.d(LOG_TAG, "compression imencode took " + (System.currentTimeMillis()-time));
             byte[] jpgByteArray = jpgByteMat.toArray();
+
             synchronized (frameLock) {
                 frameBuffer = jpgByteArray;
                 frameGeneratedTime = System.currentTimeMillis();
@@ -462,6 +487,7 @@ public class VideoStreamingThread extends Thread {
                         "FPS: " + 1000.0 * frame_count / (frame_currentUpdateTime - frame_firstUpdateTime));
             }
             frame_prevUpdateTime = frame_currentUpdateTime;
+            Log.d(LOG_TAG, "compression routine took " + (System.currentTimeMillis()-time));
             return jpgByteArray;
         }
     }
@@ -525,59 +551,6 @@ public class VideoStreamingThread extends Thread {
         }
     }
 
-/*
-	public void push(byte[] frame, Parameters parameters) {
-        if (frame_firstUpdateTime == 0) {
-            frame_firstUpdateTime = System.currentTimeMillis();
-        }
-        frame_currentUpdateTime = System.currentTimeMillis();
-        
-        int datasize = 0;
-        cameraImageSize = parameters.getPreviewSize();
-        if (this.imageFiles == null){
-            Log.d(LOG_TAG, "compress start");
-            YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
-            		cameraImageSize.height, null);
-            ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
-            image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90, tmpBuffer);
-            synchronized (frameLock) {
-                this.frameBuffer = tmpBuffer.toByteArray();
-                this.frameGeneratedTime = System.currentTimeMillis();
-                this.frameID++;
-                frameLock.notify();
-			}
-            Log.d(LOG_TAG, "compress end");
-            datasize = tmpBuffer.size();
-        }else{
-        	try {
-        		int index = indexImageFile % this.imageFiles.length;
-	            datasize = (int) this.imageFiles[index].length();
-				FileInputStream fi = new FileInputStream(this.imageFiles[index]);
-				byte[] buffer = new byte[datasize];
-				fi.read(buffer, 0, datasize);
-	            synchronized (frameLock) {
-		            this.frameBuffer = buffer;
-	                this.frameGeneratedTime = System.currentTimeMillis();
-	                this.frameID++;
-	                frameLock.notify();
-	            }
-	            indexImageFile++;
-			} catch (FileNotFoundException e) {
-			} catch (IOException e) {
-			}
-        }
-
-        frame_count++;
-        frame_totalsize += datasize;
-        if (frame_count % 50 == 0) {
-        	Log.d(LOG_TAG, "(IMG)\t" +
-        			"BW: " + 8.0*frame_totalsize / (frame_currentUpdateTime-frame_firstUpdateTime)/1000 +
-        			" Mbps\tCurrent FPS: " + 8.0*datasize/(frame_currentUpdateTime - frame_prevUpdateTime)/1000 + " Mbps\t" +
-        			"FPS: " + 1000.0*frame_count/(frame_currentUpdateTime-frame_firstUpdateTime));
-		}
-        frame_prevUpdateTime = frame_currentUpdateTime;
-	}
-*/
 
 	private void notifyError(String message) {
 		// callback
