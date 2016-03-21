@@ -6,7 +6,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -14,12 +13,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import edu.cmu.cs.gabriel.Const;
+import net.bither.util.NativeUtil;
 import edu.cmu.cs.gabriel.token.TokenController;
 
 import android.graphics.Bitmap;
@@ -38,9 +36,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.core.MatOfInt;
-import org.opencv.imgcodecs.Imgcodecs;
 
 public class VideoStreamingThread extends Thread {
 
@@ -464,12 +459,24 @@ public class VideoStreamingThread extends Thread {
 //            byte[] jpgByteArray=bos.toByteArray();
 
             //opencv compression version
+//            int datasize = 0;
+//            MatOfByte jpgByteMat = new MatOfByte();
+//            MatOfInt params = new MatOfInt(Imgcodecs.IMWRITE_JPEG_QUALITY, 80);
+//            Imgcodecs.imencode(".jpg", frame, jpgByteMat, params);
+//            Log.d(LOG_TAG, "compression imencode took " + (System.currentTimeMillis()-time));
+//            byte[] jpgByteArray = jpgByteMat.toArray();
+
+            //libjpeg-turbo compress
             int datasize = 0;
-            MatOfByte jpgByteMat = new MatOfByte();
-            MatOfInt params = new MatOfInt(Imgcodecs.IMWRITE_JPEG_QUALITY, 80);
-            Imgcodecs.imencode(".jpg", frame, jpgByteMat, params);
-            Log.d(LOG_TAG, "compression imencode took " + (System.currentTimeMillis()-time));
-            byte[] jpgByteArray = jpgByteMat.toArray();
+            //native lib use ARGB_8888 format
+            Bitmap bmp = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(frame, bmp);
+            NativeUtil.compressBitmap(bmp, 95, "/sdcard/tmp/compression_test.jpg", true);
+            Log.d(LOG_TAG, "native compression took " + (System.currentTimeMillis()-time));
+
+            ByteArrayOutputStream bos=new ByteArrayOutputStream();
+            bmp.compress(Bitmap.CompressFormat.JPEG, 70, bos);
+            byte[] jpgByteArray=bos.toByteArray();
 
             synchronized (frameLock) {
                 frameBuffer = jpgByteArray;
