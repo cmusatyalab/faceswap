@@ -53,7 +53,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from NetworkProtocol import *
 import openface
-DEBUG = True
+DEBUG = False
 STORE_IMG_DEBUG = False
 EXPERIMENT = 'e3'
 test_idx =0
@@ -138,10 +138,10 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
     def onMessage(self, payload, isBinary):
         raw = payload.decode('utf-8')
-        print raw
         msg = json.loads(raw)
-        print("Received {} message of length {}.".format(
-            msg['type'], len(raw)))
+        if DEBUG:
+            print("Received {} message of length {}.".format(
+                msg['type'], len(raw)))
         if msg['type'] == FaceRecognitionServerProtocol.TYPE_set_state:
             print msg
             self.loadState(msg['images'],
@@ -315,11 +315,12 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         self.sendMessage(json.dumps(msg))
 
     def trainSVM(self):
+        global svm
         print("+ Training SVM on {} labeled images.".format(len(self.images)))
         print("+ labeled images {}".format(self.images))        
         d = self.getData()
         if d is None:
-            self.svm = None
+            svm = None
             return
         else:
             (X, y) = d
@@ -335,7 +336,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                  'gamma': [0.001, 0.0001],
                  'kernel': ['rbf']}
             ]
-            self.svm = GridSearchCV(SVC(C=1), param_grid, cv=5).fit(X, y)
+            svm = GridSearchCV(SVC(C=1), param_grid, cv=5).fit(X, y)
+            print("successfully trained svm {}".format(svm))                    
 
     def processFrame(self, dataURL, name):
         head = "data:image/jpeg;base64,"
@@ -445,14 +447,14 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                     aligned_img.save(output_file_aligned)
 
             else:
-                print "detecting"
+                global svm
+#                print 'detecting. known people: {} svm: {}'.format(self.people, svm) 
                 if len(self.people) == 0:
                     identity = -1
                 elif len(self.people) == 1:
                     identity = 0
-                elif self.svm:
-                    identity = self.svm.predict(rep)[0]
-                    print "svm result: {}".format(identity)
+                elif svm:
+                    identity = svm.predict(rep)[0]
                 else:
                     print "No SVM trained"
                     identity = -1

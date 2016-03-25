@@ -45,8 +45,9 @@ import json
 import cProfile, pstats, StringIO
 from NetworkProtocol import *
 import cv2
+from demo_config import Config
 
-DEBUG = True
+DEBUG = Config.DEBUG
 
 prev_timestamp = time.time()*1000
 
@@ -216,19 +217,29 @@ class DummyVideoApp(AppProxyThread):
             training=True
             name=header_dict['training']
 
-        # operate on client data
+        # using PIL approach to open a jpeg data
         # image_raw = Image.open(io.BytesIO(data))
         # image = np.asarray(image_raw)
+
+        # using opencv imread to open jpeg files
         # hopefully it will hit cache but not memory
-        fake_file = '/tmp/image.jpg'
-        fh=open(fake_file,'wb')
-#        fh.write(data.decode('base64'))
-        fh.write(data)
-        fh.close()
-        bgr_img = cv2.imread(fake_file)
+        # why not just use imdecode???
+        # fake_file = '/tmp/image.jpg'
+        # fh=open(fake_file,'wb')
+        # fh.write(data)
+        # fh.close()
+        # bgr_img = cv2.imread(fake_file)
+        # b,g,r = cv2.split(bgr_img)       # get b,g,r
+        # image = cv2.merge([r,g,b])     # switch it to rgb
+
+        # just pixel data
+        data=np.fromstring(data, dtype=np.uint8)
+        bgr_img=cv2.imdecode(data,cv2.IMREAD_COLOR)
+#        cv2.imwrite('/tmp/bgr_image.jpg', bgr_img)        
         b,g,r = cv2.split(bgr_img)       # get b,g,r
         image = cv2.merge([r,g,b])     # switch it to rgb
-        
+#        cv2.imwrite('/tmp/image.jpg', image)
+            
         if training:
             cnt, face_json = transformer.train(image, name)
             if face_json is not None:

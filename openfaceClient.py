@@ -23,7 +23,7 @@ from NetworkProtocol import *
 # receive is called synchronously
 # all return result directly goes to recv and returned
 class OpenFaceClient(object):
-    def __init__(self, server_ip=u"ws://128.2.211.75", server_port=9000):
+    def __init__(self, server_ip=u"ws://localhost", server_port=9000):
         self.logger=MyUtils.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
         server_ip_port = server_ip + ':' +str(server_port)
@@ -143,9 +143,10 @@ class OpenFaceClient(object):
         return self.recv()
 
 class AsyncOpenFaceClientProcess(OpenFaceClient):
-    def __init__(self, server_ip=u"ws://128.2.211.75", server_port=9000,
+    def __init__(self, server_ip=u"ws://localhost", server_port=9000,
                  call_back=None,
-                 queue=None):
+                 queue=None,
+                 busy_event=None   ):
         super(AsyncOpenFaceClientProcess, self).__init__(server_ip, server_port)
         self.call_back_fun = call_back
         self.shared_queue=queue
@@ -153,7 +154,9 @@ class AsyncOpenFaceClientProcess(OpenFaceClient):
                                                 name='receive_thread',
                                                 args=(self.ws.sock,
                                                       call_back,
-                                                      queue, ))
+                                                      queue,
+                                                      busy_event,
+                                                  ))
         self.receive_process_running = multiprocessing.Event()
         self.receive_process_running.set()
         self.receive_process.start()
@@ -161,7 +164,8 @@ class AsyncOpenFaceClientProcess(OpenFaceClient):
     def async_on_receive(self,
                          sock,
                          call_back,
-                         queue):
+                         queue,
+                         busy_event):
         input = [sock]
         while True:
             inputready,outputready,exceptready = select.select(input,[],[])
@@ -171,7 +175,7 @@ class AsyncOpenFaceClientProcess(OpenFaceClient):
                         resp = self.ws.recv()
 #                        self.logger.debug('server said: {}'.format(resp[:50]))
                         if call_back is not None:
-                            call_back(resp, queue)
+                            call_back(resp, queue=queue, busy_event=busy_event)
                     except WebSocketException as e:
                         self.logger.debug("web socket error: {0}".format(e))
 
@@ -186,6 +190,9 @@ class AsyncOpenFaceClientProcess(OpenFaceClient):
         }
         msg = json.dumps(msg)
         self.ws.send(msg)
+        # sys.stdout.write('successful sent frame msg: {}'.format(msg))
+        # sys.stdout.flush()
+        
 #        self.logger.debug('after send out request openfaceClient')
         return self.recv()
 
@@ -198,7 +205,7 @@ class AsyncOpenFaceClientProcess(OpenFaceClient):
         self.ws.close()
 
 class AsyncOpenFaceClientThread(OpenFaceClient):
-    def __init__(self, server_ip=u"ws://128.2.211.75", server_port=9000,
+    def __init__(self, server_ip=u"ws://localhost", server_port=9000,
                  call_back=None):
         super(AsyncOpenFaceClientThread, self).__init__(server_ip, server_port)
         self.call_back_fun = call_back
@@ -233,8 +240,8 @@ class AsyncOpenFaceClientThread(OpenFaceClient):
 
 if __name__ == '__main__':
 #    client = OpenFaceClient()
-    client = AsyncOpenFaceClient()
-    pdb.set_trace()
+    client = AsyncOpenFaceClientProcess()
+#    pdb.set_trace()
     base_dir = '/home/junjuew/gabriel/gabriel/bin/img/'
     people_dir = ['Hu_Jintao', 'Jeb_Bush']
     test_dir = ['test']

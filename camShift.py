@@ -31,9 +31,9 @@ class camshiftTracker(object):
         cv2.normalize(hist, hist, 0, 255, cv2.NORM_MINMAX)
         self.hist = hist.reshape(-1)
         
-    def update(self, frame, converted=False, suggested_roi=None):
+    def update(self, frame, is_hsv=False, suggested_roi=None):
         try:
-            if not converted:
+            if not is_hsv:
                 hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             else:
                 hsv = frame
@@ -73,9 +73,9 @@ class meanshiftTracker(object):
         cv2.normalize(hist, hist, 0, 255, cv2.NORM_MINMAX)
         self.hist = hist.reshape(-1)
         
-    def update(self, frame, converted=False, suggested_roi=None):
+    def update(self, frame, is_hsv=False, suggested_roi=None):
         try:
-            if not converted:
+            if not is_hsv:
                 hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             else:
                 hsv = frame
