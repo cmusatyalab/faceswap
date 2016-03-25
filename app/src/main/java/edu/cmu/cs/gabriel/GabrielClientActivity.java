@@ -217,13 +217,10 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 		FileDescriptor fd = null;
 		if (null != name) {
 			videoStreamingThread = new VideoStreamingThread(fd,
-					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset, name);
-		} else if (null != faceTable) {
-			videoStreamingThread = new VideoStreamingThread(fd,
-					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
+					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, name);
 		} else {
 			videoStreamingThread = new VideoStreamingThread(fd,
-					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
+					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController);
 		}
 		videoStreamingThread.start();
 	}
@@ -407,6 +404,7 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 	private double timeStamp=System.currentTimeMillis();
 	private double totalDelay=0;
 	private double packetFirstUpdateTime=0;
+	private double packetLastUpdateTime=0;
 	private long packtCnt=0;
 
 	private Handler returnMsgHandler = new Handler() {
@@ -428,10 +426,10 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 				if (!isTraining){
 					if (0==packtCnt){
 						packetFirstUpdateTime=System.currentTimeMillis();
+						packetLastUpdateTime=System.currentTimeMillis();
 					}
 					timeStamp=System.currentTimeMillis();
                     Log.d(LOG_TAG, "token available. starting timer for frame");
-					packtCnt++;
 				}
 			}
 
@@ -442,11 +440,14 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 //				double prevTimeStamp=timeStamp;
 //				timeStamp=System.currentTimeMillis();
 				double latency=System.currentTimeMillis()-timeStamp;
+				packtCnt++;
                 Log.d(LOG_TAG, "latency for above packet " + latency);
 				totalDelay+=latency;
 				if (packtCnt % 10 ==0){
 					double avgLatency=totalDelay/10;
-					double fps=(double)packtCnt/((System.currentTimeMillis()-packetFirstUpdateTime)/1000);
+//					double fps=(double)packtCnt/((System.currentTimeMillis()-packetFirstUpdateTime)/1000);
+					double fps=10.0/((System.currentTimeMillis()-packetLastUpdateTime)/1000);
+					packetLastUpdateTime=System.currentTimeMillis();
 					String info=String.format("Latency: %.2f ms, FPS: %.2f",avgLatency,fps);
 					totalDelay=0;
 					auxView.setText(info);

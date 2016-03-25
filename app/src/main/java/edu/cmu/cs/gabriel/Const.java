@@ -10,7 +10,8 @@ public class Const {
 	 */
 	
 	public static final boolean IS_EXPERIMENT = false;
-	
+	public static final boolean USE_JPEG_COMPRESSION = true;
+
 	// Transfer from the file list
 	// If TEST_IMAGE_DIR is not none, transmit from the image
 	public static File ROOT_DIR = new File(Environment.getExternalStorageDirectory() + File.separator + "Gabriel" + File.separator);
@@ -29,8 +30,8 @@ public class Const {
 	
 	// image size and frame rate
 	public static int MIN_FPS = 10;
-	public static int IMAGE_WIDTH = 640;
-	public static int IMAGE_HEIGHT = 480;
+	public static int IMAGE_WIDTH = 500;
+	public static int IMAGE_HEIGHT = 300;
 	//640x480
 	//800x600
 	//1024x960
