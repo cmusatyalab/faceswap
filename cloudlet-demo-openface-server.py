@@ -254,8 +254,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         # format it such that json can serialize
         images_serializable=[]
         for h, face in images.iteritems():
-            print str(face)
-            print type(face.rep[0])
+#            print str(face)
+#            print type(face.rep[0])
             rep_bytes= face.rep.tobytes()
             rep_string = base64.b64encode(rep_bytes)            
             images_serializable.append({
