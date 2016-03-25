@@ -156,8 +156,6 @@ class FaceTransformation(object):
         self.img_queue = multiprocessing.Queue()
         self.trackers_queue = multiprocessing.Queue()
         self.recognition_queue = multiprocessing.Queue()
-        self.recognition_busy_event = multiprocessing.Event()
-        self.recognition_busy_event.clear()
         
         # openface related
         self.training_cnt = 0
@@ -195,7 +193,6 @@ class FaceTransformation(object):
             args=(self.img_queue,
                   self.trackers_queue,
                   self.recognition_queue,
-                  self.recognition_busy_event,
                   self.server_ip,
                   self.server_port,
                   self.correct_tracking_event,
@@ -239,7 +236,7 @@ class FaceTransformation(object):
                     if (isinstance(update, RecognitionRequestUpdate)):
                         in_fly_recognition_info[update.recognition_frame_id] = update.location
                     else:
-#                        self.logger.info('main process received recognition resp {}'.format(update))
+                        self.logger.info('main process received recognition resp {}'.format(update))
                         recognition_resp = json.loads(update)
                         if (recognition_resp['type'] == FaceRecognitionServerProtocol.TYPE_frame_resp
                             and recognition_resp['success']):
@@ -349,7 +346,7 @@ class FaceTransformation(object):
             else:
                 self.logger.info('server busy event not set')
                 
-            self.logger.info('server response: {}'.format(resp[:10]))
+            self.logger.info('server response: {}'.format(resp[:40]))
             queue.put(resp)
 
                 # resp_dict = json.loads(resp)
@@ -388,12 +385,14 @@ class FaceTransformation(object):
                                 img_queue,
                                 trackers_queue,
                                 recognition_queue,
-                                recognition_busy_event,
                                 openface_ip,
                                 openface_port,
                                 sync_face_event,
                                 stop_event):
 
+        recognition_busy_event = multiprocessing.Event()
+        recognition_busy_event.clear()
+        
         try:
             self.logger.info('created')
             detector = dlib.get_frontal_face_detector()
@@ -410,25 +409,26 @@ class FaceTransformation(object):
                     continue
 
                 rois = self.detect_faces(frame, detector)
-                self.logger.debug('finished detecting')            
-                if (not recognition_busy_event.is_set()):
-                    for roi in rois:
-                        (x1,y1,x2,y2) = roi
-                        # TODO: really need copy here?
-    #                    face_pixels = np.copy(frame[y1:y2+1, x1:x2+1])
-                        face_pixels = frame[y1:y2+1, x1:x2+1]
-                        face_string = self.np_array_to_jpeg_data_url(face_pixels)
-                        # has to use the same client as mainprocess
-
-                        detection_process_openface_client.addFrameWithID(face_string, 'detect', recognition_frame_id)
-                        self.logger.debug('send out recognition request')                    
-                        roi_center=((x1 + x2)/2, (y1+y2)/2)
-                        recognition_queue.put(RecognitionRequestUpdate(recognition_frame_id, roi_center))
-                        recognition_frame_id+=1
-                        self.logger.debug('after putting updates on queues')
-                    recognition_busy_event.set()
-                else:
-                    self.logger.debug('skipped sending recognition')  
+                self.logger.debug('finished detecting')
+                if (len(rois)>0):
+                    if (not recognition_busy_event.is_set() ):
+                        recognition_busy_event.set()                                            
+                        for roi in rois:
+                            (x1,y1,x2,y2) = roi
+                            # TODO: really need copy here?
+        #                    face_pixels = np.copy(frame[y1:y2+1, x1:x2+1])
+                            face_pixels = frame[y1:y2+1, x1:x2+1]
+                            face_string = self.np_array_to_jpeg_data_url(face_pixels)
+                            # has to use the same client as mainprocess
+                            detection_process_openface_client.addFrameWithID(face_string, 'detect', recognition_frame_id)
+                            self.logger.debug('send out recognition request')                    
+                            roi_center=((x1 + x2)/2, (y1+y2)/2)
+                            recognition_queue.put(RecognitionRequestUpdate(recognition_frame_id, roi_center))
+                            recognition_frame_id+=1
+                            self.logger.debug('after putting updates on queues')
+                    else:
+                        self.logger.debug('skipped sending recognition')
+                        
                 if WRITE_PICTURE_DEBUG:
                     self.draw_rois(frame,rois)
                     imwrite_rgb(self.pic_output_path(str(frame_id)+'_detect'), frame)

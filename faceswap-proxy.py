@@ -155,7 +155,7 @@ class DummyVideoApp(AppProxyThread):
             is_load_state = header_dict['load_state']
             if is_load_state:
                 sys.stdout.write('loading openface state')
-                sys.stdout.write(data)
+                sys.stdout.write(data[:30])
                 sys.stdout.flush()
                 state_string = data
                 transformer.openface_client.setState(state_string)
@@ -184,7 +184,7 @@ class DummyVideoApp(AppProxyThread):
             if is_get_person:
                 state_string = transformer.openface_client.getPeople()
                 resp=self.gen_response(AppDataProtocol.TYPE_get_person, state_string)
-                print 'send out response {}'.format(resp[:10])
+                print 'send out response {}'.format(resp)
                 sys.stdout.flush()
             else:
                 sys.stdout.write('error: has get_person in header, but the value is false')

@@ -43,7 +43,6 @@ class OpenFaceClient(object):
     def recv(self):
         try:
             resp = self.ws.recv()
-            self.logger.debug('server said: {}'.format(resp[:]))
             return resp
         except WebSocketException as e:
             self.logger.debug("web socket error: {0}".format(e))
@@ -76,15 +75,10 @@ class OpenFaceClient(object):
         self.ws.send(msg)
         
     def setState(self, state_string):
-        # state_json = json.loads(state_string)
-        # msg = {
-        #     'type': 'ALL_STATE',
-        #     'images': images,
-        #     'people': people,
-        #     'training': training_on
-        # }
-        # msg = json.dumps(msg)
-        self.ws.send(state_string)
+        state_json = json.loads(state_string)
+        state_json['type']=FaceRecognitionServerProtocol.TYPE_set_state
+        msg = json.dumps(state_json)
+        self.ws.send(msg)
         
 
     def getState(self):
@@ -224,7 +218,6 @@ class AsyncOpenFaceClientThread(OpenFaceClient):
                 if s == self.ws.sock:
                     try:
                         resp = self.ws.recv()
-                        self.logger.debug('server said: {}'.format(resp[:50]))
                         if call_back:
                             call_back(resp)
                     except WebSocketException as e:
