@@ -173,6 +173,13 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 }
                 curModId = -1;
             }
+        } else if (action.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)){
+            Log.d(TAG, "upload state finished. success? " + success);
+            if (success){
+                //fetch person's name
+                Log.d(TAG, "request trained people list" + success);
+                sendOpenFaceGetPersonRequest(currentServerIp);
+            }
         } else if (action.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE)){
             Log.d(TAG, "download state finished. success? " + success);
             if (success){

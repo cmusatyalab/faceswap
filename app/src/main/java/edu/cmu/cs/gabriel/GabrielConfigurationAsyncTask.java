@@ -393,6 +393,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 sendPacket(header, data);
                 String resp = receiveMsg(networkReader);
                 String openfaceState=parseResponsePacket(resp);
+                Log.d(LOG_TAG, "response get from get_person: " + openfaceState);
                 String people=parseGetPersonResponseData(openfaceState);
                 extra=people.getBytes();
                 success=true;
