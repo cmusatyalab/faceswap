@@ -198,6 +198,7 @@ class FaceTransformation(object):
                   self.correct_tracking_event,
                   self.detection_process_stop_event,))
         self.detection_process.start()
+        self.image_width=Config.MAX_IMAGE_WIDTH
 
     # background thread that updates self.faces once
     # detection process signaled
@@ -218,8 +219,11 @@ class FaceTransformation(object):
                     tracker_frame = tracker_updates['frame']
                     for face in faces:
                         nearest_face = self.find_nearest_face(face, self.faces)
+#                                                              max_distance=self.image_width*Config.FACE_MAX_DRIFT_PERCENT)
                         if (nearest_face):
                             face.name = nearest_face.name
+                        else:
+                            face.name=""
                         tracker = create_tracker(tracker_frame, face.roi)
                         face.tracker = tracker
 
@@ -236,7 +240,7 @@ class FaceTransformation(object):
                     if (isinstance(update, RecognitionRequestUpdate)):
                         in_fly_recognition_info[update.recognition_frame_id] = update.location
                     else:
-                        self.logger.info('main process received recognition resp {}'.format(update))
+                        self.logger.debug('main process received recognition resp {}'.format(update))
                         recognition_resp = json.loads(update)
                         if (recognition_resp['type'] == FaceRecognitionServerProtocol.TYPE_frame_resp
                             and recognition_resp['success']):
@@ -244,8 +248,8 @@ class FaceTransformation(object):
                             if (frame_id in in_fly_recognition_info):
                                 # TODO: add in min distance requirement
                                 self.faces_lock.acquire()
-                                nearest_face = self.find_nearest_face(in_fly_recognition_info.pop(frame_id),
-                                                                      self.faces)
+                                nearest_face = self.find_nearest_face(in_fly_recognition_info.pop(frame_id), self.faces)
+#                , max_distance=self.image_width*Config.FACE_MAX_DRIFT_PERCENT)
                                 if (nearest_face):
                                     nearest_face.name = recognition_resp['name']
                                 self.faces_lock.release()
@@ -313,7 +317,7 @@ class FaceTransformation(object):
 #     trackers_queue.put(tracker_updates)
 #     sync_face_event.set()
 
-    def find_nearest_face(self, src, nearby_faces):
+    def find_nearest_face(self, src, nearby_faces, max_distance=None):
         distances = []
         # find the closest face object
         for face in nearby_faces:
@@ -323,7 +327,13 @@ class FaceTransformation(object):
             else:
                 src_center=src
             distance = euclidean_distance_square(face_center, src_center)
-            distances.append(distance)
+            if max_distance is not None:
+                if distance <= max_distance:
+                    distances.append(distance)
+                else:
+                    self.logger.info('drift too much. do not update recognition result')         
+            else:
+                distances.append(distance)                
         if distances:
             (face_idx, _) = min(enumerate(distances), key=itemgetter(1))
             return nearby_faces[face_idx]
@@ -344,9 +354,9 @@ class FaceTransformation(object):
                 self.logger.debug('cleared recognition busy')
                 busy_event.clear()
             else:
-                self.logger.info('server busy event not set')
+                self.logger.debug('server busy event not set')
                 
-            self.logger.info('server response: {}'.format(resp[:40]))
+            self.logger.debug('server response: {}'.format(resp[:40]))
             queue.put(resp)
 
                 # resp_dict = json.loads(resp)
@@ -536,6 +546,8 @@ class FaceTransformation(object):
             self.training=False
             self.openface_client.setTraining(False)
 
+        self.image_width=frame.shape[1]
+        self.logger.debug('image width: {}'.format(self.image_width))
         # forward img to DetectionProcess
         # preprocessing to grey scale can reduce run time for detection process only handle greyscale
         # openface need rgb images
@@ -603,6 +615,7 @@ class FaceTransformation(object):
         
         # region too small
         if ( abs(x2-x1) < MIN_WIDTH_THRESHOLD or abs(y2-y1) < MIN_HEIGHT_THRESHOLD):
+            self.logger.info('face too small discard')
             return True
 
         
