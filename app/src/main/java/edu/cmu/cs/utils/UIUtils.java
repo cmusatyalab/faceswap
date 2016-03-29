@@ -26,7 +26,7 @@ import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 
 import edu.cmu.cs.gabriel.Const;
-import edu.cmu.cs.gabriel.R;
+import edu.cmu.cs.cloudletdemo.R;
 import filepickerlibrary.FilePickerActivity;
 import filepickerlibrary.enums.Request;
 import filepickerlibrary.enums.Scope;

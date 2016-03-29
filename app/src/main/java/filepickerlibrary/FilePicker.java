@@ -37,7 +37,7 @@ import com.afollestad.materialdialogs.MaterialDialog;
 
 import java.io.File;
 
-import edu.cmu.cs.gabriel.R;
+import edu.cmu.cs.cloudletdemo.R;
 import filepickerlibrary.adapter.FileRecyclerViewAdapter;
 import filepickerlibrary.enums.MimeType;
 import filepickerlibrary.enums.Request;

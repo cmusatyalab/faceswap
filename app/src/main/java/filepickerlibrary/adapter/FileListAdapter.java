@@ -42,7 +42,7 @@ import java.util.Calendar;
 import java.util.List;
 
 import filepickerlibrary.enums.Scope;
-import edu.cmu.cs.gabriel.R;
+import edu.cmu.cs.cloudletdemo.R;
 /**
  * Created by Paul Tsouchlos
  */

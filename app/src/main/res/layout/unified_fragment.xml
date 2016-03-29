@@ -1,34 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroll_view"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fillViewport="false">
-<!--
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    tools:context="edu.cmu.cs.cloudletdemo.CloudletFragment"
-    android:id="@+id/fragmentRelativeLayout"
-    >
--->
+    android:layout_height="wrap_content"
+    android:paddingBottom="20dp"
+    android:scrollbars="vertical">
+
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/fragmentRelativeLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        tools:context="edu.cmu.cs.cloudletdemo.CloudletFragment"
-        android:id="@+id/fragmentRelativeLayout"
-        >
+        tools:context="edu.cmu.cs.cloudletdemo.CloudletFragment">
 
         <TextView
+            android:id="@+id/step_1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="1. Select Server Type"
-            android:id="@+id/step_1"
-            android:textSize="25dp"
+            android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true" />
+            android:text="1. Select Server Type"
+            android:textSize="25dp" />
 
         <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/type_radiogroup"
@@ -37,140 +30,137 @@
             android:orientation="horizontal"
             android:paddingLeft="40dp">
 
-            <RadioButton android:id="@+id/radio_cloudlet"
+            <RadioButton
+                android:id="@+id/radio_cloudlet"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/type_cloudlet"
-                android:buttonTint="@color/colorPrimary"/>
+                android:buttonTint="@color/colorPrimary"
+                android:text="@string/type_cloudlet" />
 
-            <RadioButton android:id="@+id/radio_cloud"
+            <RadioButton
+                android:id="@+id/radio_cloud"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/type_cloud"
-                android:buttonTint="@color/colorPrimary"/>
+                android:buttonTint="@color/colorPrimary"
+                android:text="@string/type_cloud" />
         </RadioGroup>
 
         <TextView
+            android:id="@+id/step_2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="2. Choose a Specific Server"
-            android:id="@+id/step_2"
-            android:textSize="25dp"
+            android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true" />
+            android:text="2. Choose a Specific Server"
+            android:textSize="25dp" />
 
         <TextView
+            android:id="@+id/step_2_2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="(Use Setting 'Manage Server' to add Server)"
-            android:id="@+id/step_2_2"
-            android:textSize="15dp"
-            />
+            android:textSize="15dp" />
 
         <Spinner
+            android:id="@+id/select_server_spinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/select_server_spinner"
-            android:spinnerMode="dialog"
             android:paddingBottom="10dp"
-            />
+            android:spinnerMode="dialog" />
 
         <TextView
+            android:id="@+id/step_3"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="3. Add Training Images"
-            android:id="@+id/step_3"
-            android:textSize="25dp"
+            android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:layout_alignParentLeft="true" />
+            android:text="3. Add Training Images"
+            android:textSize="25dp" />
 
         <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Add Person"
             android:id="@+id/addPersonButton"
-            android:layout_gravity="center"
-        />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="4. Choose Who to Substitute"
-        android:id="@+id/step_4"
-        android:layout_marginTop="30dp"
-        android:textSize="25dp"
-        android:layout_alignParentLeft="true"
-        />
-
-    <LinearLayout
-        android:id="@+id/personLinearLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="left"
-        android:orientation="horizontal"
-        android:layout_marginBottom="20dp">
-
-        <TableLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="Add Person" />
+
+        <TextView
+            android:id="@+id/step_4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:text="4. Choose Who to Substitute"
+            android:textSize="25dp" />
+
+        <!--
+            <LinearLayout
+                android:id="@+id/personLinearLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="left"
+                android:orientation="horizontal"
+                android:layout_marginBottom="20dp">
+        -->
+        <TableLayout
             android:id="@+id/trainedTable"
-            android:stretchColumns="*">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stretchColumns="*"
+            android:orientation="vertical"
+            >
+
             <TableRow
                 android:id="@+id/tableRow1"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content">
+
                 <TextView
                     android:id="@+id/tableName"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
+                    android:layout_column="0"
                     android:text="Name"
-                    android:textSize="15dp"
-                    android:layout_column="0"/>
+                    android:textSize="15dp" />
+
                 <TextView
-                    android:text="Substitute OFF/ON"
+                    android:layout_column="1"
                     android:layout_gravity="left"
-                    android:layout_column="1" />
+                    android:text="Substitute OFF/ON" />
+
                 <TextView
-                    android:text="Substituted By Person"
-                    android:layout_column="2" />
+                    android:layout_column="2"
+                    android:text="Substituted By Person" />
+
                 <TextView
-                    android:text="Delete"
-                    android:layout_column="3" />
+                    android:layout_column="3"
+                    android:text="Delete" />
             </TableRow>
         </TableLayout>
+        <!--
+            </LinearLayout>
+        -->
+        <TextView
+            android:id="@+id/step_5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="5. Run Demo"
+            android:textSize="25dp" />
+
+        <Button
+            android:id="@+id/cloudletRunDemoButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="fill"
+            android:text="Run Demo"
+            />
+
+        <TextView
+            android:id="@+id/dummy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="\n"
+            android:textSize="25dp" />
+
     </LinearLayout>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="5. Run Demo"
-        android:id="@+id/step_5"
-        android:layout_marginTop="30dp"
-        android:textSize="25dp"
-        android:layout_alignParentLeft="true"
-        />
-
-<!--
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="cloudlet ip:"
-        android:textStyle="bold"
-        android:id="@+id/titleView"
-        android:layout_alignBaseline="@+id/cloudletRunDemoButton"
-        android:layout_alignBottom="@+id/cloudletRunDemoButton"
-        android:layout_alignParentLeft="true" />
--->
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Run Demo"
-        android:id="@+id/cloudletRunDemoButton"
-        android:layout_gravity="center"/>
-
-
-</LinearLayout>
 </ScrollView>

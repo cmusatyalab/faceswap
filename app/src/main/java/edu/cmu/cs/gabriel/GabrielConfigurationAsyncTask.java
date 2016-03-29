@@ -179,8 +179,9 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         try{
             obj = new JSONObject(recvData);
             frameID = obj.getLong(NetworkProtocol.HEADER_MESSAGE_FRAME_ID);
-            Log.d(LOG_TAG, "received response. frameID: "+frameID);
+
             msgData = obj.getString(NetworkProtocol.HEADER_MESSAGE_RESULT);
+            Log.d(LOG_TAG, "received response. frameID: "+frameID + " msg: " + msgData);
             ret = parseResponseData(msgData);
         } catch(JSONException e){
             e.printStackTrace();

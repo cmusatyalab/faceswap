@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import edu.cmu.cs.gabriel.R;
+import edu.cmu.cs.cloudletdemo.R;
 import edu.cmu.cs.utils.NetworkUtils;
 
 import static edu.cmu.cs.CustomExceptions.CustomExceptions.notifyError;
