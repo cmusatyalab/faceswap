@@ -44,7 +44,10 @@ public class ResultReceivingThread extends Thread {
 			"Do you have a gabriel server running at: " + Const.GABRIEL_IP + "?";
 
 
-	public ResultReceivingThread(String GABRIEL_IP, int port, Handler returnMsgHandler, TokenController tokenController) {
+	public ResultReceivingThread(String GABRIEL_IP,
+								 int port,
+								 Handler returnMsgHandler,
+								 TokenController tokenController) {
 		is_running = false;
 		this.tokenController = tokenController;
 		this.returnMsgHandler = returnMsgHandler;
@@ -81,9 +84,9 @@ public class ResultReceivingThread extends Thread {
 				String recvMsg = this.receiveMsg(networkReader);
 				this.notifyReceivedData(recvMsg);
 			} catch (IOException e) {
-				Log.e("krha", e.toString());
+				Log.e("resultReceiving_thread", e.toString());
 				// Do not send error to handler, Streaming thread already sent it.
-				this.notifyError(e.getMessage());				
+				this.notifyError(e.getMessage());
 				break;
 			} catch (JSONException e) {
 				Log.e("krha", e.toString());

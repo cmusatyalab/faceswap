@@ -35,7 +35,7 @@ import java.util.Set;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
-import edu.cmu.cs.gabriel.R;
+import edu.cmu.cs.cloudletdemo.R;
 
 public class CloudletFragment extends DemoFragment implements CompoundButton.OnCheckedChangeListener {
     private final int LAUNCHCODE = 0;
@@ -77,7 +77,7 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         getMyAcitivty().sendOpenFaceGetPersonRequest(getMyAcitivty().currentServerIp);
         //update PersonUIRow
         clearPersonTable();
-        Log.d(TAG, "current ip changed to: " +getMyAcitivty().currentServerIp);
+        Log.d(TAG, "current ip changed to: " + getMyAcitivty().currentServerIp);
         Toast.makeText(getContext(),
                 "current ip: "+getMyAcitivty().currentServerIp,
                 Toast.LENGTH_SHORT).show();
@@ -87,7 +87,12 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
     public void onResume(){
         super.onResume();
         Log.d(TAG, "on resume");
-        populateSelectServerSpinner();
+        if (getMyAcitivty().onResumeFromLoadState){
+            Log.d(TAG, "on resume from load state. don't refresh yet");
+            getMyAcitivty().onResumeFromLoadState=false;
+        } else {
+            populateSelectServerSpinner();
+        }
     }
 
     @Override
@@ -308,6 +313,12 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
                 trainedPeople.add(person);
             }
         }
+        if (getMyAcitivty().scrollView!=null){
+            getMyAcitivty().scrollView.invalidate();
+        } else {
+            Log.d(TAG, "scroll view is not rendered yet");
+        }
+
     }
 
     private void addPersonUIRow(String name) {
@@ -341,6 +352,10 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         sw.setTextOff("OFF");
         sw.setTextOn("ON");
         sw.setHeight(20);
+        //before listener so that it won't fire off
+        if (faceTable.containsKey(name)){
+            sw.setChecked(true);
+        }
         sw.setOnCheckedChangeListener(this);
         sw.setLayoutParams(tlp2);
 
@@ -355,6 +370,10 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         tlp3.column=2;
         subView.setLayoutParams(tlp3);
         subView.setVisibility(View.INVISIBLE);
+        if (faceTable.containsKey(name)){
+            subView.setText(faceTable.get(name));
+            subView.setVisibility(View.VISIBLE);
+        }
 
         //create delete button
         ImageView deleteView = new ImageView(getContext());

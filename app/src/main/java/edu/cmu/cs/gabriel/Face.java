@@ -5,6 +5,8 @@ import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.util.Log;
 
+import org.opencv.core.Mat;
+
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -16,17 +18,19 @@ import java.nio.LongBuffer;
  */
 public class Face {
     private static final String TAG = "Face";
+    public Mat argbMat;
     private int[] roi;
     public int[] screenSizeRoi;
     //image roi for display. is the result of swap
     public int[] imageRoi;
     //original detected roi. before swap
     public int[] realRoi;
-    private byte[] img;
+    public byte[] img;
+    public byte[] displayImg;
     public Bitmap bitmap;
     public Bitmap screenBitmap;
     private String name;
-    public boolean renderBitmap=true;
+    public boolean isRenderring =true;
 
     public Face(int[] roi, byte[] img) {
         this.roi = roi;
@@ -40,6 +44,7 @@ public class Face {
         this.realRoi=new int[roi.length];
         System.arraycopy(this.roi, 0, this.realRoi, 0, this.roi.length);
         this.name=name;
+        this.displayImg=img;
     }
 
     public String getName() {

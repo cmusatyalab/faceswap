@@ -29,7 +29,7 @@ import java.util.List;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
-import edu.cmu.cs.gabriel.R;
+import edu.cmu.cs.cloudletdemo.R;
 
 /**
  * Created by junjuew on 1/28/16.
@@ -137,7 +137,7 @@ public class DemoFragment extends Fragment implements  AdapterView.OnItemSelecte
 //        Toast.makeText(getContext(), "getting state", Toast.LENGTH_SHORT).show();
 
 
-        personLinearLayout = (LinearLayout)view.findViewById(R.id.personLinearLayout);
+//        personLinearLayout = (LinearLayout)view.findViewById(R.id.personLinearLayout);
         tb = (TableLayout)view.findViewById(R.id.trainedTable);
         trainPeopleTextView = (TextView)view.findViewById(R.id.trainPeopleTextView);
 

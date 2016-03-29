@@ -1,0 +1,3 @@
+A local gradle (2.11) is needed. The old version of gradle that Android studio has internally has troubles resolving several dependencies. 
+
+If ANdroid studio is used, a local version of gradle needs to be configured as the build tool

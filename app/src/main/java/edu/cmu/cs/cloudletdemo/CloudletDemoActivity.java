@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.Toast;
 
 
@@ -29,7 +30,7 @@ import java.util.Set;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
-import edu.cmu.cs.gabriel.R;
+import edu.cmu.cs.cloudletdemo.R;
 import edu.cmu.cs.utils.EditTextAlertDialog;
 import edu.cmu.cs.utils.UIUtils;
 import filepickerlibrary.FilePickerActivity;
@@ -60,6 +61,10 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     public String currentServerIp=null;
     private Activity mActivity=null;
 
+    //fix the bug for load_state, and onresume race for sending
+    public boolean onResumeFromLoadState=false;
+    public ScrollView scrollView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +79,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             viewPager = (ViewPager) findViewById(R.id.viewpager);
             setupViewPager(viewPager);
 
+            scrollView = (ScrollView) findViewById(R.id.scroll_view);
             tabLayout = (TabLayout) findViewById(R.id.tabs);
             tabLayout.setupWithViewPager(viewPager);
             curModId=R.id.setting_cloudlet_ip;
@@ -91,7 +97,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
         childFragment = new CloudletFragment();
         adapter.addFragment(childFragment, "Face Swap Demo");
-//        adapter.addFragment(new CloudFragment(), "cloud-EC2");
         viewPager.setAdapter(adapter);
     }
 
@@ -173,6 +178,13 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 }
                 curModId = -1;
             }
+        } else if (action.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)){
+            Log.d(TAG, "upload state finished. success? " + success);
+            if (success){
+                //fetch person's name
+                Log.d(TAG, "request trained people list" + success);
+                sendOpenFaceGetPersonRequest(currentServerIp);
+            }
         } else if (action.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE)){
             Log.d(TAG, "download state finished. success? " + success);
             if (success){
@@ -243,7 +255,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         //return value will be called into onGabrielConfigurationAsyncTaskFinish
         GabrielConfigurationAsyncTask task =
                 new GabrielConfigurationAsyncTask(this,
-                        Const.CLOUDLET_GABRIEL_IP,
+                        currentServerIp,
                         GabrielClientActivity.VIDEO_STREAM_PORT,
                         GabrielClientActivity.RESULT_RECEIVING_PORT,
                         Const.GABRIEL_CONFIGURATION_UPLOAD_STATE,
@@ -357,17 +369,18 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                     return true;
                 }
                 return false;
-            case R.id.setting_copy_server_state:
-                //TODO: alertdialog let user select which server to copy from
-                AlertDialog dg =SelectServerAlertDialog.createDialog(
-                        mActivity,
-                        "Pick a Server",
-                        getAllServerNames(),
-                        launchCopyStateAsyncTaskAction,
-                        SelectServerAlertDialog.cancelAction,
-                        true);
-                dg.show();
-                return true;
+
+//            case R.id.setting_copy_server_state:
+//                //TODO: alertdialog let user select which server to copy from
+//                AlertDialog dg =SelectServerAlertDialog.createDialog(
+//                        mActivity,
+//                        "Pick a Server",
+//                        getAllServerNames(),
+//                        launchCopyStateAsyncTaskAction,
+//                        SelectServerAlertDialog.cancelAction,
+//                        true);
+//                dg.show();
+//                return true;
 
             case R.id.setting_load_state:
                 //check online
@@ -376,6 +389,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 }
                 //launch activity result to readin states
                 Intent intent = prepareForResultIntentForFilePickerActivity(this, true);
+                onResumeFromLoadState=true;
                 startActivityForResult(intent, FilePickerActivity.REQUEST_FILE);
                 return true;
             case R.id.setting_save_state:

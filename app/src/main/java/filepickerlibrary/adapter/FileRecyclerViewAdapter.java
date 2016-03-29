@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
-import edu.cmu.cs.gabriel.R;
+import edu.cmu.cs.cloudletdemo.R;
 import filepickerlibrary.enums.Scope;
 
 /**

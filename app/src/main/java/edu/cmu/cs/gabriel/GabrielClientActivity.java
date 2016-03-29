@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
+import edu.cmu.cs.cloudletdemo.R;
 import edu.cmu.cs.gabriel.network.NetworkProtocol;
 import edu.cmu.cs.gabriel.network.ResultReceivingThread;
 import edu.cmu.cs.gabriel.network.VideoStreamingThread;
@@ -39,10 +40,15 @@ import android.widget.Toast;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.opencv.android.BaseLoaderCallback;
+import org.opencv.android.CameraBridgeViewBase;
+import org.opencv.android.LoaderCallbackInterface;
+import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Mat;
 
 import static edu.cmu.cs.CustomExceptions.CustomExceptions.notifyError;
 
-public class GabrielClientActivity extends Activity {
+public class GabrielClientActivity extends Activity implements CVRenderer.CVPreviewListener{
 
 	private static final String LOG_TAG = "GabrielClientActivity";
 	private static final String DEBUG_TAG = "krha_debug";
@@ -73,6 +79,26 @@ public class GabrielClientActivity extends Activity {
 	private Bitmap curFrame = null;
 	private Activity mActivity=null;
 	private boolean isTraining=false;
+	private CameraBridgeViewBase mOpenCvCameraView;
+	private CVRenderer renderer;
+
+	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+		@Override
+		public void onManagerConnected(int status) {
+			switch (status) {
+				case LoaderCallbackInterface.SUCCESS:
+				{
+					Log.i(LOG_TAG, "OpenCV loaded successfully");
+					mOpenCvCameraView.setMaxFrameSize(Const.IMAGE_WIDTH, Const.IMAGE_HEIGHT);
+					mOpenCvCameraView.enableView();
+				} break;
+				default:
+				{
+					super.onManagerConnected(status);
+				} break;
+			}
+		}
+	};
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -140,19 +166,22 @@ public class GabrielClientActivity extends Activity {
 	private void init_once() {
 		Log.d(DEBUG_TAG, "on init once");
 
-		cameraOverlay = (CameraOverlay) findViewById(R.id.display_surface);
-		cameraOverlay.bringToFront();
+		renderer = new CVRenderer(this);
+		mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.cv_camera_view);
+		mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
+		mOpenCvCameraView.setCvCameraViewListener(renderer);
 
-		mPreview = (CameraPreview) findViewById(R.id.camera_preview);
-		if (Const.DISPLAY_PREVIEW_ONLY) {
-			RelativeLayout.LayoutParams invisibleLayout = new RelativeLayout.LayoutParams(0, 0);
-			mDisplay.setLayoutParams(invisibleLayout);
-			mDisplay.setVisibility(View.INVISIBLE);
-			mDisplay.setZOrderMediaOverlay(false);
-		}
-
-		mPreview.setPreviewCallback(previewCallback);
-		cameraOverlay.setImageSize(mPreview.imageSize);
+//		cameraOverlay = (CameraOverlay) findViewById(R.id.display_surface);
+//		cameraOverlay.bringToFront();
+//		mPreview = (CameraPreview) findViewById(R.id.camera_preview);
+//		if (Const.DISPLAY_PREVIEW_ONLY) {
+//			RelativeLayout.LayoutParams invisibleLayout = new RelativeLayout.LayoutParams(0, 0);
+//			mDisplay.setLayoutParams(invisibleLayout);
+//			mDisplay.setVisibility(View.INVISIBLE);
+//			mDisplay.setZOrderMediaOverlay(false);
+//		}
+//		mPreview.setPreviewCallback(previewCallback);
+//		cameraOverlay.setImageSize(mPreview.imageSize);
 
 		Const.ROOT_DIR.mkdirs();
 		Const.LATENCY_DIR.mkdirs();
@@ -189,13 +218,10 @@ public class GabrielClientActivity extends Activity {
 		FileDescriptor fd = null;
 		if (null != name) {
 			videoStreamingThread = new VideoStreamingThread(fd,
-					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset, name);
-		} else if (null != faceTable) {
-			videoStreamingThread = new VideoStreamingThread(fd,
-					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
+					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, name);
 		} else {
 			videoStreamingThread = new VideoStreamingThread(fd,
-					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController, reset);
+					Const.GABRIEL_IP, VIDEO_STREAM_PORT, returnMsgHandler, tokenController);
 		}
 		videoStreamingThread.start();
 	}
@@ -207,12 +233,21 @@ public class GabrielClientActivity extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
+		if (!OpenCVLoader.initDebug()) {
+			Log.d(LOG_TAG, "Internal OpenCV library not found. Using OpenCV Manager for initialization");
+			OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_3_0_0, this, mLoaderCallback);
+		} else {
+			Log.d(LOG_TAG, "OpenCV library found inside package. Using it!");
+			mLoaderCallback.onManagerConnected(LoaderCallbackInterface.SUCCESS);
+		}
 		Log.d(DEBUG_TAG, "on resume");
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
+		if (mOpenCvCameraView != null)
+			mOpenCvCameraView.disableView();
 		Log.d(DEBUG_TAG, "on pause");
 		this.terminate();
 		finish();
@@ -240,12 +275,22 @@ public class GabrielClientActivity extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 
+	@Override
+	public void onCVPreviewAvailable(Mat frame) {
+		Log.d(LOG_TAG, "CV preview available");
+		if (hasStarted) {
+			if (videoStreamingThread != null) {
+				videoStreamingThread.pushCVFrame(frame);
+			}
+		}
+	}
+
 	/***
 	 * call back once a preview is available
 	 */
 	private PreviewCallback previewCallback = new PreviewCallback() {
 		public void onPreviewFrame(byte[] frame, Camera mCamera) {
-///			Log.d(LOG_TAG, "onpreviewframe called. data transmitting");
+//			Log.d(LOG_TAG, "onpreviewframe called. data transmitting");
 			if (hasStarted) {
 				Camera.Parameters parameters = mCamera.getParameters();
 				if (videoStreamingThread != null) {
@@ -287,7 +332,7 @@ public class GabrielClientActivity extends Activity {
 			if (obj.has(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG)) {
 				String img_string = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_IMG);
 				img = Base64.decode(img_string, Base64.DEFAULT);
-				Log.d(LOG_TAG, "parsed face snippets" + img);
+//				Log.d(LOG_TAG, "parsed face snippets" + img);
 			} else {
 				if (Const.FACE_DEMO_DISPLAY_RECEIVED_FACES){
 					Log.e(LOG_TAG, "No face snippets in the packet!");
@@ -322,6 +367,15 @@ public class GabrielClientActivity extends Activity {
 		return null;
 	}
 
+	private void CVRenderDrawFaceSnippets(Face[] faces){
+		// if not destroyed
+		if (renderer!=null){
+			//TODO: not doing scaling right now
+			renderer.drawFaces(faces);
+		}
+	}
+
+
 	private void drawFaceSnippets(Face[] faces, Bitmap curFrame) {
 		// if not destroyed
 		if (cameraOverlay != null && mPreview != null) {
@@ -351,6 +405,7 @@ public class GabrielClientActivity extends Activity {
 	private double timeStamp=System.currentTimeMillis();
 	private double totalDelay=0;
 	private double packetFirstUpdateTime=0;
+	private double packetLastUpdateTime=0;
 	private long packtCnt=0;
 
 	private Handler returnMsgHandler = new Handler() {
@@ -372,9 +427,10 @@ public class GabrielClientActivity extends Activity {
 				if (!isTraining){
 					if (0==packtCnt){
 						packetFirstUpdateTime=System.currentTimeMillis();
+						packetLastUpdateTime=System.currentTimeMillis();
 					}
 					timeStamp=System.currentTimeMillis();
-					packtCnt++;
+                    Log.d(LOG_TAG, "token available. starting timer for frame");
 				}
 			}
 
@@ -382,14 +438,17 @@ public class GabrielClientActivity extends Activity {
 			//is measuring time different between two adjcent packet right now?
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
 				String response = (String) msg.obj;
-				double prevTimeStamp=timeStamp;
+//				double prevTimeStamp=timeStamp;
 //				timeStamp=System.currentTimeMillis();
-				double latency=System.currentTimeMillis()-prevTimeStamp;
-				Log.d(LOG_TAG, "latency for above packet " + latency);
+				double latency=System.currentTimeMillis()-timeStamp;
+				packtCnt++;
+                Log.d(LOG_TAG, "latency for above packet " + latency);
 				totalDelay+=latency;
 				if (packtCnt % 10 ==0){
 					double avgLatency=totalDelay/10;
-					double fps=(double)packtCnt/((System.currentTimeMillis()-packetFirstUpdateTime)/1000);
+//					double fps=(double)packtCnt/((System.currentTimeMillis()-packetFirstUpdateTime)/1000);
+					double fps=10.0/((System.currentTimeMillis()-packetLastUpdateTime)/1000);
+					packetLastUpdateTime=System.currentTimeMillis();
 					String info=String.format("Latency: %.2f ms, FPS: %.2f",avgLatency,fps);
 					totalDelay=0;
 					auxView.setText(info);
@@ -413,7 +472,8 @@ public class GabrielClientActivity extends Activity {
 						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_TRAIN)) {
 							String value = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
 							Face[] faces = parseFaceSnippets(value);
-							drawFaceSnippets(faces, null);
+							CVRenderDrawFaceSnippets(faces);
+//							drawFaceSnippets(faces, null);
 							JSONObject cnt_json = new JSONObject(value);
 							String cnt = cnt_json.getString("cnt");
 //                            Log.d(LOG_TAG, "gabriel server training cnt: " + cnt);
@@ -427,7 +487,8 @@ public class GabrielClientActivity extends Activity {
 							Face[] faces = parseFaceSnippets(value);
 							swapFaces(faces);
 							if (null != videoStreamingThread) {
-								drawFaceSnippets(faces, videoStreamingThread.curFrame);
+								CVRenderDrawFaceSnippets(faces);
+//								drawFaceSnippets(faces, videoStreamingThread.curFrame);
 							}
 							Log.w(LOG_TAG, "detect image processing time: " +
 									(System.currentTimeMillis() - time));
@@ -474,14 +535,16 @@ public class GabrielClientActivity extends Activity {
 	};
 
 	private void swapFaces(Face[] faces) {
-		Face[] originalFaces = new Face[faces.length];
-		System.arraycopy(faces, 0, originalFaces, 0, faces.length);
+//		Face[] originalFaces = new Face[faces.length];
+//		System.arraycopy(faces, 0, originalFaces, 0, faces.length);
+		Face[] originalFaces = faces;
 		for (Face face : faces) {
 			if (faceTable.containsKey(face.getName())) {
 				String toPerson = faceTable.get(face.getName());
 				for (Face face2 : originalFaces) {
 					if (face2.getName().equals(toPerson)) {
-						face.imageRoi = face2.realRoi;
+//						face.imageRoi = face2.realRoi;
+						face.displayImg = face2.img;
 						break;
 					}
 				}
@@ -493,7 +556,7 @@ public class GabrielClientActivity extends Activity {
 				String toPerson = faceTable.get(face.getName());
 				for (Face face2 : faces) {
 					if (face2.getName().equals(toPerson)) {
-						face2.renderBitmap = false;
+						face2.isRenderring = false;
 						break;
 					}
 				}
@@ -610,7 +673,6 @@ public class GabrielClientActivity extends Activity {
 
 	private void terminate() {
 		Log.d(DEBUG_TAG, "on terminate");
-
 //		if (cameraRecorder != null) {
 //			cameraRecorder.close();
 //			cameraRecorder = null;
@@ -642,5 +704,8 @@ public class GabrielClientActivity extends Activity {
 			cameraOverlay.destroyDrawingCache();
 			cameraOverlay = null;
 		}
+		if (mOpenCvCameraView != null)
+			mOpenCvCameraView.disableView();
 	}
+
 }

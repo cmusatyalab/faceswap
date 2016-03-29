@@ -11,6 +11,11 @@
         android:id="@+id/camera_relative_layout"
         >
 
+        <org.opencv.android.JavaCameraView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/cv_camera_view" />
+<!--
         <edu.cmu.cs.gabriel.CameraPreview
             android:id="@+id/camera_preview"
             android:layout_width="match_parent"
@@ -23,6 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             />
+-->
     </RelativeLayout>
 
 </LinearLayout>

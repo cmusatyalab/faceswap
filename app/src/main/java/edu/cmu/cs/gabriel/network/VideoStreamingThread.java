@@ -1,12 +1,12 @@
 package edu.cmu.cs.gabriel.network;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -14,12 +14,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import edu.cmu.cs.gabriel.Const;
+import net.bither.util.NativeUtil;
 import edu.cmu.cs.gabriel.token.TokenController;
 
 import android.graphics.Bitmap;
@@ -36,6 +35,12 @@ import android.util.Log;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
+import org.opencv.core.MatOfInt;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
 
 public class VideoStreamingThread extends Thread {
 
@@ -65,12 +70,11 @@ public class VideoStreamingThread extends Thread {
 
 	//person's name for training face recognizers
 	private String name = null;
-    private boolean hasSentInitialization;
 
     //for swapping faces
     private HashMap<String, String> faceTable;
     //for setting openface server state
-    private boolean reset;
+    private boolean hasInitliazed;
     public volatile String state_string;
     public Bitmap curFrame=null;
 
@@ -81,8 +85,7 @@ public class VideoStreamingThread extends Thread {
 								String IPString,
 								int port,
 								Handler handler,
-								TokenController tokenController,
-                                boolean reset) {
+								TokenController tokenController) {
 		is_running = false;
 		this.networkHander = handler;
 		this.tokenController = tokenController;
@@ -98,8 +101,7 @@ public class VideoStreamingThread extends Thread {
 		// check input data at image directory
 //		imageFiles = this.getImageFiles(Const.TEST_IMAGE_DIR);
         imageFiles=null;
-        this.hasSentInitialization =true;
-        this.reset = reset;
+		hasInitliazed=false;
 	}
 
 	public VideoStreamingThread(FileDescriptor fd,
@@ -107,28 +109,12 @@ public class VideoStreamingThread extends Thread {
 								int port,
 								Handler handler,
 								TokenController tokenController,
-                                boolean reset,
 								String name) {
-		this(fd, IPString, port, handler, tokenController, reset);
+		this(fd, IPString, port, handler, tokenController);
         if (name != null){
             this.name = name;
-            this.hasSentInitialization =false;
         }
 	}
-
-    public VideoStreamingThread(FileDescriptor fd,
-                                String IPString,
-                                int port,
-                                Handler handler,
-                                TokenController tokenController,
-                                boolean reset,
-                                HashMap faceTable) {
-        this(fd, IPString, port, handler, tokenController, reset);
-        if (faceTable != null){
-            this.faceTable=faceTable;
-            this.hasSentInitialization =false;
-        }
-    }
 
 	private File[] getImageFiles(File imageDir) {
 		if (imageDir == null){
@@ -148,55 +134,6 @@ public class VideoStreamingThread extends Thread {
 	}
 
 
-    private void switchConnection(){
-        if (tcpSocket != null) {
-            try {
-                tcpSocket.close();
-            } catch (IOException e) {
-            }
-        }
-        if (networkWriter != null) {
-            try {
-                networkWriter.close();
-            } catch (IOException e) {
-            }
-        }
-        if (networkReceiver != null) {
-            networkReceiver.close();
-        }
-
-        InetAddress ip=null;
-        if (remoteIP.equals(Const.CLOUD_GABRIEL_IP)){
-            try {
-                ip = InetAddress.getByName(Const.CLOUDLET_GABRIEL_IP);
-            } catch (UnknownHostException e) {
-                Log.e(LOG_TAG, "unknown host: " + e.getMessage());
-            }
-        } else {
-            try {
-                ip = InetAddress.getByName(Const.CLOUD_GABRIEL_IP);
-            } catch (UnknownHostException e) {
-                Log.e(LOG_TAG, "unknown host: " + e.getMessage());
-            }
-        }
-        try {
-            tcpSocket = new Socket();
-            tcpSocket.setTcpNoDelay(true);
-            tcpSocket.connect(new InetSocketAddress(ip, remotePort), 5 * 1000);
-            networkWriter = new DataOutputStream(tcpSocket.getOutputStream());
-            DataInputStream networkReader = new DataInputStream(tcpSocket.getInputStream());
-            networkReceiver = new VideoControlThread(networkReader, this.networkHander, tokenController);
-            networkReceiver.start();
-        } catch (IOException e) {
-            Log.e(LOG_TAG, Log.getStackTraceString(e));
-            Log.e(LOG_TAG, "Error in initializing Data socket: " + e);
-            this.notifyError(connection_failure_msg);
-            this.is_running = false;
-            return;
-        }
-        Log.d(LOG_TAG, "switching host: " + remoteIP + " changed to " + ip);
-    }
-
 	public void run() {
 		this.is_running = true;
 		Log.i(LOG_TAG, "Streaming thread running");
@@ -211,7 +148,9 @@ public class VideoStreamingThread extends Thread {
 			tcpSocket = new Socket();
 			tcpSocket.setTcpNoDelay(true);
 			tcpSocket.connect(new InetSocketAddress(remoteIP, remotePort), 5 * 1000);
-			networkWriter = new DataOutputStream(tcpSocket.getOutputStream());
+            //use buffered writer
+            networkWriter = new DataOutputStream(tcpSocket.getOutputStream());
+//            networkWriter = new BufferedOutputStream(tcpSocket.getOutputStream());
 			DataInputStream networkReader = new DataInputStream(tcpSocket.getInputStream());
 			networkReceiver = new VideoControlThread(networkReader, this.networkHander, tokenController);
 			networkReceiver.start();
@@ -232,10 +171,14 @@ public class VideoStreamingThread extends Thread {
 					continue;
 				}
 
+                long time=System.currentTimeMillis();
+
                 //measurement
-                Message msg = Message.obtain();
-                msg.what = NetworkProtocol.NETWORK_MEASUREMENT;
-                networkHander.sendMessage(msg);
+                if (Const.MEASURE_LATENCY){
+                    Message msg = Message.obtain();
+                    msg.what = NetworkProtocol.NETWORK_MEASUREMENT;
+                    networkHander.sendMessage(msg);
+                }
 
 				// get data
 				byte[] data = null;
@@ -253,7 +196,8 @@ public class VideoStreamingThread extends Thread {
 					sendingFrameID = this.frameID;
 					this.frameBuffer = null;
 				}
-				
+                Log.d(LOG_TAG, "wait for framebuffer : " + (System.currentTimeMillis()-time));
+
 				// make it as a single packet
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		        DataOutputStream dos=new DataOutputStream(baos);
@@ -262,56 +206,32 @@ public class VideoStreamingThread extends Thread {
                 JSONObject headerJson = new JSONObject();
                 try{
                     headerJson.put("id", sendingFrameID);
-                    //reset flag
-                    if (reset){
-                        headerJson.put("reset", "True");
-                        reset = false;
-                    }
-                    //initilization packet for training and detecting
-                    if (!hasSentInitialization) {
-                        if (null != this.name) {
-                            headerJson.put("add_person", this.name);
-                            headerJson.put("training", this.name);
-                            hasSentInitialization = true;
-                        } else if (null != this.faceTable) {
-                            //detecting case
-                            JSONObject faceTableJson = new JSONObject();
-                            String faceTableString = null;
-                            try {
-                                for (Map.Entry<String, String> entry : faceTable.entrySet()) {
-                                    faceTableJson.put(entry.getKey(), entry.getValue());
-                                }
-                                faceTableString = faceTableJson.toString();
-                                headerJson.put("face_table", faceTableString);
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-
-                            hasSentInitialization = true;
-                        }
-                    } else {
-                        //if training then add training flag
-                        if (null != this.name){
-                            headerJson.put("training", this.name);
-                        }
+					if (!hasInitliazed){
+						headerJson.put("add_person", this.name);
+						hasInitliazed=true;
+					}
+                    //if training then add training flag
+                    if (null != this.name){
+						headerJson.put("training", this.name);
                     }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
-//                Log.d("json", headerJson.toString());
-                header = headerJson.toString().getBytes();
 
+                header = headerJson.toString().getBytes();
 				dos.writeInt(header.length);
 				dos.writeInt(data.length);
 				dos.write(header);
 				dos.write(data);
 
-                Log.d(LOG_TAG, "sending frameID: " + sendingFrameID);
+                time = System.currentTimeMillis();
                 this.tokenController.sendData(sendingFrameID, System.currentTimeMillis(), dos.size());
-				networkWriter.write(baos.toByteArray());
+                byte[] content=baos.toByteArray();
+				networkWriter.write(content);
 				networkWriter.flush();
 				this.tokenController.decreaseToken();
-//                Log.d(LOG_TAG,"sent frame ID: "+sendingFrameID);
+                Log.d(LOG_TAG, "sent frameID: " + sendingFrameID + " tooks "
+                        + (System.currentTimeMillis() - time));
 				
 				// measurement
 		        if (packet_firstUpdateTime == 0) {
@@ -384,6 +304,11 @@ public class VideoStreamingThread extends Thread {
     private long frame_prevUpdateTime = 0, frame_currentUpdateTime = 0;
     private long frame_totalsize = 0;
 
+    /**
+     * receive frame from camera preview
+     * @param frame
+     * @param parameters
+     */
     public void pushAsync(byte[] frame, Parameters parameters) {
         Object frameObj = frame;
         Object param = parameters;
@@ -391,8 +316,110 @@ public class VideoStreamingThread extends Thread {
         new PushTask().execute(inputAsync);
     }
 
-    private class PushTask extends AsyncTask<Object, Void, byte[]> {
+//    long time = System.currentTimeMillis();
+    /**
+     * receive frame from opencv camera preview
+     * @param frame
+     */
+    public void pushCVFrame(Mat frame) {
+        Log.d(LOG_TAG, "pushed CV frame for encoding method: ppm");
+        new PushCVFrameAsyncTask().execute(frame);
+    }
 
+    private class PushCVFrameAsyncTask extends AsyncTask<Mat, Void, byte[]> {
+        @Override
+        protected void onPostExecute(byte[] buffer) {
+            //TODO: implement this if you still want to draw segments based on image but not
+//            Log.d(LOG_TAG, "compression finsihed "+ (System.currentTimeMillis()- time));
+            // from packet
+//            if (!Const.FACE_DEMO_DISPLAY_RECEIVED_FACES) {
+//                if (curFrame == null) {
+//                    BitmapFactory.Options options = new BitmapFactory.Options();
+//                    options.inMutable = true;
+//                    curFrame = BitmapFactory.decodeByteArray(buffer,
+//                            0,
+//                            buffer.length, options);
+//                    Log.i(LOG_TAG, "created current frame bitmap");
+//                } else {
+//                    BitmapFactory.Options options = new BitmapFactory.Options();
+//                    options.inBitmap = curFrame;
+//                    options.inMutable = true;
+//                    curFrame = BitmapFactory.decodeByteArray(buffer,
+//                            0,
+//                            buffer.length,
+//                            options);
+//                }
+//            }
+            return;
+        }
+
+
+        @Override
+        protected byte[] doInBackground(Mat... frames) {
+            Mat frame=frames[0];
+            if (frame_firstUpdateTime == 0) {
+                frame_firstUpdateTime = System.currentTimeMillis();
+            }
+            frame_currentUpdateTime = System.currentTimeMillis();
+
+            long time = System.currentTimeMillis();
+
+            //android compression version
+			int datasize = 0;
+			byte[] byterray=null;
+			if (Const.USE_JPEG_COMPRESSION){
+				Bitmap bmp = Bitmap.createBitmap(frame.cols(), frame.rows(),
+						Bitmap.Config.ARGB_8888);
+				Utils.matToBitmap(frame, bmp);
+				ByteArrayOutputStream bos=new ByteArrayOutputStream();
+				bmp.compress(Bitmap.CompressFormat.JPEG, 80, bos);
+				byterray=bos.toByteArray();
+				bmp.recycle();
+			} else {
+				MatOfByte byteMat = new MatOfByte();
+				//changed to rgb so that decoding side is correct
+				Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BGRA2RGB);
+				Imgcodecs.imencode(".ppm", frame, byteMat);
+				Log.d(LOG_TAG, "encoding took " + (System.currentTimeMillis() - time));
+				byterray = byteMat.toArray();
+			}
+
+            //opencv jpeg compression version
+            // before compression: 640 * 480 = 900K, after compression ~300k
+//            int datasize = 0;
+//            MatOfByte jpgByteMat = new MatOfByte();
+//            MatOfInt params = new MatOfInt(Imgcodecs.IMWRITE_JPEG_QUALITY, 80);
+//            Imgcodecs.imencode(".jpg", frame, jpgByteMat, params);
+//            Log.d(LOG_TAG, "compression imencode took " + (System.currentTimeMillis() - time));
+//            Log.d(LOG_TAG, "original size: " + frame.total() * frame.elemSize()
+//                    + " after compression " + jpgByteMat.total() * jpgByteMat.elemSize());
+//            byte[] byterray = jpgByteMat.toArray();
+
+            //libjpeg-turbo compress
+//            int datasize = 0;
+//            //native lib use ARGB_8888 format
+//            Bitmap bmp = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+//            Utils.matToBitmap(frame, bmp);
+//            NativeUtil.compressBitmap(bmp, 95, "/sdcard/tmp/compression_test.jpg", true);
+//            Log.d(LOG_TAG, "native compression took " + (System.currentTimeMillis()-time));
+//
+//            ByteArrayOutputStream bos=new ByteArrayOutputStream();
+//            bmp.compress(Bitmap.CompressFormat.JPEG, 70, bos);
+//            byte[] byterray=bos.toByteArray();
+
+
+            synchronized (frameLock) {
+                frameBuffer = byterray;
+                frameGeneratedTime = System.currentTimeMillis();
+                frameID++;
+                frameLock.notify();
+            }
+            Log.d(LOG_TAG, "encoding routine took " + (System.currentTimeMillis()-time));
+            return byterray;
+        }
+    }
+
+    private class PushTask extends AsyncTask<Object, Void, byte[]> {
         @Override
         protected void onPostExecute(byte[] buffer){
             if (!Const.FACE_DEMO_DISPLAY_RECEIVED_FACES){
@@ -453,59 +480,6 @@ public class VideoStreamingThread extends Thread {
         }
     }
 
-/*
-	public void push(byte[] frame, Parameters parameters) {
-        if (frame_firstUpdateTime == 0) {
-            frame_firstUpdateTime = System.currentTimeMillis();
-        }
-        frame_currentUpdateTime = System.currentTimeMillis();
-        
-        int datasize = 0;
-        cameraImageSize = parameters.getPreviewSize();
-        if (this.imageFiles == null){
-            Log.d(LOG_TAG, "compress start");
-            YuvImage image = new YuvImage(frame, parameters.getPreviewFormat(), cameraImageSize.width,
-            		cameraImageSize.height, null);
-            ByteArrayOutputStream tmpBuffer = new ByteArrayOutputStream();
-            image.compressToJpeg(new Rect(0, 0, image.getWidth(), image.getHeight()), 90, tmpBuffer);
-            synchronized (frameLock) {
-                this.frameBuffer = tmpBuffer.toByteArray();
-                this.frameGeneratedTime = System.currentTimeMillis();
-                this.frameID++;
-                frameLock.notify();
-			}
-            Log.d(LOG_TAG, "compress end");
-            datasize = tmpBuffer.size();
-        }else{
-        	try {
-        		int index = indexImageFile % this.imageFiles.length;
-	            datasize = (int) this.imageFiles[index].length();
-				FileInputStream fi = new FileInputStream(this.imageFiles[index]);
-				byte[] buffer = new byte[datasize];
-				fi.read(buffer, 0, datasize);
-	            synchronized (frameLock) {
-		            this.frameBuffer = buffer;
-	                this.frameGeneratedTime = System.currentTimeMillis();
-	                this.frameID++;
-	                frameLock.notify();
-	            }
-	            indexImageFile++;
-			} catch (FileNotFoundException e) {
-			} catch (IOException e) {
-			}
-        }
-
-        frame_count++;
-        frame_totalsize += datasize;
-        if (frame_count % 50 == 0) {
-        	Log.d(LOG_TAG, "(IMG)\t" +
-        			"BW: " + 8.0*frame_totalsize / (frame_currentUpdateTime-frame_firstUpdateTime)/1000 +
-        			" Mbps\tCurrent FPS: " + 8.0*datasize/(frame_currentUpdateTime - frame_prevUpdateTime)/1000 + " Mbps\t" +
-        			"FPS: " + 1000.0*frame_count/(frame_currentUpdateTime-frame_firstUpdateTime));
-		}
-        frame_prevUpdateTime = frame_currentUpdateTime;
-	}
-*/
 
 	private void notifyError(String message) {
 		// callback
@@ -518,3 +492,28 @@ public class VideoStreamingThread extends Thread {
 	}
 
 }
+
+//
+////initilization packet for training and detecting
+//if (!hasSentInitialization) {
+//        if (null != this.name) {
+//        headerJson.put("add_person", this.name);
+//        headerJson.put("training", this.name);
+//        hasSentInitialization = true;
+//        } else if (null != this.faceTable) {
+//        //detecting case
+//        JSONObject faceTableJson = new JSONObject();
+//        String faceTableString = null;
+//        try {
+//        for (Map.Entry<String, String> entry : faceTable.entrySet()) {
+//        faceTableJson.put(entry.getKey(), entry.getValue());
+//        }
+//        faceTableString = faceTableJson.toString();
+//        headerJson.put("face_table", faceTableString);
+//        } catch (JSONException e) {
+//        e.printStackTrace();
+//        }
+//
+//        hasSentInitialization = true;
+//        }
+//        } else {

@@ -74,7 +74,7 @@ public class CameraOverlay extends View {
 //                        renderImg.recycle();
 //                    }
                 } else {
-                    if (face.renderBitmap){
+                    if (face.isRenderring){
                         c.drawBitmap(face.screenBitmap, face.screenSizeRoi[0], face.screenSizeRoi[1],
                                 null);
                     }
