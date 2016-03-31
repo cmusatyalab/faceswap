@@ -1,10 +1,13 @@
-package edu.cmu.cs.cloudletdemo;
+package edu.cmu.cs.faceswap;
 
+import android.annotation.TargetApi;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Gravity;
@@ -28,6 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,9 +39,8 @@ import java.util.Set;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
-import edu.cmu.cs.cloudletdemo.R;
 
-public class CloudletFragment extends DemoFragment implements CompoundButton.OnCheckedChangeListener {
+public class CloudletFragment extends Fragment implements CompoundButton.OnCheckedChangeListener {
     private final int LAUNCHCODE = 0;
     private static final int DLG_EXAMPLE1 = 0;
     private static final int TEXT_ID = 1000;
@@ -46,17 +49,37 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
 
     private List<PersonUIRow> personUIList = new ArrayList<PersonUIRow>();
 
+    protected Button cloudletRunDemoButton;
+    protected Button addPersonButton;
+    protected Button uploadStateFromFileButton;
+    protected Button uploadStateFromGoogleDriveButton;
+    protected RadioGroup typeRadioGroup;
+    protected RadioButton cloudletRadioButton;
+    protected RadioButton cloudRadioButton;
+    protected Spinner selectServerSpinner;
 
-    private CloudletDemoActivity getMyAcitivty(){
+    protected View view;
+    protected List<String> spinnerList;
+    protected TableLayout tb;
+
+    private static final String LOG_TAG = "fragment";
+
+    public List<String> trainedPeople;
+    public HashMap<String, String> faceTable;
+
+    private CloudletDemoActivity getMyAcitivty() {
         CloudletDemoActivity a = (CloudletDemoActivity) getActivity();
         return a;
     }
 
+    @TargetApi(Build.VERSION_CODES.M)
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        this.spinnerList = new ArrayList<String>();
+        faceTable = new HashMap<String, String>();
+        trainedPeople = new ArrayList<String>();
     }
-
 
     Spinner.OnItemSelectedListener spinnerSelectedListener = new Spinner.OnItemSelectedListener(){
         @Override
@@ -98,9 +121,22 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        super.onCreateView(inflater, container, savedInstanceState);
+        view=inflater.inflate(R.layout.unified_fragment,container,false);
 
-        final View view = super.onCreateView(inflater, container, savedInstanceState);
+        typeRadioGroup=(RadioGroup)view.findViewById(R.id.type_radiogroup);
+        cloudletRadioButton=(RadioButton)view.findViewById(R.id.radio_cloudlet);
+        cloudRadioButton=(RadioButton)view.findViewById(R.id.radio_cloud);
+        typeRadioGroup.check(R.id.radio_cloudlet);
 
+        selectServerSpinner=(Spinner) view.findViewById(R.id.select_server_spinner);
+        cloudletRunDemoButton =(Button)view.findViewById(R.id.cloudletRunDemoButton);
+        addPersonButton = (Button)view.findViewById(R.id.addPersonButton);
+        uploadStateFromFileButton = (Button)view.findViewById(R.id.uploadFromFileButton);
+        uploadStateFromGoogleDriveButton = (Button)
+                view.findViewById(R.id.uploadFromGoogleDriveButton);
+
+        tb = (TableLayout)view.findViewById(R.id.trainedTable);
         typeRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
@@ -111,39 +147,13 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
         cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Const.GABRIEL_IP=getMyAcitivty().currentServerIp;
+                Const.GABRIEL_IP = getMyAcitivty().currentServerIp;
                 Intent intent = new Intent(getContext(), GabrielClientActivity.class);
                 intent.putExtra("faceTable", faceTable);
                 startActivity(intent);
                 Toast.makeText(getContext(), "initializing demo", Toast.LENGTH_SHORT).show();
             }
         });
-
-//        cloudRunDemoButton.setOnClickListener(new Button.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                GabrielConfigurationAsyncTask task =
-//                        new GabrielConfigurationAsyncTask(getActivity(),
-//                        Const.CLOUDLET_GABRIEL_IP,
-//                        GabrielClientActivity.VIDEO_STREAM_PORT,
-//                        GabrielClientActivity.RESULT_RECEIVING_PORT,
-//                                Const.GABRIEL_CONFIGURATION_SYNC_STATE);
-//                task.execute(Const.GABRIEL_CONFIGURATION_SYNC_STATE);
-//
-//                try {
-//                    task.get();
-//                    Const.GABRIEL_IP=Const.CLOUD_GABRIEL_IP;
-//                    Intent intent = new Intent(getContext(), GabrielClientActivity.class);
-//                    intent.putExtra("faceTable", faceTable);
-//                    startActivity(intent);
-//                    Toast.makeText(getContext(), "initializing demo", Toast.LENGTH_SHORT).show();
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                } catch (ExecutionException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        });
 
         addPersonButton.setOnClickListener(new Button.OnClickListener() {
             @Override
@@ -152,7 +162,21 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
                 dg.show();
             }
         });
-        // Inflate the layout for this fragment
+
+        uploadStateFromFileButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getMyAcitivty().actionUploadStateFromLocalFile();
+            }
+        });
+
+        uploadStateFromGoogleDriveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getMyAcitivty().actionReadStateFileFromGoogleDrive();
+            }
+        });
+
         return view;
     }
 
@@ -195,7 +219,7 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
             ipNameSet=mSharedPreferences.getStringSet(
                     getString(R.string.shared_preference_cloudlet_ip_dict),
                     new HashSet<String>());
-        } else if (type.equals(getString(R.string.type_cloud))){
+        } else if (type.equals(getString(R.string.type_cloud))) {
             ipNameSet=mSharedPreferences.getStringSet(
                     getString(R.string.shared_preference_cloud_ip_dict),
                     new HashSet<String>());
@@ -313,11 +337,13 @@ public class CloudletFragment extends DemoFragment implements CompoundButton.OnC
                 trainedPeople.add(person);
             }
         }
-        if (getMyAcitivty().scrollView!=null){
-            getMyAcitivty().scrollView.invalidate();
-        } else {
-            Log.d(TAG, "scroll view is not rendered yet");
-        }
+
+        //TODO: to check if comment out lines below will change the scrolling behavior
+//        if (getMyAcitivty().scrollView!=null){
+//            getMyAcitivty().scrollView.invalidate();
+//        } else {
+//            Log.d(TAG, "scroll view is not rendered yet");
+//        }
 
     }
 

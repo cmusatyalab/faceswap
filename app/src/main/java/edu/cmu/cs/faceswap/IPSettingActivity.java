@@ -1,11 +1,10 @@
-package edu.cmu.cs.cloudletdemo;
+package edu.cmu.cs.faceswap;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -14,14 +13,10 @@ import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import edu.cmu.cs.cloudletdemo.R;
 import edu.cmu.cs.utils.NetworkUtils;
 
 import static edu.cmu.cs.CustomExceptions.CustomExceptions.notifyError;

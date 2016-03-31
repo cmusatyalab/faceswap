@@ -1,16 +1,12 @@
-package edu.cmu.cs.cloudletdemo;
+package edu.cmu.cs.faceswap;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.os.Bundle;
 import android.support.v7.app.AlertDialog;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
-import edu.cmu.cs.cloudletdemo.R;
 
 /**
  * Created by junjuew on 3/9/16.

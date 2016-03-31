@@ -47,81 +47,6 @@
         android:focusableInTouchMode="true"
         android:isScrollContainer="true">
 
-<!--
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Add New Person Default IP"
-            android:id="@+id/add_ip_default_text" />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="change default"
-            android:id="@+id/add_ip_change_default_ip_button"
-            android:layout_gravity="center_horizontal" />
--->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Cloudlet IPs:"
-            android:id="@+id/cloudlet_ip_text" />
-
-        <TableLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/add_ip_cloudlet_table"
-            android:stretchColumns="*">
-            <TableRow
-                android:layout_width="0dp"
-                android:layout_height="wrap_content">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:text="Name"
-                    android:textSize="15dp"
-                    android:layout_column="0"/>
-                <TextView
-                    android:text="IP"
-                    android:layout_column="1" />
-                <TextView
-                    android:text="Delete"
-                    android:layout_column="2" />
-            </TableRow>
-        </TableLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Cloud IPs"
-            android:id="@+id/cloud_ip_text" />
-
-        <TableLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/add_ip_cloud_table"
-            android:stretchColumns="*">
-            <TableRow
-                android:layout_width="0dp"
-                android:layout_height="wrap_content">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:text="Name"
-                    android:textSize="15dp"
-                    android:layout_column="0"/>
-                <TextView
-                    android:text="IP"
-                    android:layout_column="1" />
-                <TextView
-                    android:text="Delete"
-                    android:layout_column="2" />
-            </TableRow>
-        </TableLayout>
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -169,11 +94,79 @@
             android:entries="@array/add_ip_places_spinner_array"/>
 
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Add IP"
             android:id="@+id/add_ip_button"
-            android:layout_gravity="center_horizontal" />
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="\nCurrent Servers"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Cloudlet"
+            android:id="@+id/cloudlet_ip_text" />
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/add_ip_cloudlet_table"
+            android:stretchColumns="*">
+            <TableRow
+                android:layout_width="0dp"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="Name"
+                    android:textSize="15dp"
+                    android:layout_column="0"/>
+                <TextView
+                    android:text="IP"
+                    android:layout_column="1" />
+                <TextView
+                    android:text="Delete"
+                    android:layout_column="2" />
+            </TableRow>
+        </TableLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="Cloud"
+            android:id="@+id/cloud_ip_text" />
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/add_ip_cloud_table"
+            android:stretchColumns="*">
+            <TableRow
+                android:layout_width="0dp"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="Name"
+                    android:textSize="15dp"
+                    android:layout_column="0"/>
+                <TextView
+                    android:text="IP"
+                    android:layout_column="1" />
+                <TextView
+                    android:text="Delete"
+                    android:layout_column="2" />
+            </TableRow>
+        </TableLayout>
     </LinearLayout>
+
     </android.support.v4.widget.NestedScrollView>
 </android.support.design.widget.CoordinatorLayout>

@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
-import edu.cmu.cs.cloudletdemo.R;
+import edu.cmu.cs.faceswap.R;
 import edu.cmu.cs.gabriel.network.NetworkProtocol;
 import edu.cmu.cs.gabriel.network.ResultReceivingThread;
 import edu.cmu.cs.gabriel.network.VideoStreamingThread;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="edu.cmu.cs.cloudletdemo"
+    package="edu.cmu.cs.faceswap"
     android:versionCode="1"
     android:versionName="1.0">
 
@@ -25,7 +25,7 @@
         android:largeHeap="true"
         android:theme="@style/MyGabrielMaterialTheme">
         <activity
-            android:name="CloudletDemoActivity"
+            android:name="edu.cmu.cs.faceswap.CloudletDemoActivity"
             android:label="@string/title_activity_cloudlet_demo"
             android:screenOrientation="portrait"
             android:theme="@style/MyGabrielMaterialTheme">
@@ -58,10 +58,10 @@
             android:name="com.google.android.glass.VoiceTrigger"
             android:resource="@xml/gabriel_start" />
         -->
-        <activity android:name="edu.cmu.cs.cloudletdemo.SettingActivity"></activity>
-        <activity android:name="edu.cmu.cs.cloudletdemo.IPSettingActivity"
+        <activity android:name="edu.cmu.cs.faceswap.SettingActivity"></activity>
+        <activity android:name="edu.cmu.cs.faceswap.IPSettingActivity"
             android:theme="@style/MyGabrielMaterialTheme"
-            android:parentActivityName="edu.cmu.cs.cloudletdemo.CloudletDemoActivity">
+            android:parentActivityName="edu.cmu.cs.faceswap.CloudletDemoActivity">
         </activity>
     </application>
 

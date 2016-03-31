@@ -1,25 +1,33 @@
-package edu.cmu.cs.cloudletdemo;
+package edu.cmu.cs.faceswap;
 
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
-import android.widget.ScrollView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.drive.DriveApi.DriveContentsResult;
+import com.google.android.gms.drive.Drive;
+import com.google.android.gms.drive.DriveApi;
+import com.google.android.gms.drive.DriveFile;
+import com.google.android.gms.drive.DriveId;
+import com.google.android.gms.drive.OpenFileActivityBuilder;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -27,11 +35,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import edu.cmu.cs.IO.RetrieveDriveFileContentsAsyncTask;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
-import edu.cmu.cs.cloudletdemo.R;
-import edu.cmu.cs.utils.EditTextAlertDialog;
 import edu.cmu.cs.utils.UIUtils;
 import filepickerlibrary.FilePickerActivity;
 
@@ -41,8 +48,9 @@ import static edu.cmu.cs.utils.NetworkUtils.isOnline;
 import static edu.cmu.cs.utils.UIUtils.prepareForResultIntentForFilePickerActivity;
 
 public class CloudletDemoActivity extends AppCompatActivity implements
-        GabrielConfigurationAsyncTask.AsyncResponse,
-        EditTextAlertDialog.DialogEditTextResultListener {
+        GabrielConfigurationAsyncTask.AsyncResponse, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener{
+
     private Toolbar toolbar;
     private TabLayout tabLayout;
     private ViewPager viewPager;
@@ -53,7 +61,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     public String inputDialogResult;
     private CloudletFragment childFragment;
     private EditText dialogInputTextEdit;
-    int curModId = -1;
+//    int curModId = -1;
 
     public SharedPreferences mSharedPreferences= null;
 
@@ -63,7 +71,9 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 
     //fix the bug for load_state, and onresume race for sending
     public boolean onResumeFromLoadState=false;
-    public ScrollView scrollView;
+    private GoogleApiClient mGoogleApiClient;
+    private final int RESOLVE_CONNECTION_REQUEST_CODE=32891;
+    private static final int REQUEST_CODE_OPENER = 23091;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,62 +85,28 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 
             toolbar = (Toolbar) findViewById(R.id.toolbar);
             setSupportActionBar(toolbar);
-
-            viewPager = (ViewPager) findViewById(R.id.viewpager);
-            setupViewPager(viewPager);
-
-            scrollView = (ScrollView) findViewById(R.id.scroll_view);
-            tabLayout = (TabLayout) findViewById(R.id.tabs);
-            tabLayout.setupWithViewPager(viewPager);
-            curModId=R.id.setting_cloudlet_ip;
-            inputDialogResult = Const.CLOUDLET_GABRIEL_IP;
-//            sendOpenFaceResetRequest(currentServerIp);
+            childFragment=
+                    (CloudletFragment) getSupportFragmentManager().findFragmentById(R.id.demofragment);
             mSharedPreferences=getSharedPreferences(getString(R.string.shared_preference_file_key),
                     MODE_PRIVATE);
         }
         Log.d(TAG,"on create");
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Drive.API)
+                .addScope(Drive.SCOPE_FILE)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+
         mActivity=this;
     }
 
-
-    private void setupViewPager(ViewPager viewPager) {
-        ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
-        childFragment = new CloudletFragment();
-        adapter.addFragment(childFragment, "Face Swap Demo");
-        viewPager.setAdapter(adapter);
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.i(TAG, "on start");
+        mGoogleApiClient.connect();
     }
-
-
-
-    class ViewPagerAdapter extends FragmentPagerAdapter {
-        private final List<Fragment> mFragmentList = new ArrayList<>();
-        private final List<String> mFragmentTitleList = new ArrayList<>();
-
-        public ViewPagerAdapter(FragmentManager manager) {
-            super(manager);
-        }
-
-        @Override
-        public Fragment getItem(int position) {
-            return mFragmentList.get(position);
-        }
-
-        @Override
-        public int getCount() {
-            return mFragmentList.size();
-        }
-
-        public void addFragment(Fragment fragment, String title) {
-            mFragmentList.add(fragment);
-            mFragmentTitleList.add(title);
-        }
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            return mFragmentTitleList.get(position);
-        }
-    }
-
 
     //activity menu
     @Override
@@ -140,10 +116,10 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         return true;
     }
 
-    @Override
-    public void onDialogEditTextResult(String result) {
-        inputDialogResult=result;
-    }
+//    @Override
+//    public void onDialogEditTextResult(String result) {
+//        inputDialogResult=result;
+//    }
 
     /**
      * callback when gabriel configuration async task finished
@@ -168,16 +144,17 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                         dialog.dismiss();
                     }
                 },this);
-            } else {
-                if (curModId == R.id.setting_cloudlet_ip){
-                    Const.CLOUDLET_GABRIEL_IP = inputDialogResult;
-                    Log.i(TAG, "cloudlet ip changed to : " + Const.CLOUDLET_GABRIEL_IP);
-                } else if (curModId == R.id.setting_cloud_ip){
-                    Const.CLOUD_GABRIEL_IP = inputDialogResult;
-                    Log.i(TAG, "cloudlet ip changed to : " + Const.CLOUD_GABRIEL_IP);
-                }
-                curModId = -1;
             }
+//            else {
+//                if (curModId == R.id.setting_cloudlet_ip){
+//                    Const.CLOUDLET_GABRIEL_IP = inputDialogResult;
+//                    Log.i(TAG, "cloudlet ip changed to : " + Const.CLOUDLET_GABRIEL_IP);
+//                } else if (curModId == R.id.setting_cloud_ip){
+//                    Const.CLOUD_GABRIEL_IP = inputDialogResult;
+//                    Log.i(TAG, "cloudlet ip changed to : " + Const.CLOUD_GABRIEL_IP);
+//                }
+//                curModId = -1;
+//            }
         } else if (action.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)){
             Log.d(TAG, "upload state finished. success? " + success);
             if (success){
@@ -220,26 +197,45 @@ public class CloudletDemoActivity extends AppCompatActivity implements
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if(requestCode == FilePickerActivity.REQUEST_FILE && resultCode==RESULT_OK){
-            Bundle extras = data.getExtras();
-            String path = (String) extras.get(FilePickerActivity.FILE_EXTRA_DATA_PATH);
-            Log.d(TAG, "path: " + path);
-            boolean isLoad=(boolean)extras.get(FilePickerActivity.INTENT_EXTRA_ACTION_READ);
-            File file=new File(path);
-            if (isLoad){
-                byte[] stateData= UIUtils.loadFromFile(file);
-                if (stateData!=null){
-                    //send asyncrequest
-                    sendOpenFaceLoadStateRequest(stateData);
-                } else {
-                    Log.e(TAG, "wrong file format");
-                    Toast.makeText(this, "wrong file format", Toast.LENGTH_LONG).show();
+        switch (requestCode){
+            case FilePickerActivity.REQUEST_FILE:
+                if (resultCode==RESULT_OK){
+                    Bundle extras = data.getExtras();
+                    String path = (String) extras.get(FilePickerActivity.FILE_EXTRA_DATA_PATH);
+                    Log.d(TAG, "path: " + path);
+                    boolean isLoad=(boolean)extras.get(FilePickerActivity.INTENT_EXTRA_ACTION_READ);
+                    File file=new File(path);
+                    if (isLoad){
+                        byte[] stateData= UIUtils.loadFromFile(file);
+                        if (stateData!=null){
+                            //send asyncrequest
+                            sendOpenFaceLoadStateRequest(stateData);
+                        } else {
+                            Log.e(TAG, "wrong file format");
+                            Toast.makeText(this, "wrong file format", Toast.LENGTH_LONG).show();
+                        }
+                    } else {
+                        if (this.asyncResponseExtra!=null){
+                            UIUtils.saveToFile(file, this.asyncResponseExtra);
+                        }
+                    }
                 }
-            } else {
-                if (this.asyncResponseExtra!=null){
-                    UIUtils.saveToFile(file, this.asyncResponseExtra);
+                break;
+            case RESOLVE_CONNECTION_REQUEST_CODE:
+                Log.i(TAG, "returned from resolution for drive connection");
+                if (resultCode == RESULT_OK) {
+                    Log.i(TAG, "successfully connected drive ");
+                    mGoogleApiClient.connect();
                 }
-            }
+                break;
+            case REQUEST_CODE_OPENER:
+                if (resultCode == RESULT_OK) {
+                    DriveId fileId = (DriveId) data.getParcelableExtra(
+                            OpenFileActivityBuilder.EXTRA_RESPONSE_DRIVE_ID);
+                    Log.i(TAG, "user select drive file id: "+fileId);
+                    openDriveFile(fileId);
+                }
+                break;
         }
     }
 
@@ -325,6 +321,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         return result;
     }
 
+/*
     DialogInterface.OnClickListener launchCopyStateAsyncTaskAction=
             new DialogInterface.OnClickListener() {
         @Override
@@ -349,6 +346,19 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             return;
         }
     };
+*/
+
+    public boolean actionUploadStateFromLocalFile(){
+        //check online
+        if (!checkOnline(this)) {
+            return false;
+        }
+        //launch activity result to readin states
+        Intent intent = prepareForResultIntentForFilePickerActivity(this, true);
+        onResumeFromLoadState=true;
+        startActivityForResult(intent, FilePickerActivity.REQUEST_FILE);
+        return true;
+    }
 
     //TODO: move check online to async task?
     @Override
@@ -383,15 +393,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 //                return true;
 
             case R.id.setting_load_state:
-                //check online
-                if (!checkOnline(this)) {
-                    return false;
-                }
-                //launch activity result to readin states
-                Intent intent = prepareForResultIntentForFilePickerActivity(this, true);
-                onResumeFromLoadState=true;
-                startActivityForResult(intent, FilePickerActivity.REQUEST_FILE);
-                return true;
+                actionUploadStateFromLocalFile();
             case R.id.setting_save_state:
                 if (!checkOnline(this)) {
                     return false;
@@ -412,62 +414,90 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         }
     }
 
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "on resume");
+        super.onResume();
+        if (mGoogleApiClient == null) {
+            // Create the API client and bind it to an instance variable.
+            // We use this instance as the callback for connection and connection
+            // failures.
+            // Since no account name is passed, the user is prompted to choose.
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addApi(Drive.API)
+                    .addScope(Drive.SCOPE_FILE)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .build();
+        }
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    protected void onPause() {
+        Log.i(TAG, "on pause");
+        if (mGoogleApiClient != null) {
+            mGoogleApiClient.disconnect();
+        }
+        super.onPause();
+    }
+
+    // connection with google drive
+    public void actionReadStateFileFromGoogleDrive(){
+        // Let the user pick text file
+        // no files selected by the user.
+        //http://stackoverflow.com/questions/26331046/android-how-can-i-access-a-spreadsheet-with-the-google-drive-sdk
+        // cannot open google doc file
+        IntentSender intentSender = Drive.DriveApi
+                .newOpenFileActivityBuilder()
+                .setMimeType(new String[]{"text/plain", "application/vnd.google-apps.document"})
+                .build(mGoogleApiClient);
+        try {
+            startIntentSenderForResult(intentSender, REQUEST_CODE_OPENER, null, 0, 0, 0);
+        } catch (IntentSender.SendIntentException e) {
+            Log.w(TAG, "Unable to send intent", e);
+        }
+    }
+
+    private void openDriveFile(DriveId mSelectedFileDriveId) {
+        // Reset progress dialog back to zero as we're
+        // initiating an opening request.
+        RetrieveDriveFileContentsAsyncTask task=
+                new RetrieveDriveFileContentsAsyncTask(getApplicationContext());
+        task.execute(mSelectedFileDriveId);
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        Log.i(TAG, "drive API client connected.");
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        Log.i(TAG, "GoogleApiClient connection suspended");
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        // Called whenever the API client fails to connect.
+        Log.i(TAG, "GoogleApiClient connection failed: " + result.toString());
+        if (!result.hasResolution()) {
+            // show the localized error dialog.
+            GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
+            Log.i(TAG, "trying to resolve" + result.toString());
+            return;
+        }
+        // The failure has a resolution. Resolve it.
+        // Called typically when the app is not yet authorized, and an
+        // authorization
+        // dialog is displayed to the user.
+        try {
+            result.startResolutionForResult(this, RESOLVE_CONNECTION_REQUEST_CODE);
+        } catch (IntentSender.SendIntentException e) {
+            Log.e(TAG, "Exception while starting resolution activity", e);
+        }
+    }
+
 }
 
 
-
-//    /**
-//     * Create and return an example alert dialog with an edit text box.
-//     */
-//    public Dialog createExampleDialog(String title, String msg) {
-//        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-//        builder.setTitle(title);
-//        builder.setMessage(msg);
-//
-//        // Use an EditText view to get user input.
-//        final EditText input = new EditText(this);
-//        input.setText("");
-//        dialogInputTextEdit = input;
-//        inputDialogResult=null;
-//        builder.setView(input);
-//
-//        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int whichButton) {
-//            }
-//        });
-//
-//        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int which) {
-//                return;
-//            }
-//        });
-//
-//        AlertDialog alertDialog = builder.create();
-//        alertDialog.show();
-//        Button customOkButton = alertDialog.getButton(DialogInterface.BUTTON_POSITIVE);
-//        customOkButton.setOnClickListener(new CustomListener(alertDialog));
-//        return alertDialog;
-//    }
-//
-//    class CustomListener implements View.OnClickListener {
-//        private final Dialog dialog;
-//        public CustomListener(Dialog dialog) {
-//            this.dialog = dialog;
-//        }
-//        @Override
-//        public void onClick(View v) {
-//            String value = dialogInputTextEdit.getText().toString();
-//            Log.d(TAG, "user input: " + value);
-//            if (!isIpAddress(value)) {
-//                Toast.makeText(getApplicationContext(),
-//                        "Invalid IP address", Toast.LENGTH_SHORT).show();
-//            } else {
-//                sendOpenFaceResetRequest(value);
-//                inputDialogResult = value;
-//                dialog.dismiss();
-//            }
-//            return;
-//        }
-//    }

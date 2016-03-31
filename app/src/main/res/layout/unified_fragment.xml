@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/scroll_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -12,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        tools:context="edu.cmu.cs.cloudletdemo.CloudletFragment">
+        tools:context="edu.cmu.cs.faceswap.CloudletFragment">
 
         <TextView
             android:id="@+id/step_1"
@@ -53,7 +54,7 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:text="2. Choose a Specific Server"
+            android:text="\n2. Choose a Specific Server"
             android:textSize="25dp" />
 
         <TextView
@@ -76,21 +77,40 @@
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_alignParentTop="true"
-            android:text="3. Add Training Images"
+            android:text="\n3. Add Training Images"
             android:textSize="25dp" />
 
-        <Button
-            android:id="@+id/addPersonButton"
+
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Add Person" />
+            android:layout_height="wrap_content">
+            <Button
+                android:id="@+id/addPersonButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Collect Images" />
+
+            <Button
+                android:id="@+id/uploadFromFileButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@+id/addPersonButton"
+                android:text="From Local File" />
+
+            <Button
+                android:id="@+id/uploadFromGoogleDriveButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@+id/uploadFromFileButton"
+                android:text="From Google Drive" />
+        </RelativeLayout>
 
         <TextView
             android:id="@+id/step_4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
-            android:text="4. Choose Who to Substitute"
+            android:text="\n4. Choose Who to Substitute"
             android:textSize="25dp" />
 
         <!--
@@ -137,14 +157,11 @@
                     android:text="Delete" />
             </TableRow>
         </TableLayout>
-        <!--
-            </LinearLayout>
-        -->
         <TextView
             android:id="@+id/step_5"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="5. Run Demo"
+            android:text="\n5. Run Demo"
             android:textSize="25dp" />
 
         <Button
@@ -163,4 +180,4 @@
             android:textSize="25dp" />
 
     </LinearLayout>
-</ScrollView>
+</android.support.v4.widget.NestedScrollView>

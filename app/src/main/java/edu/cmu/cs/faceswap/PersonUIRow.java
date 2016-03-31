@@ -1,4 +1,4 @@
-package edu.cmu.cs.cloudletdemo;
+package edu.cmu.cs.faceswap;
 
 import android.widget.ImageView;
 import android.widget.Switch;

@@ -1,8 +1,7 @@
-package edu.cmu.cs.cloudletdemo;
+package edu.cmu.cs.faceswap;
 
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
 public class SettingActivity extends PreferenceActivity {

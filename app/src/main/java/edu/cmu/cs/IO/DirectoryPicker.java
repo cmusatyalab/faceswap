@@ -17,7 +17,7 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import edu.cmu.cs.cloudletdemo.R;
+import edu.cmu.cs.faceswap.R;
 
 /**
  * modified by junjuew junjuew@cs.cmu.edu
