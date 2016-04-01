@@ -191,16 +191,19 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 os.makedirs(person_dir)                
         elif msg['type'] == FaceRecognitionServerProtocol.TYPE_remove_person:
             name = msg['val'].encode('ascii', 'ignore')
+            print 'remove {} from {}'.format(name, people)
             # remove identities from images
             try:
                 remove_identity = people.index(name)
                 people.remove(name)
+                print 'succesfully removed {}'.format(name)
                 images ={h:face for h,face in images.iteritems() if face.identity != remove_identity}
                 self.trainSVM()
                 msg={
                     'type':FaceRecognitionServerProtocol.TYPE_remove_person_resp,
                     'val':True
                 }
+                print 'before send message'
                 self.sendMessage(json.dumps(msg))
             except ValueError:
                 print('error: Name to be removed is not found')
@@ -278,7 +281,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         global svm
         global training
         global svm_lock
-        
+
+        self.remove_people_with_insufficient_images()
         # format it such that json can serialize
         msg ={
             'type':FaceRecognitionServerProtocol.TYPE_get_people_resp,
@@ -286,6 +290,24 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         }
         return msg
 
+
+    def remove_people_with_insufficient_images(self):
+        global images
+        global people
+        no_image_people=[]
+        to_be_removed_images=[]
+        for (idx,person) in enumerate(people):
+            person_images_hashes=[h for h,face in images.iteritems() if face.identity == idx]
+            print '{} has {} images'.format(person,len(person_images_hashes))
+            if len(person_images_hashes) < 6:
+                print 'removing {}'.format(person)
+                no_image_people.append(idx)
+                to_be_removed_images.extend(person_images_hashes)
+
+        for hash in to_be_removed_images:
+            del images[hash]
+        people = [person for (idx,person) in enumerate(people) if idx not in no_image_people]
+        
         
     def getData(self):
         global images
@@ -293,7 +315,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         global svm
         global training
         global svm_lock
-        
+
+        self.remove_people_with_insufficient_images()
         X = []
         y = []
         for img in images.values():
@@ -361,7 +384,10 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         global svm_lock
 
         print("+ Training SVM on {} labeled images.".format(len(images)))
-        print("+ labeled images {}".format(images))        
+#        print("+ labeled images {}".format(images))
+
+        # clean images first
+
         d = self.getData()
         if d is None:
             svm = None
