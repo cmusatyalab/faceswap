@@ -12,6 +12,7 @@ public class Const {
 	public static final boolean IS_EXPERIMENT = false;
 	public static final boolean USE_JPEG_COMPRESSION = true;
 
+
 	// Transfer from the file list
 	// If TEST_IMAGE_DIR is not none, transmit from the image
 	public static File ROOT_DIR = new File(Environment.getExternalStorageDirectory() + File.separator + "Gabriel" + File.separator);
@@ -49,12 +50,15 @@ public class Const {
 	//display preview or img processed from gabriel server
 	public static boolean DISPLAY_PREVIEW_ONLY=false;
 
-	public static String GABRIEL_CONFIGURATION_SYNC_STATE="syncState";
-	public static String GABRIEL_CONFIGURATION_DOWNLOAD_STATE="downloadState";
-	public static String GABRIEL_CONFIGURATION_UPLOAD_STATE="uploadState";
-	public static String GABRIEL_CONFIGURATION_RESET_STATE="reset";
-	public static String GABRIEL_CONFIGURATION_REMOVE_PERSON="remove_person";
-	public static String GABRIEL_CONFIGURATION_GET_PERSON="get_person";
+	public static final String GABRIEL_CONFIGURATION_SYNC_STATE="syncState";
+	public static final String GABRIEL_CONFIGURATION_DOWNLOAD_STATE="downloadState";
+	public static final String GABRIEL_CONFIGURATION_DOWNLOAD_STATE_TO_GDRIVE =
+			"downloadStateToGdrive";
+	public static final String GABRIEL_CONFIGURATION_UPLOAD_STATE="uploadState";
+	public static final String GABRIEL_CONFIGURATION_RESET_STATE="reset";
+	public static final String GABRIEL_CONFIGURATION_REMOVE_PERSON="remove_person";
+	public static final String GABRIEL_CONFIGURATION_GET_PERSON="get_person";
+
 
 	public static boolean FACE_DEMO_BOUNDING_BOX_ONLY=false;
 	//true: use the face snippets received in the packet

@@ -30,6 +30,7 @@ public abstract class ApiClientAsyncTask<Params, Progress, Result>
         mClient = builder.build();
     }
 
+
     @Override
     protected final Result doInBackground(Params... params) {
         Log.d("TAG", "in background opening google api client");

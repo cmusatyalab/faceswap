@@ -67,26 +67,60 @@ public class UIUtils {
         return false;
     }
 
-    public static byte[] loadFromFile(File file){
+    public static String stripMagicSequence(String stateInput){
+        if (stateInput!=null){
+            String openFaceMagicSequence=Const.OPENFACE_STATE_FILE_MAGIC_SEQUENCE.replace("\n",
+                    "");
+            String[] lines=stateInput.split("\n");
+            String firstLine = lines[0];
+            String validState=null;
+            if (firstLine.equals(openFaceMagicSequence)){
+                StringBuilder text=new StringBuilder();
+                for (int idx=1;idx<lines.length;idx++){
+                    text.append(lines[idx]);
+                    text.append("\n");
+                }
+                validState=text.toString();
+            }
+            return validState;
+        }
+        return null;
+    }
+
+    public static byte[] loadFromFile(File file) {
         Log.d(TAG, "loading openface state string to file...");
         if (isExternalStorageReadable()) {
             if (file.exists() && file.isFile() && file.canRead()) {
                 try {
                     // open input stream test.txt for reading purpose.
                     BufferedReader br = new BufferedReader(new FileReader(file));
-                    String magicSequence = br.readLine();
-                    String openFaceMagicSequence=Const.OPENFACE_STATE_FILE_MAGIC_SEQUENCE.replace("\n",
-                            "");
-                    if (magicSequence.equals(openFaceMagicSequence)) {
-                        StringBuilder text = new StringBuilder();
-                        String line;
-                        while ((line = br.readLine()) != null) {
-                            text.append(line);
-                            text.append('\n');
-                        }
-                        br.close();
-                        return text.toString().getBytes();
+                    StringBuilder builder = new StringBuilder();
+                    String line;
+                    String state;
+                    while ((line = br.readLine()) != null) {
+                        builder.append(line);
+                        builder.append("\n");
                     }
+                    br.close();
+                    state = builder.toString();
+                    String validState=stripMagicSequence(state);
+                    if (validState!=null){
+                        return validState.getBytes();
+                    }
+
+//                    String magicSequence = br.readLine();
+//                    String openFaceMagicSequence=Const.OPENFACE_STATE_FILE_MAGIC_SEQUENCE.replace("\n",
+//                            "");
+//                    if (magicSequence.equals(openFaceMagicSequence)) {
+//                        StringBuilder text = new StringBuilder();
+//                        String line;
+//                        while ((line = br.readLine()) != null) {
+//                            text.append(line);
+//                            text.append('\n');
+//                        }
+//                        br.close();
+//                        return text.toString().getBytes();
+//                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

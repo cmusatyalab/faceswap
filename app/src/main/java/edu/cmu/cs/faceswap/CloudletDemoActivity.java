@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -14,7 +15,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 
@@ -22,14 +22,16 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.drive.DriveApi.DriveContentsResult;
 import com.google.android.gms.drive.Drive;
 import com.google.android.gms.drive.DriveApi;
-import com.google.android.gms.drive.DriveFile;
 import com.google.android.gms.drive.DriveId;
+import com.google.android.gms.drive.MetadataChangeSet;
 import com.google.android.gms.drive.OpenFileActivityBuilder;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +52,7 @@ import static edu.cmu.cs.utils.UIUtils.prepareForResultIntentForFilePickerActivi
 public class CloudletDemoActivity extends AppCompatActivity implements
         GabrielConfigurationAsyncTask.AsyncResponse, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener{
+
 
     private Toolbar toolbar;
     private TabLayout tabLayout;
@@ -72,8 +75,9 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     //fix the bug for load_state, and onresume race for sending
     public boolean onResumeFromLoadState=false;
     private GoogleApiClient mGoogleApiClient;
-    private final int RESOLVE_CONNECTION_REQUEST_CODE=32891;
-    private static final int REQUEST_CODE_OPENER = 23091;
+    private static final int GDRIVE_RESOLVE_CONNECTION_REQUEST_CODE =32891;
+    private static final int GDRIVE_REQUEST_CODE_OPENER = 23091;
+    private static final int GDRIVE_REQUEST_CODE_CREATOR = 20391;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -162,12 +166,18 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 Log.d(TAG, "request trained people list" + success);
                 sendOpenFaceGetPersonRequest(currentServerIp);
             }
-        } else if (action.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE)){
+        } else if (action.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE)) {
             Log.d(TAG, "download state finished. success? " + success);
-            if (success){
-                asyncResponseExtra=extra;
+            if (success) {
+                asyncResponseExtra = extra;
                 Intent intent = prepareForResultIntentForFilePickerActivity(this, false);
                 startActivityForResult(intent, FilePickerActivity.REQUEST_FILE);
+            }
+        } else if (action.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE_TO_GDRIVE)){
+            Log.d(TAG, "download state to google drive finished. success? " + success);
+            if (success) {
+                asyncResponseExtra = extra;
+                saveFileToDrive(asyncResponseExtra);
             }
         } else if (action.equals(Const.GABRIEL_CONFIGURATION_GET_PERSON)){
             Log.d(TAG, "download person finished. success? " + success);
@@ -189,6 +199,16 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         }
 }
 
+    public void actionUploadStateByteArray(byte[] stateData){
+        if (stateData!=null){
+            onResumeFromLoadState=true;
+            sendOpenFaceLoadStateRequest(stateData);
+        } else {
+            Log.e(TAG, "wrong file format");
+            Toast.makeText(this, "wrong file format", Toast.LENGTH_LONG).show();
+        }
+    }
+
     /**
      * file picker activie result
      * @param requestCode
@@ -207,13 +227,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                     File file=new File(path);
                     if (isLoad){
                         byte[] stateData= UIUtils.loadFromFile(file);
-                        if (stateData!=null){
-                            //send asyncrequest
-                            sendOpenFaceLoadStateRequest(stateData);
-                        } else {
-                            Log.e(TAG, "wrong file format");
-                            Toast.makeText(this, "wrong file format", Toast.LENGTH_LONG).show();
-                        }
+                        actionUploadStateByteArray(stateData);
                     } else {
                         if (this.asyncResponseExtra!=null){
                             UIUtils.saveToFile(file, this.asyncResponseExtra);
@@ -221,19 +235,27 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                     }
                 }
                 break;
-            case RESOLVE_CONNECTION_REQUEST_CODE:
+            case GDRIVE_RESOLVE_CONNECTION_REQUEST_CODE:
                 Log.i(TAG, "returned from resolution for drive connection");
                 if (resultCode == RESULT_OK) {
                     Log.i(TAG, "successfully connected drive ");
                     mGoogleApiClient.connect();
                 }
                 break;
-            case REQUEST_CODE_OPENER:
+            case GDRIVE_REQUEST_CODE_OPENER:
                 if (resultCode == RESULT_OK) {
                     DriveId fileId = (DriveId) data.getParcelableExtra(
                             OpenFileActivityBuilder.EXTRA_RESPONSE_DRIVE_ID);
                     Log.i(TAG, "user select drive file id: "+fileId);
                     openDriveFile(fileId);
+                }
+                break;
+            case GDRIVE_REQUEST_CODE_CREATOR:
+                // Called after a file is saved to Drive.
+                if (resultCode == RESULT_OK) {
+                    Log.i(TAG, "Image successfully saved.");
+                    Toast.makeText(this,
+                            "succesfully saved to google drive", Toast.LENGTH_SHORT).show();
                 }
                 break;
         }
@@ -355,12 +377,11 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         }
         //launch activity result to readin states
         Intent intent = prepareForResultIntentForFilePickerActivity(this, true);
-        onResumeFromLoadState=true;
+
         startActivityForResult(intent, FilePickerActivity.REQUEST_FILE);
         return true;
     }
 
-    //TODO: move check online to async task?
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -379,6 +400,34 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                     return true;
                 }
                 return false;
+            case R.id.setting_save_state:
+                if (!checkOnline(this)) {
+                    return false;
+                }
+                //fire off download state async task
+                //return value will be called into onGabrielConfigurationAsyncTaskFinish
+                new GabrielConfigurationAsyncTask(this,
+                        Const.CLOUDLET_GABRIEL_IP,
+                        GabrielClientActivity.VIDEO_STREAM_PORT,
+                        GabrielClientActivity.RESULT_RECEIVING_PORT,
+                        Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE,
+                        this).execute();
+                return true;
+            case R.id.setting_save_state_to_gdrive:
+                if (!checkOnline(this)) {
+                    return false;
+                }
+                new GabrielConfigurationAsyncTask(this,
+                        Const.CLOUDLET_GABRIEL_IP,
+                        GabrielClientActivity.VIDEO_STREAM_PORT,
+                        GabrielClientActivity.RESULT_RECEIVING_PORT,
+                        Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE_TO_GDRIVE,
+                        this).execute();
+                return true;
+            default:
+                return false;
+        }
+    }
 
 //            case R.id.setting_copy_server_state:
 //                //TODO: alertdialog let user select which server to copy from
@@ -392,27 +441,9 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 //                dg.show();
 //                return true;
 
-            case R.id.setting_load_state:
-                actionUploadStateFromLocalFile();
-            case R.id.setting_save_state:
-                if (!checkOnline(this)) {
-                    return false;
-                }
-                //fire off download state async task
-                //return value will be called into onGabrielConfigurationAsyncTaskFinish
-                GabrielConfigurationAsyncTask task =
-                        new GabrielConfigurationAsyncTask(this,
-                                Const.CLOUDLET_GABRIEL_IP,
-                                GabrielClientActivity.VIDEO_STREAM_PORT,
-                                GabrielClientActivity.RESULT_RECEIVING_PORT,
-                                Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE,
-                                this);
-                task.execute();
-                return true;
-            default:
-                return false;
-        }
-    }
+//            case R.id.setting_load_state:
+//                return actionUploadStateFromLocalFile();
+
 
     @Override
     protected void onResume() {
@@ -442,6 +473,15 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         super.onPause();
     }
 
+    private RetrieveDriveFileContentsAsyncTask.GdriveRetrieveFileContentCallBack gdriveCallBack=
+            new RetrieveDriveFileContentsAsyncTask.GdriveRetrieveFileContentCallBack() {
+                @Override
+                public void onFileRetrieved(byte[] content) {
+                    Log.i(TAG, "uploading byte array to server...");
+                    actionUploadStateByteArray(content);
+                }
+            };
+
     // connection with google drive
     public void actionReadStateFileFromGoogleDrive(){
         // Let the user pick text file
@@ -453,7 +493,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 .setMimeType(new String[]{"text/plain", "application/vnd.google-apps.document"})
                 .build(mGoogleApiClient);
         try {
-            startIntentSenderForResult(intentSender, REQUEST_CODE_OPENER, null, 0, 0, 0);
+            startIntentSenderForResult(intentSender, GDRIVE_REQUEST_CODE_OPENER, null, 0, 0, 0);
         } catch (IntentSender.SendIntentException e) {
             Log.w(TAG, "Unable to send intent", e);
         }
@@ -463,7 +503,8 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         // Reset progress dialog back to zero as we're
         // initiating an opening request.
         RetrieveDriveFileContentsAsyncTask task=
-                new RetrieveDriveFileContentsAsyncTask(getApplicationContext());
+                new RetrieveDriveFileContentsAsyncTask(getApplicationContext(),
+                        gdriveCallBack);
         task.execute(mSelectedFileDriveId);
     }
 
@@ -492,12 +533,63 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         // authorization
         // dialog is displayed to the user.
         try {
-            result.startResolutionForResult(this, RESOLVE_CONNECTION_REQUEST_CODE);
+            result.startResolutionForResult(this, GDRIVE_RESOLVE_CONNECTION_REQUEST_CODE);
         } catch (IntentSender.SendIntentException e) {
             Log.e(TAG, "Exception while starting resolution activity", e);
         }
     }
 
+    /**
+     * Create a new file and save it to Drive.
+     */
+    private void saveFileToDrive(final byte[] state) {
+        // Start by creating a new contents, and setting a callback.
+        Log.i(TAG, "Creating new contents.");
+        Drive.DriveApi.newDriveContents(mGoogleApiClient)
+                .setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
+                    @Override
+                    public void onResult(DriveApi.DriveContentsResult result) {
+                        // If the operation was not successful, we cannot do anything
+                        // and must
+                        // fail.
+                        if (!result.getStatus().isSuccess()) {
+                            Log.i(TAG, "Failed to create new contents.");
+                            return;
+                        }
+                        // Otherwise, we can write our data to the new contents.
+                        Log.i(TAG, "New contents created.");
+                        // Get an output stream for the contents.
+                        OutputStream outputStream = result.getDriveContents().getOutputStream();
+                        // Write the bitmap data from it.
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                        try {
+                            bos.write(Const.OPENFACE_STATE_FILE_MAGIC_SEQUENCE.getBytes());
+                            bos.write(state);
+                            outputStream.write(bos.toByteArray());
+                            bos.close();
+                            outputStream.close();
+                        } catch (IOException e1) {
+                            Log.i(TAG, "Unable to write file contents.");
+                        }
+                        // Create the initial metadata - MIME type and title.
+                        // Note that the user will be able to change the title later.
+                        MetadataChangeSet metadataChangeSet = new MetadataChangeSet.Builder()
+                                .setMimeType("text/plain").setTitle("tmp.txt").build();
+                        // Create an intent for the file chooser, and start it.
+                        IntentSender intentSender = Drive.DriveApi
+                                .newCreateFileActivityBuilder()
+                                .setInitialMetadata(metadataChangeSet)
+                                .setInitialDriveContents(result.getDriveContents())
+                                .build(mGoogleApiClient);
+                            try {
+                                startIntentSenderForResult(
+                                    intentSender, GDRIVE_REQUEST_CODE_CREATOR, null, 0, 0, 0);
+                        } catch (IntentSender.SendIntentException e) {
+                            Log.i(TAG, "Failed to launch file chooser.");
+                        }
+                    }
+                });
+    }
 }
 
 

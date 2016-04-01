@@ -266,9 +266,10 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
             Log.i("configurationAsyncTask", "success: " + bgResult + ". " + uiMsg);
             Toast.makeText(callingActivity.getApplicationContext(),
                     "success? "+bgResult + "\nmessage: " + uiMsg,
-                Toast.LENGTH_SHORT).show();
+                Toast.LENGTH_LONG).show();
         } else {
             Log.i("configurationAsyncTask", "success: " + bgResult);
+
 //            Toast.makeText(callingActivity.getApplicationContext(),
 //                    "success? "+bgResult,
 //                    Toast.LENGTH_LONG).show();
@@ -283,8 +284,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         Boolean success =false;
         String task = action;
         // task is to sync state
-        if (task.equals(Const.GABRIEL_CONFIGURATION_SYNC_STATE)) {
-            try {
+        try{
+            if (task.equals(Const.GABRIEL_CONFIGURATION_SYNC_STATE)) {
                 String copyFromIp = (String) inputData[0];
                 InetAddress copyFrom = InetAddress.getByName(copyFromIp);
                 setupConnection(copyFrom, sendToPort, recvFromPort);
@@ -306,14 +307,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 if (content.equals("true")) {
                     success = true;
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-                Log.e(LOG_TAG, "IO exception sync state failed");
-            } finally {
-                closeConnection();
-            }
-        } else if (task.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
-            try{
+            } else if (task.equals(Const.GABRIEL_CONFIGURATION_RESET_STATE)){
                 setupConnection(remoteIP, sendToPort, recvFromPort);
                 //get state
                 byte[] header= generateHeader("reset");
@@ -324,14 +318,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 if (content.equals("true")) {
                     success = true;
                 }
-            } catch (IOException e){
-                e.printStackTrace();
-                Log.e(LOG_TAG, "IO exception reset state failed");
-            } finally {
-                closeConnection();
-            }
-        } else if (task.equals(Const.GABRIEL_CONFIGURATION_REMOVE_PERSON)){
-            try{
+            } else if (task.equals(Const.GABRIEL_CONFIGURATION_REMOVE_PERSON)){
                 setupConnection(remoteIP, sendToPort, recvFromPort);
                 //get state
                 String name = (String) inputData[0];
@@ -343,14 +330,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 if (content.equals("true")) {
                     success = true;
                 }
-            } catch (IOException e){
-                e.printStackTrace();
-                Log.e(LOG_TAG, "IO exception reset state failed");
-            } finally {
-                closeConnection();
-            }
-        } else if (task.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE)){
-            try{
+            } else if (task.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE)
+                    || task.equals(Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE_TO_GDRIVE)){
                 setupConnection(remoteIP, sendToPort, recvFromPort);
                 //get state
                 byte[] header= generateGetStateHeader();
@@ -360,15 +341,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 String openfaceState=parseResponsePacket(resp);
                 extra=openfaceState.getBytes();
                 success=true;
-            } catch (IOException e){
-                e.printStackTrace();
-                Log.e(LOG_TAG, "IO exception sync state failed");
-            } finally {
-                closeConnection();
-            }
-        } else if (task.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)) {
-            byte[] stateData = (byte[]) inputData[0];
-            try {
+            } else if (task.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)) {
+                byte[] stateData = (byte[]) inputData[0];
                 setupConnection(remoteIP, sendToPort, recvFromPort);
                 //get state
                 byte[] header = generateHeader("load_state");
@@ -379,33 +353,27 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 if (respVal.toLowerCase().equals("true")) {
                     success = true;
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-                Log.e(LOG_TAG, "IO exception sync state failed");
-            } finally {
-                closeConnection();
-            }
-        } else if (task.equals(Const.GABRIEL_CONFIGURATION_GET_PERSON)) {
-            try{
+            } else if (task.equals(Const.GABRIEL_CONFIGURATION_GET_PERSON)) {
                 setupConnection(remoteIP, sendToPort, recvFromPort);
                 //get state
-                byte[] header= generateHeader("get_person");
-                byte[] data= "dummpy_long_enough_for_correctness".getBytes();
+                byte[] header = generateHeader("get_person");
+                byte[] data = "dummpy_long_enough_for_correctness".getBytes();
                 sendPacket(header, data);
                 String resp = receiveMsg(networkReader);
-                String openfaceState=parseResponsePacket(resp);
+                String openfaceState = parseResponsePacket(resp);
                 Log.d(LOG_TAG, "response get from get_person: " + openfaceState);
-                String people=parseGetPersonResponseData(openfaceState);
-                extra=people.getBytes();
-                success=true;
-            } catch (IOException e){
-                e.printStackTrace();
-                Log.e(LOG_TAG, "IO exception sync state failed");
-            } catch (JSONException e) {
-                e.printStackTrace();
-            } finally {
-                closeConnection();
+                String people = parseGetPersonResponseData(openfaceState);
+                extra = people.getBytes();
+                success = true;
             }
+        } catch (IOException e){
+            e.printStackTrace();
+            Log.e(LOG_TAG, "IO exception sync state failed");
+            uiMsg="Is Face Swap Server Running at " + remoteIP + "?";
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } finally {
+            closeConnection();
         }
         return success;
     }
