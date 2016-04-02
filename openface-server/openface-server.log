@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/home/junjuew/FaceSwap/openface-server/cloudlet-demo-openface-server.py", line 88, in <module>
+    align = openface.AlignDlib(args.dlibFacePredictor)
+  File "/usr/local/lib/python2.7/dist-packages/openface/align_dlib.py", line 91, in __init__
+    self.predictor = dlib.shape_predictor(facePredictor)
+RuntimeError: Unable to open /home/junjuew/FaceSwap/openface-server/../../models/dlib/shape_predictor_68_face_landmarks.dat
