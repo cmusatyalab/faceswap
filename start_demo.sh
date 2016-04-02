@@ -9,7 +9,16 @@ while getopts "d" opt; do
     esac
 done
 
+# need to pull models down if they doesn't exist yet
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+openface_model_dir=$DIR/openface-server/models
+dlib_face_model=$openface_model_dir/dlib/shape_predictor_68_face_landmarks.dat
+openface_model=$openface_model_dir/openface/nn4.small2.v1.t7
+if [ ! -f $dlib_face_model ] || [ ! -f $openface_model ]; then
+    echo -e "start downloading models"
+    $openface_model_dir/get-models.sh
+fi
+
 echo -e "launching FaceSwap server at dir $DIR"
 gabriel-control &
 sleep 5

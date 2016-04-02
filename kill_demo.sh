@@ -9,10 +9,12 @@ do
     echo $i
     PID=`ps -eaf | grep ${i} | grep -v grep | awk '{print $2}'`
     if [[ "" !=  "$PID" ]]; then 
-       echo "killing $PID"
-       # kill process group
-       pkill -KILL -g $PID
-#       kill -KILL $PID
+        while read -r line; do
+            echo "killing $line"
+            # kill process group
+            pkill -KILL -g $line
+            kill -KILL -$line
+        done <<< "$PID"
     fi
 done
 echo -e "All killed"

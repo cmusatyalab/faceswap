@@ -1,0 +1,170 @@
+With a resolution width of 960
+     detector would run around 0.5s (too much!!!)
+
+
+bw speed test:
+1. wolfstack cloudlet: avg(85.6 Mbps, 86.6 Mbps, 86.5 Mbps) = 86.2 Mbps
+2. cloud amazon west : avg(38.1 Mbps, 44.6 Mbps, 39.1 Mbps) = 40.3 Mbps
+
+=====================
+Add in face recognition:
+frontend:
+           1. UI: add person, swap person
+           2. training mode:
+              1. send out images for training
+              2. set header to be training
+              3. display resposne from server about training count
+           
+
+backend:
+        1. training mode: detect only on every frame, get identities from frontend
+           main process: train(frame, name):
+           return training_cnt                 
+
+
+        2. detecting mode:
+           main process: tracking(frame) 
+                         return ([roi, name, face_snippet])
+           background process: detect + recognizing catch up
+                               return to main process(roi, name)
+
+        3. modify openface server:
+           remove detection part from the server                               
+
+======================        
+Add in face swap section:
+
+    backend:
+        1. a dicitonary keep current swap lists (keyed by name)
+        2. add clear trained person at openface server
+
+    frontend:
+        1. add UI to add swap and remove rules
+        2. clear training
+
+                            
+Error:
+      1. gabriel throwing out client socket closed, even training mode extra person message is disabled
+      2. it's at line         header_size = struct.unpack("!I", self._recv_all(self.sock, 4))[0]
+         seems that _recv_all is not detecting socket closed
+      solved: android side sends out the wrong format of json (no error printed out, but the process gets terminated)
+
+
+======================
+network tests: 
+whitney 5G: 86.2 Mbps, whitney only 7Mbps
+latency: 8/9 ms to vm
+cmu-secure: 27-30 ms similar to going to aws...
+
+=======================
+Problem:
+1. compression takes too long on android UI side, blocking UI updates:
+   move compression to background thread (asynctask)
+
+
+stress test:
+1. nothing sent while openface has state --failed
+
+======================
+Optimization:
+        1. greyscale tracking -- done
+        2. rewrite getState -- done
+        3. shared memory region among multiple proccesses for frame, so tracking can be parallelized
+           when updating trackers, kill previous tracker process and create different process for each tracker
+           when each frame comes, update the shared memory region, and signal the process to start tracking
+           get result from each process on tracking results
+           --seems that the result is still slow...
+        4. sent back only ROI for doing AR instead of data
+        5. tracking has to at performed on ten frames before going ahead if a face is detected
+
+
+
+goal:
+identify after the view ondraw is called, how long does it take to actually see it on the screen?
+
+display image directly without going through any network, always 
+
+is camera overlay drawing the full images instead of jsut the region??
+
+try out:
+1. just draw detection frame roi instead of bitmap check render time
+
+change tracking to meanshift --- check and see the result
+
+---------------------
+1. rajawali has bugs that prevents surfaceView to be fully put on top of camera preview
+2. glSurfaceView can be put on top of camera perview, but need some work. haven't tried out libgdx
+3. should use hardware accerlaration, and move bitmap creation to background thread in order to facilitate UI drawing
+
+
+
+=================================
+features to add:
+1. load/save state
+2. define multiple cloudlets/clouds by setting
+3. ability to choose which exact location to run (cloudlet or cloud)
+4. add in fps/delay information onto screen
+5. change logo
+
+6.when the cloud is syncing, show some information
+(load state and set state may be huge....) uh....
+
+
+bugs:
+1. when get_state packet is send alone, either at the beginning of an application or after another  get_state packet. The proxy server is not able to receive such request. However, when the application is closed, the request is received at proxy server.
+
+Such request may get stuck in control or ucomm server
+
+Get_state would work if it is immediately following a add_person or runDemo requests
+bug: forget to close previous connection in client async task code
+2. the text format of states may not be acceptable. 80 images ~ 150KB
+
+
+
+bugs:
+2. right now communicating with backend server will keep displaying if there is no connection. Need a timeout for the async sockets.
+
+
+implemented currentserverip
+todo:
+2. before switch: use real time face?
+3. socket timeout handle is not good in async task
+4. when moved away, has some problem connecting or making connection throwing out "dummy" message... what??
+   openface server is recieving "dummpy" message which is the data set from async task
+5. after canceling an asynctask by clicking backbutton, the connection is still alive, therefore blocking next requests
+
+
+
+1. need to use 
+libopenblas-base libopenblas-dev for faster speed on linear algebra for dlib
+
+when uses a cpu for face recognition, current detection and recognition are done in serial.
+Need to use detection to correct tracker quickly, and then use recognition to give names by corresponding to face tracker indices...
+
+
+TODO server:
+1. use sharedmem to speed up frame sharing...
+
+2. seems that after getting server response, the packet interval becomes quite large
+
+
+client side:
+in current implementation, the client side is displaying frame stored from camera feeds...
+currently the face data is not sent as well... need to be changed
+
+
+androdi:
+mergeDebug error: 
+http://stackoverflow.com/questions/31979965/after-updating-android-studio-to-version-1-3-0-i-am-getting-ndk-integration-is
+
+
+================image format==============:
+ppm:
+original size: 921600 after compression 921615 bytes
+jpg:
+original size: 921600 after compression 300000 bytes
+
+
+==========installation==============
+gabriel should use the latest python six version
+otherwise your pip will get insecureplatofrm warning
