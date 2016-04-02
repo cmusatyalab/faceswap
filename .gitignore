@@ -6,6 +6,7 @@ models/facenet/*.t7
 models/dlib/shape_predictor_68_face_landmarks.dat
 
 *.pyc
+*.log
 
 demos/web/bower_components
 demos/web/unknown*.npy
