@@ -6,7 +6,7 @@
 
     <uses-sdk
         android:minSdkVersion="16"
-        android:targetSdkVersion="16" />
+        android:targetSdkVersion="23" />
 
     <uses-feature android:name="android.hardware.camera" />
 
@@ -47,17 +47,6 @@
             android:label="@string/title_activity_main"
             android:screenOrientation="landscape" />
 
-        <!--
-        android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
-        Enable below for Google Glass
-
-        <intent-filter>
-            <action android:name="com.google.android.glass.action.VOICE_TRIGGER" />
-        </intent-filter>
-        <meta-data
-            android:name="com.google.android.glass.VoiceTrigger"
-            android:resource="@xml/gabriel_start" />
-        -->
         <activity android:name="edu.cmu.cs.faceswap.SettingActivity"></activity>
         <activity android:name="edu.cmu.cs.faceswap.IPSettingActivity"
             android:theme="@style/MyGabrielMaterialTheme"
