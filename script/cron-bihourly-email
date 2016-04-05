@@ -1,4 +1,4 @@
 #! /bin/bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-echo "Amazon EC2 FaceSwap Server is still running" | mail -s "Reminder: EC2 FaceSwap Server Running" junjuew@andrew.cmu.edu
+echo "Amazon EC2 FaceSwap Server is still running" | mail -s "Reminder: EC2 FaceSwap Server Running" $faceswap_reminder_email
 
