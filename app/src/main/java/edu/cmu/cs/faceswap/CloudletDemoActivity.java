@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -32,7 +31,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -64,7 +65,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     public String inputDialogResult;
     private CloudletFragment childFragment;
     private EditText dialogInputTextEdit;
-//    int curModId = -1;
 
     public SharedPreferences mSharedPreferences= null;
 
@@ -75,9 +75,17 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     //fix the bug for load_state, and onresume race for sending
     public boolean onResumeFromLoadState=false;
     private GoogleApiClient mGoogleApiClient;
-    private static final int GDRIVE_RESOLVE_CONNECTION_REQUEST_CODE =32891;
+    public static final int GDRIVE_RESOLVE_CONNECTION_REQUEST_CODE =32891;
     private static final int GDRIVE_REQUEST_CODE_OPENER = 23091;
     private static final int GDRIVE_REQUEST_CODE_CREATOR = 20391;
+
+    //closed when request for connection.
+    // open when onconnected
+    // or no solution for failed connection
+    // or solution result comes back
+    private int pendingGDriveAction=-1;
+    private static final int GDRIVE_ACTION_LOAD=12;
+    private static final int GDRIVE_ACTION_SAVE=13;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,12 +103,12 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                     MODE_PRIVATE);
         }
         Log.d(TAG,"on create");
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addApi(Drive.API)
-                .addScope(Drive.SCOPE_FILE)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .build();
+//        mGoogleApiClient = new GoogleApiClient.Builder(this)
+//                .addApi(Drive.API)
+//                .addScope(Drive.SCOPE_FILE)
+//                .addConnectionCallbacks(this)
+//                .addOnConnectionFailedListener(this)
+//                .build();
 
         mActivity=this;
     }
@@ -109,7 +117,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     protected void onStart() {
         super.onStart();
         Log.i(TAG, "on start");
-        mGoogleApiClient.connect();
+//        mGoogleApiClient.connect();
     }
 
     //activity menu
@@ -177,7 +185,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             Log.d(TAG, "download state to google drive finished. success? " + success);
             if (success) {
                 asyncResponseExtra = extra;
-                saveFileToDrive(asyncResponseExtra);
+                actionSaveStateFileToGoogleDrive();
             }
         } else if (action.equals(Const.GABRIEL_CONFIGURATION_GET_PERSON)){
             Log.d(TAG, "download person finished. success? " + success);
@@ -236,10 +244,14 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 }
                 break;
             case GDRIVE_RESOLVE_CONNECTION_REQUEST_CODE:
-                Log.i(TAG, "returned from resolution for drive connection");
                 if (resultCode == RESULT_OK) {
-                    Log.i(TAG, "successfully connected drive ");
+                    Log.i(TAG, "drive client problem resolved. Trying to connect");
                     mGoogleApiClient.connect();
+                } else {
+                    //if not okay, then give up
+                    pendingGDriveAction=-1;
+                    Log.i(TAG, "drive connection resolution failed");
+                    Toast.makeText(this,"Failed to Connect Google Drive", Toast.LENGTH_LONG).show();
                 }
                 break;
             case GDRIVE_REQUEST_CODE_OPENER:
@@ -445,23 +457,49 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 //                return actionUploadStateFromLocalFile();
 
 
-    @Override
-    protected void onResume() {
-        Log.i(TAG, "on resume");
-        super.onResume();
-        if (mGoogleApiClient == null) {
+    private boolean connectGoogleApiClient(){
+        if (mGoogleApiClient == null || (!mGoogleApiClient.isConnected())) {
             // Create the API client and bind it to an instance variable.
             // We use this instance as the callback for connection and connection
             // failures.
             // Since no account name is passed, the user is prompted to choose.
+            Log.d(TAG, "creating a new google api client");
             mGoogleApiClient = new GoogleApiClient.Builder(this)
                     .addApi(Drive.API)
                     .addScope(Drive.SCOPE_FILE)
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
                     .build();
+            mGoogleApiClient.connect();
         }
-        mGoogleApiClient.connect();
+        return true;
+//        ConnectionResult result=mGoogleApiClient.blockingConnect(2000, TimeUnit.MILLISECONDS);
+//        if (result.isSuccess()){
+//            return true;
+//        } else {
+//            if (!result.hasResolution()) {
+//                // show the localized error dialog.
+//                GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
+//                Log.i(TAG, "trying to resolve" + result.toString());
+//            } else {
+//                // The failure has a resolution. Resolve it.
+//                // Called typically when the app is not yet authorized, and an
+//                // authorization
+//                // dialog is displayed to the user.
+//                try {
+//                    result.startResolutionForResult(this, GDRIVE_RESOLVE_CONNECTION_REQUEST_CODE);
+//                } catch (IntentSender.SendIntentException e) {
+//                    Log.e(TAG, "Exception while starting resolution activity", e);
+//                }
+//            }
+//            return false;
+//        }
+    }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "on resume");
+        super.onResume();
     }
 
     @Override
@@ -482,22 +520,36 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 }
             };
 
-    // connection with google drive
-    public void actionReadStateFileFromGoogleDrive(){
-        // Let the user pick text file
-        // no files selected by the user.
-        //http://stackoverflow.com/questions/26331046/android-how-can-i-access-a-spreadsheet-with-the-google-drive-sdk
-        // cannot open google doc file
-        IntentSender intentSender = Drive.DriveApi
-                .newOpenFileActivityBuilder()
-                .setMimeType(new String[]{"text/plain", "application/vnd.google-apps.document"})
-                .build(mGoogleApiClient);
-        try {
-            startIntentSenderForResult(intentSender, GDRIVE_REQUEST_CODE_OPENER, null, 0, 0, 0);
-        } catch (IntentSender.SendIntentException e) {
-            Log.w(TAG, "Unable to send intent", e);
+    private void readFileFromGoogleDrive(){
+        if (mGoogleApiClient !=null && mGoogleApiClient.isConnected()){
+            // Let the user pick text file
+            // no files selected by the user.
+            //http://stackoverflow.com/questions/26331046/android-how-can-i-access-a-spreadsheet-with-the-google-drive-sdk
+            // cannot open google doc file
+            IntentSender intentSender = Drive.DriveApi
+                    .newOpenFileActivityBuilder()
+                    .setMimeType(new String[]{"text/plain", "application/vnd.google-apps.document"})
+                    .build(mGoogleApiClient);
+            try {
+                startIntentSenderForResult(intentSender, GDRIVE_REQUEST_CODE_OPENER, null, 0, 0, 0);
+            } catch (IntentSender.SendIntentException e) {
+                Log.w(TAG, "Unable to send intent", e);
+            }
         }
     }
+
+    // connection with google drive
+    public void actionReadStateFileFromGoogleDrive() {
+        pendingGDriveAction=GDRIVE_ACTION_LOAD;
+        connectGoogleApiClient();
+    }
+
+    // connection with google drive
+    public void actionSaveStateFileToGoogleDrive() {
+        pendingGDriveAction=GDRIVE_ACTION_SAVE;
+        connectGoogleApiClient();
+    }
+
 
     private void openDriveFile(DriveId mSelectedFileDriveId) {
         // Reset progress dialog back to zero as we're
@@ -511,6 +563,12 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     @Override
     public void onConnected(Bundle bundle) {
         Log.i(TAG, "drive API client connected.");
+        if (pendingGDriveAction == GDRIVE_ACTION_LOAD){
+            readFileFromGoogleDrive();
+        } else if (pendingGDriveAction == GDRIVE_ACTION_SAVE){
+            saveFileToDrive(asyncResponseExtra);
+        }
+        pendingGDriveAction=-1;
     }
 
     @Override
@@ -522,12 +580,15 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     public void onConnectionFailed(ConnectionResult result) {
         // Called whenever the API client fails to connect.
         Log.i(TAG, "GoogleApiClient connection failed: " + result.toString());
+        Toast.makeText(this, "Failed to Connect to Google Drive. Trying to resolve...",
+                Toast.LENGTH_SHORT).show();
         if (!result.hasResolution()) {
             // show the localized error dialog.
             GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
             Log.i(TAG, "trying to resolve" + result.toString());
             return;
         }
+
         // The failure has a resolution. Resolve it.
         // Called typically when the app is not yet authorized, and an
         // authorization
@@ -544,51 +605,59 @@ public class CloudletDemoActivity extends AppCompatActivity implements
      */
     private void saveFileToDrive(final byte[] state) {
         // Start by creating a new contents, and setting a callback.
-        Log.i(TAG, "Creating new contents.");
-        Drive.DriveApi.newDriveContents(mGoogleApiClient)
-                .setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
-                    @Override
-                    public void onResult(DriveApi.DriveContentsResult result) {
-                        // If the operation was not successful, we cannot do anything
-                        // and must
-                        // fail.
-                        if (!result.getStatus().isSuccess()) {
-                            Log.i(TAG, "Failed to create new contents.");
-                            return;
-                        }
-                        // Otherwise, we can write our data to the new contents.
-                        Log.i(TAG, "New contents created.");
-                        // Get an output stream for the contents.
-                        OutputStream outputStream = result.getDriveContents().getOutputStream();
-                        // Write the bitmap data from it.
-                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                        try {
-                            bos.write(Const.OPENFACE_STATE_FILE_MAGIC_SEQUENCE.getBytes());
-                            bos.write(state);
-                            outputStream.write(bos.toByteArray());
-                            bos.close();
-                            outputStream.close();
-                        } catch (IOException e1) {
-                            Log.i(TAG, "Unable to write file contents.");
-                        }
-                        // Create the initial metadata - MIME type and title.
-                        // Note that the user will be able to change the title later.
-                        MetadataChangeSet metadataChangeSet = new MetadataChangeSet.Builder()
-                                .setMimeType("text/plain").setTitle("tmp.txt").build();
-                        // Create an intent for the file chooser, and start it.
-                        IntentSender intentSender = Drive.DriveApi
-                                .newCreateFileActivityBuilder()
-                                .setInitialMetadata(metadataChangeSet)
-                                .setInitialDriveContents(result.getDriveContents())
-                                .build(mGoogleApiClient);
+        if (mGoogleApiClient!=null && mGoogleApiClient.isConnected()){
+            Log.i(TAG, "saving file to drive.");
+            Drive.DriveApi.newDriveContents(mGoogleApiClient)
+                    .setResultCallback(new ResultCallback<DriveApi.DriveContentsResult>() {
+                        @Override
+                        public void onResult(DriveApi.DriveContentsResult result) {
+                            // If the operation was not successful, we cannot do anything
+                            // and must
+                            // fail.
+                            if (!result.getStatus().isSuccess()) {
+                                Log.i(TAG, "Failed to create new contents.");
+                                return;
+                            }
+                            // Otherwise, we can write our data to the new contents.
+                            Log.i(TAG, "New contents created.");
+                            // Get an output stream for the contents.
+                            OutputStream outputStream = result.getDriveContents().getOutputStream();
+                            // Write the bitmap data from it.
+                            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                            try {
+                                bos.write(Const.OPENFACE_STATE_FILE_MAGIC_SEQUENCE.getBytes());
+                                bos.write(state);
+                                outputStream.write(bos.toByteArray());
+                                bos.close();
+                                outputStream.close();
+                            } catch (IOException e1) {
+                                Log.i(TAG, "Unable to write file contents.");
+                            }
+                            // Create the initial metadata - MIME type and title.
+                            // Note that the user will be able to change the title later.
+                            SimpleDateFormat dateFormat = new SimpleDateFormat("MM_dd_hh_mm_ss");
+                            GregorianCalendar cal = new GregorianCalendar();
+                            dateFormat.setTimeZone(cal.getTimeZone());
+                            String hint = "openface_"+ dateFormat.format(cal.getTime()) +".txt";
+                            MetadataChangeSet metadataChangeSet = new MetadataChangeSet.Builder()
+                                    .setMimeType("text/plain").setTitle(hint).build();
+                            // Create an intent for the file chooser, and start it.
+                            IntentSender intentSender = Drive.DriveApi
+                                    .newCreateFileActivityBuilder()
+                                    .setInitialMetadata(metadataChangeSet)
+                                    .setInitialDriveContents(result.getDriveContents())
+                                    .build(mGoogleApiClient);
                             try {
                                 startIntentSenderForResult(
-                                    intentSender, GDRIVE_REQUEST_CODE_CREATOR, null, 0, 0, 0);
-                        } catch (IntentSender.SendIntentException e) {
-                            Log.i(TAG, "Failed to launch file chooser.");
+                                        intentSender, GDRIVE_REQUEST_CODE_CREATOR, null, 0, 0, 0);
+                            } catch (IntentSender.SendIntentException e) {
+                                Log.i(TAG, "Failed to launch file chooser.");
+                            }
                         }
-                    }
-                });
+                    });
+        } else {
+            Toast.makeText(this, "failed to connect to google drive", Toast.LENGTH_LONG).show();
+        }
     }
 }
 

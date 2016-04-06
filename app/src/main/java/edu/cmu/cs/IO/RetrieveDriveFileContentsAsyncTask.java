@@ -28,11 +28,6 @@ public class RetrieveDriveFileContentsAsyncTask
         void onFileRetrieved(byte[] state);
     }
 
-    public RetrieveDriveFileContentsAsyncTask(Context context) {
-        super(context);
-        dialog = new ProgressDialog(context);
-    }
-
     public RetrieveDriveFileContentsAsyncTask(Context context,
                                               GdriveRetrieveFileContentCallBack delegate) {
         super(context);

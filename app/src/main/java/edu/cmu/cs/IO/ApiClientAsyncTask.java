@@ -21,7 +21,7 @@ import java.util.concurrent.CountDownLatch;
 public abstract class ApiClientAsyncTask<Params, Progress, Result>
         extends AsyncTask<Params, Progress, Result> {
 
-    private GoogleApiClient mClient;
+    protected GoogleApiClient mClient;
 
     public ApiClientAsyncTask(Context context) {
         GoogleApiClient.Builder builder = new GoogleApiClient.Builder(context)
@@ -48,6 +48,7 @@ public abstract class ApiClientAsyncTask<Params, Progress, Result>
         mClient.registerConnectionFailedListener(new OnConnectionFailedListener() {
             @Override
             public void onConnectionFailed(ConnectionResult arg0) {
+                Log.d("google api cliet", arg0.toString());
                 latch.countDown();
             }
         });
