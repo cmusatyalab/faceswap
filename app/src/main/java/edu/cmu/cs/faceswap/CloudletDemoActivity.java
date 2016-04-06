@@ -419,7 +419,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                 //fire off download state async task
                 //return value will be called into onGabrielConfigurationAsyncTaskFinish
                 new GabrielConfigurationAsyncTask(this,
-                        Const.CLOUDLET_GABRIEL_IP,
+                        currentServerIp,
                         GabrielClientActivity.VIDEO_STREAM_PORT,
                         GabrielClientActivity.RESULT_RECEIVING_PORT,
                         Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE,
@@ -430,7 +430,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                     return false;
                 }
                 new GabrielConfigurationAsyncTask(this,
-                        Const.CLOUDLET_GABRIEL_IP,
+                        currentServerIp,
                         GabrielClientActivity.VIDEO_STREAM_PORT,
                         GabrielClientActivity.RESULT_RECEIVING_PORT,
                         Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE_TO_GDRIVE,
@@ -586,6 +586,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             // show the localized error dialog.
             GoogleApiAvailability.getInstance().getErrorDialog(this, result.getErrorCode(), 0).show();
             Log.i(TAG, "trying to resolve" + result.toString());
+            pendingGDriveAction=-1;
             return;
         }
 

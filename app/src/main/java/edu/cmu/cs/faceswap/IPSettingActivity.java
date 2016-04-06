@@ -77,7 +77,9 @@ public class IPSettingActivity extends AppCompatActivity {
                     notifyError("Duplicate Name", false, mActivity);
                     return;
                 } else if (mSharedPreferences.getAll().containsKey(name)){
-                    notifyError("Name String is a Reserve Word. Please Enter a Different Name", false, mActivity);
+                    //TODO: here cloud and cloudlet server cannot share
+                    // the same name
+                    notifyError("Duplicate Name", false, mActivity);
                     return;
                 }
                 if (!NetworkUtils.isIpAddress(ip)){

@@ -70,7 +70,11 @@ public class CVRenderer implements CameraBridgeViewBase.CvCameraViewListener2{
             for (Face face:faces){
                 int[] roi = face.realRoi;
                 boundryCheck(roi, displayFrame.width(), displayFrame.height());
+                Point leftTop=new Point(roi[0], roi[1]);
+                Point rightBottom=new Point(roi[2], roi[3]);
                 if (face.isRenderring && face.argbMat!=null){
+                    rightBottom=new Point(roi[0]+face.argbMat.width(),
+                            roi[1]+face.argbMat.height());
                     Rect pRoi = new Rect(roi[0],roi[1],
                             face.argbMat.width(), face.argbMat.height());
                     Log.d("debug", "pRoi : " + pRoi.toString());
@@ -83,8 +87,8 @@ public class CVRenderer implements CameraBridgeViewBase.CvCameraViewListener2{
                     face.argbMat.copyTo(pRoiMat);
                 }
                 Imgproc.rectangle(displayFrame,
-                        new Point(roi[0], roi[1]),
-                        new Point(roi[2], roi[3]),
+                        leftTop,
+                        rightBottom,
                         new Scalar(255, 0, 0));
                 Imgproc.putText(displayFrame,
                         face.getName(),
