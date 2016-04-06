@@ -1,5 +1,6 @@
 #! /bin/bash
 
+. /home/junjuew/torch/install/bin/torch-activate
 # turn debug on by default to log output 
 debug=0
 while getopts "d" opt; do
