@@ -1,7 +1,8 @@
 #! /bin/bash
 
+. /home/junjuew/torch/install/bin/torch-activate
 # turn debug on by default to log output 
-debug=1
+debug=0
 while getopts "d" opt; do
     case "$opt" in
     d)  debug=1
@@ -31,7 +32,7 @@ then
     if [[ $debug -eq 1 ]];
     then
         echo 'debug mode...'
-        $DIR/faceswap-proxy.py 2>&1 | tee faceswap.log
+        $DIR/faceswap-proxy.py 2>&1 | tee $DIR/faceswap.log
     else
         $DIR/faceswap-proxy.py
     fi
