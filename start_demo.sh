@@ -37,7 +37,7 @@ then
         echo 'debug mode...'
         $DIR/faceswap-proxy.py 2>&1 | tee $DIR/faceswap.log
     else
-        $DIR/faceswap-proxy.py
+        $DIR/faceswap-proxy.py 2>&1
     fi
 else
     $DIR/kill_demo.sh
