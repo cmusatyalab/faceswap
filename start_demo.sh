@@ -1,6 +1,9 @@
 #! /bin/bash
 
-. /home/junjuew/torch/install/bin/torch-activate
+USER=$(whoami)
+echo "sourcing torch: "
+echo "/home/${USER}/torch/install/bin/torch-activate"
+source /home/${USER}/torch/install/bin/torch-activate
 # turn debug on by default to log output 
 debug=0
 while getopts "d" opt; do
