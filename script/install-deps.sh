@@ -38,6 +38,11 @@ install_openblas() {
     fi
 }
 
+change_blas_library(){
+    sudo update-alternatives --config libblas.so
+    sudo update-alternatives --config libblas.so.3
+}
+
 install_opencv(){
     DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
     # opencv 
@@ -56,8 +61,8 @@ install_opencv(){
         mkdir -p build && \
         cd build && \
         cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX=/usr/local -DBUILD_EXAMPLES=ON .. && \
-        make -j8
-    make install
+        make -j$(nproc)
+    sudo make install
 }
 
 install_dlib(){
@@ -107,6 +112,18 @@ install_openface(){
     sudo python2 setup.py install
 }
 
+install_openface_demo(){
+    echo "============================================"
+    echo "Installing Openface at ${ROOT}/openface-install"
+    echo "============================================"
+    ROOT=$(cd $(dirname $0); pwd)
+    cd ${ROOT}
+    cd openface-install
+    cd openface-0.2.1
+    cd demos/web
+    sudo pip install -r requirements.txt
+}
+
 install_gabriel(){
     ROOT=$(cd $(dirname $0); pwd)
     cd ${ROOT}
@@ -114,10 +131,20 @@ install_gabriel(){
     mkdir -p gabriel-install
     cd ./gabriel-install
     sudo apt-get install gcc python-dev default-jre python-pip pssh python-psutil
-    sudo pip install flask flask-restful six
+    # flask and flask-restful version have to be these 
+    # otherwise will result in packet response not sent
+    sudo pip install flask==0.9 flask-restful==0.2.1 six
     git clone https://github.com/cmusatyalab/gabriel.git
     cd gabriel
     sudo python setup.py install
+}
+
+install_FaceSwap(){
+    cd ~
+    git clone https://github.com/Jamesjue/FaceSwap-server.git
+    cd ~/FaceSwap-server
+    sudo pip install -r requirements.txt
+    ./script/server_setup.sh
 }
 
 echo "============================================"
