@@ -260,7 +260,9 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         for h, face in images.iteritems():
 #            print str(face)
 #            print type(face.rep[0])
-            rep_bytes= face.rep.tobytes()
+            # use tostring for numpy backward compatibility
+            # alias for tobytes
+            rep_bytes= face.rep.tostring()
             rep_string = base64.b64encode(rep_bytes)            
             images_serializable.append({
                 'hash':h,
