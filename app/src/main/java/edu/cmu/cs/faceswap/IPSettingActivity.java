@@ -44,7 +44,6 @@ public class IPSettingActivity extends AppCompatActivity {
         mSharedPreferences=getSharedPreferences(getString(R.string.shared_preference_file_key),
                 MODE_PRIVATE);
         addIpButton=(Button)findViewById(R.id.add_ip_button);
-//        changeDefaultButton=(Button)findViewById(R.id.add_ip_change_default_ip_button);
         ipNameEditText=(EditText)findViewById(R.id.add_ip_name_edittext);
         ipEditText=(EditText)findViewById(R.id.add_ip_ip_edittext);
         placeSpinner=(Spinner)findViewById(R.id.add_ip_place_spinner);
@@ -92,8 +91,10 @@ public class IPSettingActivity extends AppCompatActivity {
                 existingNames.add(name);
                 editor.putStringSet(sharedPreferenceIpDictName, existingNames);
                 editor.commit();
-                //TODO: update UI
+                //update UI
                 addPersonUIRow(mSharedPreferences, type, name, ip);
+                ipEditText.setText("");
+                ipNameEditText.setText("");
             }
         });
     }

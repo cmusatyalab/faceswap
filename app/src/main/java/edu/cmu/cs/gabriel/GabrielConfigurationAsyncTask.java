@@ -34,14 +34,16 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
 
     // TCP send socket
     private static Socket tcpSocket = null;
-    private DataOutputStream networkWriter = null;
+    private static DataOutputStream networkWriter = null;
 
     // TCP recv socket
     private static Socket recvTcpSocket = null;
-    private DataInputStream networkReader = null;
+    private static DataInputStream networkReader = null;
     public AsyncResponse delegate =null;
     private String action=null;
     private volatile String uiMsg=null;
+
+    private static int id=0;
 
     private byte[] extra=null;
 
@@ -80,46 +82,44 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
     }
 
     private void closeConnection(){
-        if (tcpSocket != null) {
-            try {
-                tcpSocket.close();
-            } catch (IOException e) {
-            }
-        }
-        if (networkWriter != null) {
-            try {
-                networkWriter.close();
-            } catch (IOException e) {
-            }
-        }
-        if (recvTcpSocket != null) {
-            try {
-                recvTcpSocket.close();
-            } catch (IOException e) {
-            }
-        }
-        if (networkReader != null) {
-            try {
+        try {
+            if (networkReader != null) {
                 networkReader.close();
-            } catch (IOException e) {
             }
+            if (networkWriter != null) {
+                networkWriter.close();
+            }
+            if (tcpSocket != null) {
+                tcpSocket.close();
+            }
+            if (recvTcpSocket != null) {
+                recvTcpSocket.close();
+            }
+        } catch (IOException e) {
+            Log.d(LOG_TAG, "failed to close connection");
+            e.printStackTrace();
         }
+        Log.d(LOG_TAG, "connection closed");
     }
 
     private void setupConnection(InetAddress ip, int sendToPort, int recvFromPort)
-            throws IOException {
+            throws IOException, InterruptedException {
         closeConnection();
         tcpSocket = new Socket();
         tcpSocket.setTcpNoDelay(true);
-        tcpSocket.connect(new InetSocketAddress(ip, sendToPort), 3 * 1000);
+        tcpSocket.connect(new InetSocketAddress(ip, sendToPort), 5 * 1000);
         networkWriter = new DataOutputStream(tcpSocket.getOutputStream());
 
         recvTcpSocket = new Socket();
         recvTcpSocket.setTcpNoDelay(true);
         //3 min read time out
-        recvTcpSocket.setSoTimeout(30*1000*5);
-        recvTcpSocket.connect(new InetSocketAddress(ip, recvFromPort), 3 * 1000);
+        recvTcpSocket.setSoTimeout(30 * 1000 * 5);
+        recvTcpSocket.connect(new InetSocketAddress(ip, recvFromPort), 5 * 1000);
         networkReader = new DataInputStream(recvTcpSocket.getInputStream());
+        //TODO: bug. on gabriel server side, if no sleep is added,
+        //the result receiving handler is connected after the response has been generated.
+        //resulting the response not sent back from result receiving handler
+        Thread.sleep(1000,0);
     }
 
     private void sendPacket(byte[] header, byte[] data) throws IOException {
@@ -189,31 +189,31 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         return ret;
     }
 
-    private void switchConnection() throws IOException {
-        InetAddress ip=null;
-        if (remoteIP.equals(Const.CLOUD_GABRIEL_IP)){
-            try {
-                ip = InetAddress.getByName(Const.CLOUDLET_GABRIEL_IP);
-            } catch (UnknownHostException e) {
-                Log.e(LOG_TAG, "unknown host: " + e.getMessage());
-            }
-        } else {
-            try {
-                ip = InetAddress.getByName(Const.CLOUD_GABRIEL_IP);
-            } catch (UnknownHostException e) {
-                Log.e(LOG_TAG, "unknown host: " + e.getMessage());
-            }
-        }
-        setupConnection(ip, sendToPort,recvFromPort);
-        Log.d(LOG_TAG, "switching host: " + remoteIP + " changed to " + ip);
-    }
+//    private void switchConnection() throws IOException {
+//        InetAddress ip=null;
+//        if (remoteIP.equals(Const.CLOUD_GABRIEL_IP)){
+//            try {
+//                ip = InetAddress.getByName(Const.CLOUDLET_GABRIEL_IP);
+//            } catch (UnknownHostException e) {
+//                Log.e(LOG_TAG, "unknown host: " + e.getMessage());
+//            }
+//        } else {
+//            try {
+//                ip = InetAddress.getByName(Const.CLOUD_GABRIEL_IP);
+//            } catch (UnknownHostException e) {
+//                Log.e(LOG_TAG, "unknown host: " + e.getMessage());
+//            }
+//        }
+//        setupConnection(ip, sendToPort,recvFromPort);
+//        Log.d(LOG_TAG, "switching host: " + remoteIP + " changed to " + ip);
+//    }
 
 
     private byte[] generateGetStateHeader(){
         JSONObject headerJson = new JSONObject();
         try{
 
-            headerJson.put("id", 0);
+            headerJson.put("id", id);
             headerJson.put("get_state", "True");
             Log.d(LOG_TAG, "send get_state request");
         } catch (JSONException e) {
@@ -227,7 +227,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         JSONObject headerJson = new JSONObject();
         try{
 
-            headerJson.put("id", 0);
+            headerJson.put("id", id);
             headerJson.put(headerContent, "True");
             Log.d(LOG_TAG, "send request: " + headerContent);
         } catch (JSONException e) {
@@ -240,7 +240,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         JSONObject headerJson = new JSONObject();
         try{
 
-            headerJson.put("id", 0);
+            headerJson.put("id", id);
             headerJson.put(header, value);
             Log.d(LOG_TAG, "send request: " + header + " value: "+value);
         } catch (JSONException e) {
@@ -359,6 +359,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 byte[] header = generateHeader("get_person");
                 byte[] data = "dummpy_long_enough_for_correctness".getBytes();
                 sendPacket(header, data);
+                Log.d(LOG_TAG, "send packet to request person: ");
                 String resp = receiveMsg(networkReader);
                 String openfaceState = parseResponsePacket(resp);
                 Log.d(LOG_TAG, "response get from get_person: " + openfaceState);
@@ -366,10 +367,13 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 extra = people.getBytes();
                 success = true;
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             e.printStackTrace();
             Log.e(LOG_TAG, "IO exception sync state failed");
-            uiMsg="Is Face Swap Server Running at " + remoteIP + "?";
+            uiMsg = "Is Face Swap Server Running at " + remoteIP + "?";
+        } catch (InterruptedException e){
+            e.printStackTrace();
+            Log.e(LOG_TAG, "async task interrupted");
         } catch (JSONException e) {
             e.printStackTrace();
         } finally {
