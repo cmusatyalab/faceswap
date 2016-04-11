@@ -96,7 +96,7 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
     private void updateCurrentServerIp(){
         String currentIpName=selectServerSpinner.getSelectedItem().toString();
         getMyAcitivty().currentServerIp=getMyAcitivty().mSharedPreferences.getString(currentIpName,
-                Const.CLOUDLET_GABRIEL_IP);
+                getMyAcitivty().currentServerIp);
         getMyAcitivty().sendOpenFaceGetPersonRequest(getMyAcitivty().currentServerIp);
         //update PersonUIRow
         clearPersonTable();
@@ -426,7 +426,7 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
                 if (null != toBeRemovedName){
                     GabrielConfigurationAsyncTask task =
                             new GabrielConfigurationAsyncTask(getActivity(),
-                                    Const.CLOUDLET_GABRIEL_IP,
+                                    getMyAcitivty().currentServerIp,
                                     GabrielClientActivity.VIDEO_STREAM_PORT,
                                     GabrielClientActivity.RESULT_RECEIVING_PORT,
                                     Const.GABRIEL_CONFIGURATION_REMOVE_PERSON);

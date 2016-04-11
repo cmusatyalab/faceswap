@@ -157,16 +157,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                     }
                 },this);
             }
-//            else {
-//                if (curModId == R.id.setting_cloudlet_ip){
-//                    Const.CLOUDLET_GABRIEL_IP = inputDialogResult;
-//                    Log.i(TAG, "cloudlet ip changed to : " + Const.CLOUDLET_GABRIEL_IP);
-//                } else if (curModId == R.id.setting_cloud_ip){
-//                    Const.CLOUD_GABRIEL_IP = inputDialogResult;
-//                    Log.i(TAG, "cloudlet ip changed to : " + Const.CLOUD_GABRIEL_IP);
-//                }
-//                curModId = -1;
-//            }
         } else if (action.equals(Const.GABRIEL_CONFIGURATION_UPLOAD_STATE)){
             Log.d(TAG, "upload state finished. success? " + success);
             if (success){
