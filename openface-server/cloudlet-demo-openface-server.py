@@ -196,9 +196,13 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             # remove identities from images
             try:
                 remove_identity = people.index(name)
+                # maintain the correspondence between identity and people name string
+                images ={h:face for h,face in images.iteritems() if face.identity != remove_identity}
+                for h,face in images.iteritems():
+                    if face.identity > remove_identity:
+                        face.identity=face.identity-1
                 people.remove(name)
                 print 'succesfully removed {}'.format(name)
-                images ={h:face for h,face in images.iteritems() if face.identity != remove_identity}
                 self.trainSVM()
                 msg={
                     'type':FaceRecognitionServerProtocol.TYPE_remove_person_resp,
