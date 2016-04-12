@@ -29,7 +29,8 @@ sleep 5
 # specify localhost and port to make sure we are connecting to the correct gabriel control server
 gabriel-ucomm -s 127.0.0.1:8021 &
 sleep 8
-$DIR/openface-server/start_server.sh &
+$DIR/openface-server/cloudlet-demo-openface-server.py 2>&1 &
+#$DIR/openface-server/start_server.sh &
 sleep 10
 
 if ! pgrep -f "openface_server.lua" > /dev/null;
