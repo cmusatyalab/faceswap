@@ -179,12 +179,13 @@ class DummyVideoApp(AppProxyThread):
             return resp
 
         if 'get_person' in header_dict:
-            print 'get person'            
+            sys.stdout.write('get person\n')
+            sys.stdout.flush()
             is_get_person = header_dict['get_person']
             if is_get_person:
                 state_string = transformer.openface_client.getPeople()
                 resp=self.gen_response(AppDataProtocol.TYPE_get_person, state_string)
-                print 'send out response {}'.format(resp)
+                sys.stdout.write('send out response {}\n'.format(resp))
                 sys.stdout.flush()
             else:
                 sys.stdout.write('error: has get_person in header, but the value is false')

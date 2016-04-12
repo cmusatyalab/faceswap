@@ -26,18 +26,26 @@ fi
 echo -e "launching FaceSwap server at dir $DIR"
 gabriel-control &
 sleep 5
-gabriel-ucomm &
+# specify localhost and port to make sure we are connecting to the correct gabriel control server
+gabriel-ucomm -s 127.0.0.1:8021 &
 sleep 8
 $DIR/openface-server/start_server.sh &
-sleep 8
+sleep 10
+
+if ! pgrep -f "openface_server.lua" > /dev/null;
+then
+    echo 'openface server has not finished starting. wait for another 20 seconds...'
+    sleep 20
+fi
+    
 if pgrep -f "gabriel-ucomm" > /dev/null
 then
     if [[ $debug -eq 1 ]];
     then
         echo 'debug mode...'
-        $DIR/faceswap-proxy.py 2>&1 | tee $DIR/faceswap.log
+        $DIR/faceswap-proxy.py -s 127.0.0.1:8021 2>&1 | tee $DIR/faceswap.log
     else
-        $DIR/faceswap-proxy.py 2>&1
+        $DIR/faceswap-proxy.py -s 127.0.0.1:8021 2>&1
     fi
 else
     $DIR/kill_demo.sh
