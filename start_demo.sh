@@ -15,6 +15,7 @@ done
 
 # need to pull models down if they doesn't exist yet
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 openface_model_dir=$DIR/openface-server/models
 dlib_face_model=$openface_model_dir/dlib/shape_predictor_68_face_landmarks.dat
 openface_model=$openface_model_dir/openface/nn4.small2.v1.t7
@@ -33,18 +34,25 @@ $DIR/openface-server/cloudlet-demo-openface-server.py 2>&1 &
 #$DIR/openface-server/start_server.sh &
 sleep 10
 
-if ! pgrep -f "openface_server.lua" > /dev/null;
-then
-    echo 'openface server has not finished starting. wait for another 20 seconds...'
-    sleep 20
-fi
+for trial in $(seq 1 5);
+do
+    if ! pgrep -f "openface_server.lua" > /dev/null;
+    then
+	echo 'checking openface server status:'
+	echo $trial
+	echo 'openface server has not finished starting. wait for another 20 seconds...'
+	sleep 20
+    else
+	break
+    fi
+done
     
 if pgrep -f "gabriel-ucomm" > /dev/null
 then
     if [[ $debug -eq 1 ]];
     then
         echo 'debug mode...'
-        $DIR/faceswap-proxy.py -s 127.0.0.1:8021 2>&1 | tee $DIR/faceswap.log
+        $DIR/faceswap-proxy.py -s 127.0.0.1:8021 2>&1
     else
         $DIR/faceswap-proxy.py -s 127.0.0.1:8021 2>&1
     fi

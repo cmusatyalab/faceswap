@@ -9,4 +9,7 @@ sudo initctl reload-configuration &&
 # copy cron job 
 echo 'adding cron email reminder...'
 sudo cp $DIR/cron-bihourly-email /etc/cron.hourly/ &&
+
+echo 'removing log file...'
+sudo rm -rf /var/log/FaceSwap.log
 echo 'server setup succeeded.'
