@@ -3,6 +3,7 @@ package edu.cmu.cs.IO;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.drive.DriveApi;
 import com.google.android.gms.drive.DriveContents;
@@ -23,6 +24,7 @@ public class RetrieveDriveFileContentsAsyncTask
     private static final String TAG = "RetrieveDriveAsyncTask";
     private ProgressDialog dialog;
     private GdriveRetrieveFileContentCallBack delegate;
+    private Context mContext;
 
     public interface GdriveRetrieveFileContentCallBack{
         void onFileRetrieved(byte[] state);
@@ -33,6 +35,7 @@ public class RetrieveDriveFileContentsAsyncTask
         super(context);
         dialog = new ProgressDialog(context);
         this.delegate= delegate;
+        this.mContext=context;
     }
 
 
@@ -78,6 +81,7 @@ public class RetrieveDriveFileContentsAsyncTask
         dialog.dismiss();
         if (result == null) {
             Log.d(TAG, "Error while reading from the file");
+            Toast.makeText(mContext, "Invalid File",Toast.LENGTH_SHORT).show();
             return;
         }
         Log.d(TAG, "File contents: " + result);

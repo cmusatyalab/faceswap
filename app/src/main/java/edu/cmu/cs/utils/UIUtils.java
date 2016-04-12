@@ -72,17 +72,21 @@ public class UIUtils {
             String openFaceMagicSequence=Const.OPENFACE_STATE_FILE_MAGIC_SEQUENCE.replace("\n",
                     "");
             String[] lines=stateInput.split("\n");
-            String firstLine = lines[0];
-            String validState=null;
-            if (firstLine.equals(openFaceMagicSequence)){
-                StringBuilder text=new StringBuilder();
-                for (int idx=1;idx<lines.length;idx++){
-                    text.append(lines[idx]);
-                    text.append("\n");
+            if (lines.length>=2){
+                String firstLine = lines[0];
+                String secondLine = lines[1].toLowerCase();
+                Log.d(TAG, "file check: 1st line: " + lines[0] + "\n2nd line: "+secondLine);
+                String validState=null;
+                if (firstLine.equals(openFaceMagicSequence) && (!secondLine.equals("null"))){
+                    StringBuilder text=new StringBuilder();
+                    for (int idx=1;idx<lines.length;idx++){
+                        text.append(lines[idx]);
+                        text.append("\n");
+                    }
+                    validState=text.toString();
                 }
-                validState=text.toString();
+                return validState;
             }
-            return validState;
         }
         return null;
     }

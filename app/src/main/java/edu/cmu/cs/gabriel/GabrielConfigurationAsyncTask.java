@@ -265,8 +265,8 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         if (null!=uiMsg){
             Log.i("configurationAsyncTask", "success: " + bgResult + ". " + uiMsg);
             Toast.makeText(callingActivity.getApplicationContext(),
-                    "success? "+bgResult + "\nmessage: " + uiMsg,
-                Toast.LENGTH_LONG).show();
+                    "Connecting to Backend. success? "+bgResult + "\nmessage: " + uiMsg,
+                Toast.LENGTH_SHORT).show();
         } else {
             Log.i("configurationAsyncTask", "success: " + bgResult);
 
@@ -355,6 +355,9 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
                 }
             } else if (task.equals(Const.GABRIEL_CONFIGURATION_GET_PERSON)) {
                 setupConnection(remoteIP, sendToPort, recvFromPort);
+                Log.d(LOG_TAG, "remote ip: " + remoteIP);
+                Log.d(LOG_TAG, "send to port: " +sendToPort);
+                Log.d(LOG_TAG, "recv from port: " + recvFromPort);
                 //get state
                 byte[] header = generateHeader("get_person");
                 byte[] data = "dummpy_long_enough_for_correctness".getBytes();
@@ -370,7 +373,7 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
         } catch (IOException e) {
             e.printStackTrace();
             Log.e(LOG_TAG, "IO exception sync state failed");
-            uiMsg = "Is Face Swap Server Running at " + remoteIP + "?";
+            uiMsg = "Is the FaceSwap Server Running at " + remoteIP + "?";
         } catch (InterruptedException e){
             e.printStackTrace();
             Log.e(LOG_TAG, "async task interrupted");

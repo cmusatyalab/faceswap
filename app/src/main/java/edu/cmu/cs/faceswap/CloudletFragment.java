@@ -101,9 +101,9 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
         //update PersonUIRow
         clearPersonTable();
         Log.d(TAG, "current ip changed to: " + getMyAcitivty().currentServerIp);
-        Toast.makeText(getContext(),
-                "current ip: "+getMyAcitivty().currentServerIp,
-                Toast.LENGTH_SHORT).show();
+//        Toast.makeText(getContext(),
+//                "current ip: "+getMyAcitivty().currentServerIp,
+//                Toast.LENGTH_SHORT).show();
     }
 
     @Override

@@ -225,7 +225,11 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                     File file=new File(path);
                     if (isLoad){
                         byte[] stateData= UIUtils.loadFromFile(file);
-                        actionUploadStateByteArray(stateData);
+                        if (stateData!=null){
+                            actionUploadStateByteArray(stateData);
+                        } else {
+                            Toast.makeText(this, "Invalid File",Toast.LENGTH_SHORT).show();
+                        }
                     } else {
                         if (this.asyncResponseExtra!=null){
                             UIUtils.saveToFile(file, this.asyncResponseExtra);
