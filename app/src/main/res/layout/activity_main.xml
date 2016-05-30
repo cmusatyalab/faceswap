@@ -15,20 +15,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:id="@+id/cv_camera_view" />
-<!--
-        <edu.cmu.cs.gabriel.CameraPreview
-            android:id="@+id/camera_preview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            />
-
-
-        <edu.cmu.cs.gabriel.CameraOverlay
-            android:id="@+id/display_surface"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            />
--->
     </RelativeLayout>
 
 </LinearLayout>
