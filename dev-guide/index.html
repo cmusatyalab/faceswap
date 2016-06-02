@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+
+	<title>Architecture - FaceSwap Documentation</title>
+
+        <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.5.0.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="../css/highlight.css">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
+
+            <!-- Main title -->
+            <a class="navbar-brand" href="..">FaceSwap Documentation</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                
+                
+                    <li >
+                        <a href="..">Home</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../user-guide/">User Guide</a>
+                    </li>
+                
+                
+                
+                    <li class="active">
+                        <a href="./">Architecture</a>
+                    </li>
+                
+                
+                </ul>
+            
+
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                        <i class="fa fa-search"></i> Search
+                    </a>
+                </li>
+                
+                    <li >
+                        <a rel="next" href="../user-guide/">
+                            <i class="fa fa-arrow-left"></i> Previous
+                        </a>
+                    </li>
+                    <li class="disabled">
+                        <a rel="prev" >
+                            Next <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </li>
+                
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#faceswap-architecture">FaceSwap Architecture</a></li>
+        
+    
+        <li class="main "><a href="#offload-latency-comparision">Offload Latency Comparision</a></li>
+        
+    
+        <li class="main "><a href="#timing-breakdown">Timing Breakdown</a></li>
+        
+    
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h2 id="faceswap-architecture">FaceSwap Architecture</h2>
+<p><img alt="FaceSwap Architecture" src="../img/FaceSwap-arch.png" /></p>
+<p>FaceSwap Android client continously streams 640x480 images from the smartphone to the backend.</p>
+<p>At backend, a three-tier hierarchy of face tracking, face detection, and <a href="https://cmusatyalab.github.io/openface">OpenFace</a>-based face recognition is employed. For each frame, once the face tracking result is available, bounding boxes and compressed pixels (JPEG) of all faces are then returned. Face detection and face recognition run outside of the critical path and opportunistically update trackers once their results become available. </p>
+<p>From our experience, face detection and face recognition combined takes around <strong>200ms</strong> while face tracking takes around <strong>15ms</strong>. By using face tracking to mask long latencies of face detection and face recognition, we are able to achieve a higher frame rate.</p>
+<h2 id="offload-latency-comparision">Offload Latency Comparision</h2>
+<p><img alt="latency" src="../img/CDF.png" /></p>
+<p>Here is a cumulative distribution function (CDF) graph of offload latencies when the offload site is a cloudlet or a cloud (Amazon EC2 Oregon). The offload latency is the sum of the network transmission time and server computation time. </p>
+<h2 id="timing-breakdown">Timing Breakdown</h2>
+<p><img alt="Timing Breakdown" src="../img/breakdown.png" /></p>
+<p>Here is a timing breakdown that explains the difference between cloudlet offload latency and cloud offload latency. Though the cloud has a shorter computation time due to a more powerful virtual machine, the cloudlet greatly reduces network latency. Image compression and rendering on mobile devices consume the same amount of time for both cases, therefore not contributing to the latency difference.</p></div>
+            
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            
+            <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+
+        <script src="../js/jquery-1.10.2.min.js"></script>
+        <script src="../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../js/highlight.pack.js"></script>
+        <script>var base_url = '..';</script>
+        <script data-main="../mkdocs/js/search.js" src="../mkdocs/js/require.js"></script>
+        <script src="../js/base.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            From here you can search these documents. Enter
+                            your search terms below.
+                        </p>
+                        <form role="form">
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                            </div>
+                        </form>
+                        <div id="mkdocs-search-results"></div>
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>

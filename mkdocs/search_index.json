@@ -1,0 +1,84 @@
+{
+    "docs": [
+        {
+            "location": "/", 
+            "text": "FaceSwap Documentation\n\n\nFaceSwap is used to demonstrate the critical role cloudlets play in shortening end-to-end latency for computation offloading mobile applications. \n\n\nFaceSwap demo consists of a front-end Android client and a back-end server performing.\n\n\nFaceSwap Android Client\n\n\nFaceSwap Android client is available on Google Play:\n\n\n\n\nFaceSwap Android Server\n\n\nFaceSwap Android server is available on Amazon EC2. The AMI name is \"FaceSwap-server-release\". The AMI ID in EC2 Oregon is ami-31c43351.\n\n\nThe source code is available \nhere\n.", 
+            "title": "Home"
+        }, 
+        {
+            "location": "/#faceswap-documentation", 
+            "text": "FaceSwap is used to demonstrate the critical role cloudlets play in shortening end-to-end latency for computation offloading mobile applications.   FaceSwap demo consists of a front-end Android client and a back-end server performing.", 
+            "title": "FaceSwap Documentation"
+        }, 
+        {
+            "location": "/#faceswap-android-client", 
+            "text": "FaceSwap Android client is available on Google Play:", 
+            "title": "FaceSwap Android Client"
+        }, 
+        {
+            "location": "/#faceswap-android-server", 
+            "text": "FaceSwap Android server is available on Amazon EC2. The AMI name is \"FaceSwap-server-release\". The AMI ID in EC2 Oregon is ami-31c43351.  The source code is available  here .", 
+            "title": "FaceSwap Android Server"
+        }, 
+        {
+            "location": "/user-guide/", 
+            "text": "FaceSwap Android Client User Guide\n\n\nBefore using FaceSwap Android client, please make sure all FaceSwap backend server has been started\n\n\n1. Add FaceSwap Server IPs:\n\n\nClick on Menu Button on the top right corner and select 'Manage Servers'. \nFill in the name and ip address. Select the server's category (\"cloudlet\" or \"cloud\") for easy-of-management.\n\n\n       \n\n\n2. Select a specific server by type and name\n\n\n3. Add Training Images (3 different methods)\n\n\n\n\nCollect Images: Open smartphone camera to collect training images\n\n\nFrom Local File: Load a FaceSwap dataset from local directory\n\n\nFrom Google Drive: Load a FaceSwap dataset from Google Drive\n\n\n\n\n4. Choose faces to substitude:\n\n\nThe substituded face is the processed image. The different between the substituded face and the original face is the end-to-end latency.\nFor example, in below image, the person on the left is being substituded by the face of the person on the right. \nThe face overlay on the left is a delayed face image from the face on the right. \nThe total delay time is the end-to-end latency of the system.\n\n\n       \n\n\n5. Run Demo\n\n\nFaceSwap Server User Guide\n\n\nFaceSwap Android server is available on Amazon EC2. The AMI name is \"FaceSwap-server-release\". The AMI ID in EC2 Oregon is ami-31c43351.\n\n\nTo use the image, simply start a server from the AMI. The recommended Amazon instance is m4.large. FaceSwap backend will automatically start itself once the image is booted.", 
+            "title": "User Guide"
+        }, 
+        {
+            "location": "/user-guide/#faceswap-android-client-user-guide", 
+            "text": "Before using FaceSwap Android client, please make sure all FaceSwap backend server has been started", 
+            "title": "FaceSwap Android Client User Guide"
+        }, 
+        {
+            "location": "/user-guide/#1-add-faceswap-server-ips", 
+            "text": "Click on Menu Button on the top right corner and select 'Manage Servers'. \nFill in the name and ip address. Select the server's category (\"cloudlet\" or \"cloud\") for easy-of-management.", 
+            "title": "1. Add FaceSwap Server IPs:"
+        }, 
+        {
+            "location": "/user-guide/#2-select-a-specific-server-by-type-and-name", 
+            "text": "", 
+            "title": "2. Select a specific server by type and name"
+        }, 
+        {
+            "location": "/user-guide/#3-add-training-images-3-different-methods", 
+            "text": "Collect Images: Open smartphone camera to collect training images  From Local File: Load a FaceSwap dataset from local directory  From Google Drive: Load a FaceSwap dataset from Google Drive", 
+            "title": "3. Add Training Images (3 different methods)"
+        }, 
+        {
+            "location": "/user-guide/#4-choose-faces-to-substitude", 
+            "text": "The substituded face is the processed image. The different between the substituded face and the original face is the end-to-end latency.\nFor example, in below image, the person on the left is being substituded by the face of the person on the right. \nThe face overlay on the left is a delayed face image from the face on the right. \nThe total delay time is the end-to-end latency of the system.", 
+            "title": "4. Choose faces to substitude:"
+        }, 
+        {
+            "location": "/user-guide/#5-run-demo", 
+            "text": "", 
+            "title": "5. Run Demo"
+        }, 
+        {
+            "location": "/user-guide/#faceswap-server-user-guide", 
+            "text": "FaceSwap Android server is available on Amazon EC2. The AMI name is \"FaceSwap-server-release\". The AMI ID in EC2 Oregon is ami-31c43351.  To use the image, simply start a server from the AMI. The recommended Amazon instance is m4.large. FaceSwap backend will automatically start itself once the image is booted.", 
+            "title": "FaceSwap Server User Guide"
+        }, 
+        {
+            "location": "/dev-guide/", 
+            "text": "FaceSwap Architecture\n\n\n\n\nFaceSwap Android client continously streams 640x480 images from the smartphone to the backend.\n\n\nAt backend, a three-tier hierarchy of face tracking, face detection, and \nOpenFace\n-based face recognition is employed. For each frame, once the face tracking result is available, bounding boxes and compressed pixels (JPEG) of all faces are then returned. Face detection and face recognition run outside of the critical path and opportunistically update trackers once their results become available. \n\n\nFrom our experience, face detection and face recognition combined takes around \n200ms\n while face tracking takes around \n15ms\n. By using face tracking to mask long latencies of face detection and face recognition, we are able to achieve a higher frame rate.\n\n\nOffload Latency Comparision\n\n\n\n\nHere is a cumulative distribution function (CDF) graph of offload latencies when the offload site is a cloudlet or a cloud (Amazon EC2 Oregon). The offload latency is the sum of the network transmission time and server computation time. \n\n\nTiming Breakdown\n\n\n\n\nHere is a timing breakdown that explains the difference between cloudlet offload latency and cloud offload latency. Though the cloud has a shorter computation time due to a more powerful virtual machine, the cloudlet greatly reduces network latency. Image compression and rendering on mobile devices consume the same amount of time for both cases, therefore not contributing to the latency difference.", 
+            "title": "Architecture"
+        }, 
+        {
+            "location": "/dev-guide/#faceswap-architecture", 
+            "text": "FaceSwap Android client continously streams 640x480 images from the smartphone to the backend.  At backend, a three-tier hierarchy of face tracking, face detection, and  OpenFace -based face recognition is employed. For each frame, once the face tracking result is available, bounding boxes and compressed pixels (JPEG) of all faces are then returned. Face detection and face recognition run outside of the critical path and opportunistically update trackers once their results become available.   From our experience, face detection and face recognition combined takes around  200ms  while face tracking takes around  15ms . By using face tracking to mask long latencies of face detection and face recognition, we are able to achieve a higher frame rate.", 
+            "title": "FaceSwap Architecture"
+        }, 
+        {
+            "location": "/dev-guide/#offload-latency-comparision", 
+            "text": "Here is a cumulative distribution function (CDF) graph of offload latencies when the offload site is a cloudlet or a cloud (Amazon EC2 Oregon). The offload latency is the sum of the network transmission time and server computation time.", 
+            "title": "Offload Latency Comparision"
+        }, 
+        {
+            "location": "/dev-guide/#timing-breakdown", 
+            "text": "Here is a timing breakdown that explains the difference between cloudlet offload latency and cloud offload latency. Though the cloud has a shorter computation time due to a more powerful virtual machine, the cloudlet greatly reduces network latency. Image compression and rendering on mobile devices consume the same amount of time for both cases, therefore not contributing to the latency difference.", 
+            "title": "Timing Breakdown"
+        }
+    ]
+}

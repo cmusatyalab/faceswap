@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+
+	<title>User Guide - FaceSwap Documentation</title>
+
+        <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.5.0.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="../css/highlight.css">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
+
+            <!-- Main title -->
+            <a class="navbar-brand" href="..">FaceSwap Documentation</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                
+                
+                    <li >
+                        <a href="..">Home</a>
+                    </li>
+                
+                
+                
+                    <li class="active">
+                        <a href="./">User Guide</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="../dev-guide/">Architecture</a>
+                    </li>
+                
+                
+                </ul>
+            
+
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                        <i class="fa fa-search"></i> Search
+                    </a>
+                </li>
+                
+                    <li >
+                        <a rel="next" href="..">
+                            <i class="fa fa-arrow-left"></i> Previous
+                        </a>
+                    </li>
+                    <li >
+                        <a rel="prev" href="../dev-guide/">
+                            Next <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </li>
+                
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#faceswap-android-client-user-guide">FaceSwap Android Client User Guide</a></li>
+        
+            <li><a href="#1-add-faceswap-server-ips">1. Add FaceSwap Server IPs:</a></li>
+        
+            <li><a href="#2-select-a-specific-server-by-type-and-name">2. Select a specific server by type and name</a></li>
+        
+            <li><a href="#3-add-training-images-3-different-methods">3. Add Training Images (3 different methods)</a></li>
+        
+            <li><a href="#4-choose-faces-to-substitude">4. Choose faces to substitude:</a></li>
+        
+            <li><a href="#5-run-demo">5. Run Demo</a></li>
+        
+    
+        <li class="main "><a href="#faceswap-server-user-guide">FaceSwap Server User Guide</a></li>
+        
+    
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h2 id="faceswap-android-client-user-guide">FaceSwap Android Client User Guide</h2>
+<p>Before using FaceSwap Android client, please make sure all FaceSwap backend server has been started</p>
+<h4 id="1-add-faceswap-server-ips">1. Add FaceSwap Server IPs:</h4>
+<p>Click on Menu Button on the top right corner and select 'Manage Servers'. 
+Fill in the name and ip address. Select the server's category ("cloudlet" or "cloud") for easy-of-management.</p>
+<p><img alt="manage-server" src="../img/manage-server-small.png" />       </p>
+<h4 id="2-select-a-specific-server-by-type-and-name">2. Select a specific server by type and name</h4>
+<h4 id="3-add-training-images-3-different-methods">3. Add Training Images (3 different methods)</h4>
+<ul>
+<li>Collect Images: Open smartphone camera to collect training images</li>
+<li>From Local File: Load a FaceSwap dataset from local directory</li>
+<li>From Google Drive: Load a FaceSwap dataset from Google Drive</li>
+</ul>
+<h4 id="4-choose-faces-to-substitude">4. Choose faces to substitude:</h4>
+<p>The substituded face is the processed image. The different between the substituded face and the original face is the end-to-end latency.
+For example, in below image, the person on the left is being substituded by the face of the person on the right. 
+The face overlay on the left is a delayed face image from the face on the right. 
+The total delay time is the end-to-end latency of the system.</p>
+<p><img alt="substitude" src="../img/substitude.png" />       </p>
+<h4 id="5-run-demo">5. Run Demo</h4>
+<h2 id="faceswap-server-user-guide">FaceSwap Server User Guide</h2>
+<p>FaceSwap Android server is available on Amazon EC2. The AMI name is "FaceSwap-server-release". The AMI ID in EC2 Oregon is ami-31c43351.</p>
+<p>To use the image, simply start a server from the AMI. The recommended Amazon instance is m4.large. FaceSwap backend will automatically start itself once the image is booted. </p></div>
+            
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            
+            <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+
+        <script src="../js/jquery-1.10.2.min.js"></script>
+        <script src="../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../js/highlight.pack.js"></script>
+        <script>var base_url = '..';</script>
+        <script data-main="../mkdocs/js/search.js" src="../mkdocs/js/require.js"></script>
+        <script src="../js/base.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            From here you can search these documents. Enter
+                            your search terms below.
+                        </p>
+                        <form role="form">
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                            </div>
+                        </form>
+                        <div id="mkdocs-search-results"></div>
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>
