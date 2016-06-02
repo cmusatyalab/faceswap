@@ -68,8 +68,6 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 	private boolean hasStarted;
 	private CameraPreview mPreview;
 
-	private DisplaySurface mDisplay;
-	private CameraOverlay cameraOverlay;
 	private RelativeLayout rly;
 	private TextView auxView;
 
@@ -170,18 +168,6 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 		mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.cv_camera_view);
 		mOpenCvCameraView.setVisibility(CameraBridgeViewBase.VISIBLE);
 		mOpenCvCameraView.setCvCameraViewListener(renderer);
-
-//		cameraOverlay = (CameraOverlay) findViewById(R.id.display_surface);
-//		cameraOverlay.bringToFront();
-//		mPreview = (CameraPreview) findViewById(R.id.camera_preview);
-//		if (Const.DISPLAY_PREVIEW_ONLY) {
-//			RelativeLayout.LayoutParams invisibleLayout = new RelativeLayout.LayoutParams(0, 0);
-//			mDisplay.setLayoutParams(invisibleLayout);
-//			mDisplay.setVisibility(View.INVISIBLE);
-//			mDisplay.setZOrderMediaOverlay(false);
-//		}
-//		mPreview.setPreviewCallback(previewCallback);
-//		cameraOverlay.setImageSize(mPreview.imageSize);
 
 		Const.ROOT_DIR.mkdirs();
 		Const.LATENCY_DIR.mkdirs();
@@ -376,33 +362,7 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 	}
 
 
-	private void drawFaceSnippets(Face[] faces, Bitmap curFrame) {
-		// if not destroyed
-		if (cameraOverlay != null && mPreview != null) {
-			for (Face face : faces) {
-				face.scale(mPreview.imageSize,
-						cameraOverlay.getWidth(), cameraOverlay.getHeight());
-			}
-			cameraOverlay.drawFaces(faces, mPreview.imageSize, curFrame);
-		}
-	}
-
-//    private void notifyError(String msg){
-//        DialogInterface.OnClickListener error_listener =
-//                new DialogInterface.OnClickListener() {
-//                    @Override
-//                    public void onClick(DialogInterface dialog, int which) {
-//                        terminate();
-//                        finish();
-//                    }
-//                };
-//
-//        new AlertDialog.Builder(this)
-//                .setTitle("Error").setMessage(msg)
-//                .setNegativeButton("close", error_listener).show();
-//    }
-
-	private double timeStamp=System.currentTimeMillis();
+	public static volatile long timeStamp=System.currentTimeMillis();
 	private double totalDelay=0;
 	private double packetFirstUpdateTime=0;
 	private double packetLastUpdateTime=0;
@@ -437,7 +397,7 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 			//handled by resultReceivingThread!!!
 			//is measuring time different between two adjcent packet right now?
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
-				String response = (String) msg.obj;
+				Bundle response = msg.getData();
 //				double prevTimeStamp=timeStamp;
 //				timeStamp=System.currentTimeMillis();
 				double latency=System.currentTimeMillis()-timeStamp;
@@ -456,8 +416,22 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 
 				if (Const.RESPONSE_JSON) {
 					try {
+						long app_recv_time=response.getLong("app_recv_time");
+						long app_sent_time=response.getLong("app_sent_time");
+						long client_recv_time=response.getLong("client_recv_time");
+						long client_send_time=response.getLong("client_sent_time");
+						long frameID=response.getLong(NetworkProtocol.HEADER_MESSAGE_FRAME_ID);
+						Log.i(LOG_TAG, "frameID:"+frameID+";"+"offload-time:"+(client_recv_time-client_send_time)
+						+";"+"server-time:"+(app_sent_time-app_recv_time));
+
+
+//						Log.i(LOG_TAG, "app_recv:"+app_recv_time+";"+"app_sent:"+app_sent_time
+//								+";"+"client_recv:" + client_recv_time+ ";"+"client_send"+client_send_time);
+
 						JSONObject obj;
-						obj = new JSONObject(response);
+						String result=response.getString("result");
+						obj = new JSONObject(result);
+
 						String type = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE);
 						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_ADD_PERSON)) {
 							String name = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
@@ -490,8 +464,8 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 								CVRenderDrawFaceSnippets(faces);
 //								drawFaceSnippets(faces, videoStreamingThread.curFrame);
 							}
-							Log.w(LOG_TAG, "detect image processing time: " +
-									(System.currentTimeMillis() - time));
+//							Log.w(LOG_TAG, "detect image processing time: " +
+//									(System.currentTimeMillis() - time));
 						}
 
 						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_IMG)) {
@@ -503,22 +477,6 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 					}
 				}
 
-				if (Const.RESPONSE_ROI_FACE_SNIPPET) {
-					Face[] faces = parseFaceSnippets(response);
-					// if not destroyed
-					if (cameraOverlay != null && mPreview != null) {
-						cameraOverlay.drawFaces(faces, mPreview.imageSize, curFrame);
-					}
-
-				}
-
-
-				if (Const.RESPONSE_ENCODED_IMG) {
-					byte[] img = Base64.decode(response, Base64.DEFAULT);
-					if (mDisplay != null) {
-						mDisplay.push(img);
-					}
-				}
 
 
 //				if (mTTS != null){
@@ -696,14 +654,6 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 			mPreview = null;
 		}
 
-		if (mDisplay != null) {
-			mDisplay = null;
-		}
-
-		if (cameraOverlay != null) {
-			cameraOverlay.destroyDrawingCache();
-			cameraOverlay = null;
-		}
 		if (mOpenCvCameraView != null)
 			mOpenCvCameraView.disableView();
 	}
