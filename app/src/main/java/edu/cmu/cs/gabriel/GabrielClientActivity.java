@@ -362,7 +362,7 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 	}
 
 
-	private double timeStamp=System.currentTimeMillis();
+	public static volatile long timeStamp=System.currentTimeMillis();
 	private double totalDelay=0;
 	private double packetFirstUpdateTime=0;
 	private double packetLastUpdateTime=0;
@@ -397,7 +397,7 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 			//handled by resultReceivingThread!!!
 			//is measuring time different between two adjcent packet right now?
 			if (msg.what == NetworkProtocol.NETWORK_RET_RESULT) {
-				String response = (String) msg.obj;
+				Bundle response = msg.getData();
 //				double prevTimeStamp=timeStamp;
 //				timeStamp=System.currentTimeMillis();
 				double latency=System.currentTimeMillis()-timeStamp;
@@ -416,8 +416,22 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 
 				if (Const.RESPONSE_JSON) {
 					try {
+						long app_recv_time=response.getLong("app_recv_time");
+						long app_sent_time=response.getLong("app_sent_time");
+						long client_recv_time=response.getLong("client_recv_time");
+						long client_send_time=response.getLong("client_sent_time");
+						long frameID=response.getLong(NetworkProtocol.HEADER_MESSAGE_FRAME_ID);
+						Log.i(LOG_TAG, "frameID:"+frameID+";"+"offload-time:"+(client_recv_time-client_send_time)
+						+";"+"server-time:"+(app_sent_time-app_recv_time));
+
+
+//						Log.i(LOG_TAG, "app_recv:"+app_recv_time+";"+"app_sent:"+app_sent_time
+//								+";"+"client_recv:" + client_recv_time+ ";"+"client_send"+client_send_time);
+
 						JSONObject obj;
-						obj = new JSONObject(response);
+						String result=response.getString("result");
+						obj = new JSONObject(result);
+
 						String type = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE);
 						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_ADD_PERSON)) {
 							String name = obj.getString(NetworkProtocol.CUSTOM_DATA_MESSAGE_VALUE);
@@ -450,8 +464,8 @@ public class GabrielClientActivity extends Activity implements CVRenderer.CVPrev
 								CVRenderDrawFaceSnippets(faces);
 //								drawFaceSnippets(faces, videoStreamingThread.curFrame);
 							}
-							Log.w(LOG_TAG, "detect image processing time: " +
-									(System.currentTimeMillis() - time));
+//							Log.w(LOG_TAG, "detect image processing time: " +
+//									(System.currentTimeMillis() - time));
 						}
 
 						if (type.equals(NetworkProtocol.CUSTOM_DATA_MESSAGE_TYPE_IMG)) {

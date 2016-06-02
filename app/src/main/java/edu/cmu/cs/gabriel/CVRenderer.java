@@ -60,6 +60,7 @@ public class CVRenderer implements CameraBridgeViewBase.CvCameraViewListener2{
     }
 
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
+//        Log.i("debug", "new frame");
         Imgproc.cvtColor(inputFrame.rgba(), displayFrame, Imgproc.COLOR_BGRA2BGR);
         if (this.delegate!=null){
             //TODO: needed so that bg encoding won't interfere with foreground getting a new image
@@ -77,12 +78,12 @@ public class CVRenderer implements CameraBridgeViewBase.CvCameraViewListener2{
                             roi[1]+face.argbMat.height());
                     Rect pRoi = new Rect(roi[0],roi[1],
                             face.argbMat.width(), face.argbMat.height());
-                    Log.d("debug", "pRoi : " + pRoi.toString());
-                    Log.d("debug", "display frame width : " + displayFrame.width()
-                            + " display frame height: " + displayFrame.height());
+//                    Log.d("debug", "pRoi : " + pRoi.toString());
+//                    Log.d("debug", "display frame width : " + displayFrame.width()
+//                            + " display frame height: " + displayFrame.height());
                     Mat pRoiMat=displayFrame.submat(pRoi);
-                    Log.d("debug", "display frame width : " + displayFrame.width()
-                            + " display frame height: " + displayFrame.height());
+//                    Log.d("debug", "display frame width : " + displayFrame.width()
+//                            + " display frame height: " + displayFrame.height());
 
                     face.argbMat.copyTo(pRoiMat);
                 }
@@ -99,7 +100,7 @@ public class CVRenderer implements CameraBridgeViewBase.CvCameraViewListener2{
 
             }
         }
-        Log.d(LOG_TAG, "rendered");
+//        Log.i(LOG_TAG, "rendered");
         return displayFrame;
 //                Mat pRoi=mRgba.submat(10,10+replaceImg.width(),10,10+replaceImg.height());
 //                Log.d("debug", "mat width: " + pRoi.width() + " height: " + pRoi.height());

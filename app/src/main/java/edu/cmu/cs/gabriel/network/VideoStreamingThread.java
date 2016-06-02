@@ -196,7 +196,7 @@ public class VideoStreamingThread extends Thread {
 					sendingFrameID = this.frameID;
 					this.frameBuffer = null;
 				}
-                Log.d(LOG_TAG, "wait for framebuffer : " + (System.currentTimeMillis()-time));
+//                Log.d(LOG_TAG, "wait for framebuffer : " + (System.currentTimeMillis()-time));
 
 				// make it as a single packet
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -225,14 +225,16 @@ public class VideoStreamingThread extends Thread {
 				dos.write(data);
 
                 time = System.currentTimeMillis();
+//				Log.i(LOG_TAG, "sending " + sendingFrameID + ":"
+//						+ time);
                 this.tokenController.sendData(sendingFrameID, System.currentTimeMillis(), dos.size());
                 byte[] content=baos.toByteArray();
 				networkWriter.write(content);
 				networkWriter.flush();
 				this.tokenController.decreaseToken();
-                Log.d(LOG_TAG, "sent frameID: " + sendingFrameID + " tooks "
-                        + (System.currentTimeMillis() - time));
-				
+//                Log.d(LOG_TAG, "sent frameID: " + sendingFrameID + " tooks "
+//                        + (System.currentTimeMillis() - time));
+
 				// measurement
 		        if (packet_firstUpdateTime == 0) {
 		        	packet_firstUpdateTime = System.currentTimeMillis();
@@ -243,14 +245,13 @@ public class VideoStreamingThread extends Thread {
                 if (packet_count % 10 == 0) {
                     double currentFPS =
                             1000.0 * packet_count / (packet_currentUpdateTime - packet_firstUpdateTime);
-                    Log.d(LOG_TAG, "(NET)\t" + "BW: "
-                            + 8.0*packet_totalsize / (packet_currentUpdateTime-packet_firstUpdateTime)/1000
-                            + " Mbps\tCurrent BW: "
-                            + 8.0*data.length/(packet_currentUpdateTime - packet_prevUpdateTime)/1000
-                            + " Mbps\t"
-                            + "FPS: "
-                            + currentFPS);
-
+//                    Log.d(LOG_TAG, "(NET)\t" + "BW: "
+//                            + 8.0*packet_totalsize / (packet_currentUpdateTime-packet_firstUpdateTime)/1000
+//                            + " Mbps\tCurrent BW: "
+//                            + 8.0*data.length/(packet_currentUpdateTime - packet_prevUpdateTime)/1000
+//                            + " Mbps\t"
+//                            + "FPS: "
+//                            + currentFPS);
 				}
 		        packet_prevUpdateTime = packet_currentUpdateTime;
 			} catch (IOException e) {
@@ -380,7 +381,7 @@ public class VideoStreamingThread extends Thread {
 				//changed to rgb so that decoding side is correct
 				Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BGRA2RGB);
 				Imgcodecs.imencode(".ppm", frame, byteMat);
-				Log.d(LOG_TAG, "encoding took " + (System.currentTimeMillis() - time));
+//				Log.d(LOG_TAG, "encoding took " + (System.currentTimeMillis() - time));
 				byterray = byteMat.toArray();
 			}
 

@@ -20,6 +20,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import edu.cmu.cs.gabriel.Const;
+import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.token.TokenController;
 
 import android.os.Bundle;
@@ -119,6 +120,9 @@ public class ResultReceivingThread extends Thread {
 		String engineID = "";
 		long frameID = -1;
 		obj = new JSONObject(recvData);
+		long app_recv_time=-1;
+		long app_sent_time=-1;
+		long client_recv_time=-1;
 		
 		try{
 			returnMsg = obj.getString(NetworkProtocol.HEADER_MESSAGE_RESULT);
@@ -128,7 +132,11 @@ public class ResultReceivingThread extends Thread {
 		} catch(JSONException e){}
 		try{
 			frameID = obj.getLong(NetworkProtocol.HEADER_MESSAGE_FRAME_ID);
-			Log.d(LOG_TAG, "received response. frameID: "+frameID);
+			app_recv_time = obj.getLong("app_recv_time");
+			app_sent_time = obj.getLong("app_sent_time");
+			client_recv_time=System.currentTimeMillis();
+//			Log.i(LOG_TAG, "received "+frameID + ":"+System.currentTimeMillis()+","
+//					+app_recv_time+","+app_sent_time);
 			engineID = obj.getString(NetworkProtocol.HEADER_MESSAGE_ENGINE_ID);
 		} catch(JSONException e){}
 		
@@ -136,8 +144,17 @@ public class ResultReceivingThread extends Thread {
 		if (Const.IS_EXPERIMENT != true){
 			if (returnMsg != null){
 				Message msg = Message.obtain();
+				Bundle data = new Bundle();
+				data.putLong(NetworkProtocol.HEADER_MESSAGE_FRAME_ID, frameID);
+				data.putLong("app_recv_time", app_recv_time);
+				data.putLong("app_sent_time", app_sent_time);
+				data.putLong("client_recv_time", client_recv_time);
+				data.putLong("client_sent_time", GabrielClientActivity.timeStamp);
+				data.putString("result", returnMsg);
 				msg.what = NetworkProtocol.NETWORK_RET_RESULT;
-				msg.obj = returnMsg;
+				msg.setData(data);
+//				msg.obj = data;
+
 				this.returnMsgHandler.sendMessage(msg);
 			}
 		}
