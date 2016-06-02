@@ -2,7 +2,7 @@
     "docs": [
         {
             "location": "/", 
-            "text": "FaceSwap Documentation\n\n\nFaceSwap is used to demonstrate the critical role cloudlets play in shortening end-to-end latency for computation offloading mobile applications. \n\n\nFaceSwap demo consists of a front-end Android client and a back-end server performing.\n\n\nFaceSwap Android Client\n\n\nFaceSwap Android client is available on Google Play:\n\n\n\n\nFaceSwap Android Server\n\n\nFaceSwap Android server is available on Amazon EC2. The AMI name is \"FaceSwap-server-release\". The AMI ID in EC2 Oregon is ami-31c43351.\n\n\nThe source code is available \nhere\n.", 
+            "text": "FaceSwap Documentation\n\n\nFaceSwap is used to demonstrate the critical role cloudlets play in shortening end-to-end latency for computation offloading mobile applications. \n\n\nFaceSwap demo consists of a front-end Android client and a back-end server performing.\n\n\nFaceSwap Android Client\n\n\nFaceSwap Android client is available on Google Play:\n\n\n\n\nFaceSwap Android Server\n\n\nFaceSwap Android server is available on Amazon EC2. The AMI name is \"FaceSwap-server-release\". The AMI ID in EC2 Oregon is ami-31c43351.\n\n\nThe source code is available \nhere\n.\n\n\nVideo Demo\n\n\n\nhttps://youtu.be/YSC-04jxS90", 
             "title": "Home"
         }, 
         {
@@ -19,6 +19,11 @@
             "location": "/#faceswap-android-server", 
             "text": "FaceSwap Android server is available on Amazon EC2. The AMI name is \"FaceSwap-server-release\". The AMI ID in EC2 Oregon is ami-31c43351.  The source code is available  here .", 
             "title": "FaceSwap Android Server"
+        }, 
+        {
+            "location": "/#video-demo", 
+            "text": "https://youtu.be/YSC-04jxS90", 
+            "title": "Video Demo"
         }, 
         {
             "location": "/user-guide/", 
