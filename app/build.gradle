@@ -1,0 +1,72 @@
+apply plugin: 'com.android.application'
+if(project.hasProperty("FaceSwapSigning.properties")
+        && new File(project.property("FaceSwapSigning.properties")).exists()) {
+    Properties signingProps = new Properties()
+    signingProps.load(new FileInputStream(file(project.property("FaceSwapSigning.properties"))))
+    println("using release key")
+    android {
+        signingConfigs {
+            release_key {
+                keyAlias 'FaceSwap'
+                keyPassword signingProps['key.password']
+                storeFile file(signingProps['store'])
+                storePassword signingProps['store.password']
+            }
+        }
+        compileSdkVersion 23
+        buildToolsVersion "23.0.1"
+        defaultConfig {
+            applicationId "edu.cmu.cs.faceswap"
+            minSdkVersion 16
+            targetSdkVersion 23
+        }
+        buildTypes {
+            release {
+                //minifyEnabled enables proguard
+                minifyEnabled true
+                proguardFile 'proguard-faceswap.pro'
+                //optimzation has to be enabled in order to remove logging
+                proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+                signingConfig signingConfigs.release_key
+            }
+            debug {
+                signingConfig signingConfigs.release_key
+            }
+        }
+    }
+} else {
+    println("using android studio debug key")
+    android {
+        compileSdkVersion 23
+        buildToolsVersion "23.0.1"
+        defaultConfig {
+            applicationId "edu.cmu.cs.faceswap"
+            minSdkVersion 16
+            targetSdkVersion 23
+        }
+        buildTypes {
+            release {
+                //minifyEnabled enables proguard
+                minifyEnabled true
+                proguardFile 'proguard-faceswap.pro'
+                //optimzation has to be enabled in order to remove logging
+                proguardFile getDefaultProguardFile('proguard-android-optimize.txt')
+            }
+            debug {
+            }
+        }
+    }
+}
+
+dependencies {
+    compile('com.github.afollestad.material-dialogs:core:0.8.5.4@aar') {
+        transitive = true
+    }
+    compile 'com.android.support:appcompat-v7:23.2.0'
+    compile 'com.android.support:support-v4:23.2.0'
+    compile 'com.android.support:support-v13:23.2.0'
+    compile 'com.android.support:design:23.2.0'
+    compile 'com.github.DeveloperPaul123:MaterialLibrary:1.0.5'
+    compile 'com.google.android.gms:play-services-drive:8.4.0'
+    compile project(':openCVLibrary310')
+}

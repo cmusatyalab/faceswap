@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="listArray">
+        <item>Headings</item>
+        <item>Headings and Details</item>
+        <item>All Data</item>
+    </string-array>
+
+    <string-array name="add_ip_places_spinner_array">
+        <item>@string/type_cloudlet</item>
+        <item>@string/type_cloud</item>
+    </string-array>
+
+    <!-- Strings related to Settings -->
+    <string-array name="shared_preference_ip_dict_names">
+        <item>@string/shared_preference_cloudlet_ip_dict</item>
+        <item>@string/shared_preference_cloud_ip_dict</item>
+    </string-array>
+
+    <string-array name="listValues">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+</resources>

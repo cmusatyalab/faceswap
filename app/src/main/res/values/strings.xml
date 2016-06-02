@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">FaceSwap</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_main">FaceSwap</string>
+    <string name="start_button">Start</string>
+
+    <string name="title_activity_cloudlet_demo">FaceSwap</string>
+
+    <string name="title_section1">Section 1</string>
+    <string name="title_section2">Section 2</string>
+    <string name="title_section3">Section 3</string>
+
+    <string name="hello_world">Hello world!</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="setting_cloudlet_ip">set cloudlet ip</string>
+    <string name="setting_cloud_ip">set cloud ip</string>
+    <string name="setting_reset_openface_server">reset openface server</string>
+
+    <string name="file_picker_permission_rationale_dialog_title">Read/Write Storage Permission</string>
+    <string name="file_picker_permission_rationale_dialog_content">The read/write storage permission is needed to access and read the files on your phone to display them to you</string>
+    <string name="file_picker_ok">OK</string>
+    <string name="file_picker_cancel">Cancel</string>
+    <string name="file_picker_directory_error">Initial file must be a directory.</string>
+    <string name="file_picker_snackbar_select_directory_message">Please select a directory.</string>
+    <string name="file_picker_snackbar_select_file_ext_message">Please select a %s file</string>
+    <string name="file_picker_snackbar_no_file_type_handler">No handler for this type of file.</string>
+    <string name="file_picker_snackbar_no_read_type">Couldn\'t get file type.</string>
+    <string name="file_picker_progress_dialog_loading">Loading…</string>
+    <string name="file_picker_default_directory_title">Parent Directory</string>
+    <string name="file_picker_adapter_size_string">Size: %d bytes</string>
+    <string name="file_picker_adapter_last_modified_string">Last Modified: %s</string>
+    <string name="file_picker_adapter_file_path_string">Path: %s</string>
+    <string name="file_picker_adapter_file_size_only_string">%d bytes</string>
+    <string name="file_picker_file_info_dialog_file_path">File: %s</string>
+    <string name="file_picker_recycler_adapter_view_holder_type_error">No type that matches that type.</string>
+    <item name="POSITION_KEY" type="id" />
+
+    <!-- Strings related to Settings -->
+    <string name="shared_preference_file_key">edu.cmu.cs.faceswap</string>
+    <string name="shared_preference_cloudlet_ip_dict">shared_preferences_cloudlet_ip_names</string>
+    <string name="shared_preference_cloud_ip_dict">shared_preferences_cloud_ip_names</string>
+    <string name="type_cloudlet">cloudlet</string>
+    <string name="type_cloud">cloud</string>
+
+
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="pref_title_social_recommendations">Enable social recommendations</string>
+    <string name="pref_description_social_recommendations">Recommendations for people to contact
+        based on your message history
+    </string>
+
+    <string name="pref_title_display_name">Display name</string>
+    <string name="pref_default_display_name">John Smith</string>
+
+    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
+    <string name="manage_servers_text">manage servers</string>
+    <string-array name="pref_example_list_titles">
+        <item>Always</item>
+        <item>When possible</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+</resources>
