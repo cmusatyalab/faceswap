@@ -15,3 +15,7 @@ FaceSwap Android client is available on Google Play:
 FaceSwap Android server is available on Amazon EC2. The AMI name is "FaceSwap-server-release". The AMI ID in EC2 Oregon is ami-31c43351.
 
 The source code is available [here](https://github.com/Jamesjue/FaceSwap-server).
+
+## Hardware Requirements
+
+The recommended FaceSwap server should have 4 core and 8GM RAM. Similar EC2 instances are m4.xlarge and m4.large.
