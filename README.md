@@ -20,5 +20,3 @@ Unless otherwise stated, the source code are copyright Carnegie Mellon Universit
 
 ## Author ##
 Junjue Wang <junjuew at cs dot cmu dot edu>
-=======
-# faceswap
