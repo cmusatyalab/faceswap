@@ -17,10 +17,11 @@ FaceSwap is a demo application to visualize differences [cloudlet](http://elijah
 
 ## FaceSwap Server Setup ##
 ### Dependency ###
-[dlib](https://github.com/davisking/dlib/releases/tag/v18.18)
-opencv (>=2.4)
-[openface](https://github.com/cmusatyalab/openface/releases/tag/0.2.1)
-[gabriel](https://github.com/cmusatyalab/gabriel/releases/tag/mobisys2016submission)
+
+* [dlib](https://github.com/davisking/dlib/releases/tag/v18.18)
+* opencv (>=2.4)
+* [openface](https://github.com/cmusatyalab/openface/releases/tag/0.2.1)
+* [gabriel](https://github.com/cmusatyalab/gabriel/releases/tag/mobisys2016submission)
 
 ### Usage ###
 To start server, run server/start_demo.sh
