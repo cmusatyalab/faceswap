@@ -12,8 +12,18 @@
 ---
 
 ## Overview ##
-FaceSwap is an Android application that swap people's faces in real time using face tracking, face detection, and face recognition.
-FaceSwap is a demo application to visualize difference [cloudlet](http://elijah.cs.cmu.edu/) can make in reducing network latency for compute-intensive and latency-sensitive applications.
+FaceSwap is an Android application that swaps people's faces in real time using face tracking, face detection, and face recognition.
+FaceSwap is a demo application to visualize differences [cloudlet](http://elijah.cs.cmu.edu/) can make in reducing network latency for compute-intensive and latency-sensitive applications.
+
+## FaceSwap Server Setup ##
+### Dependency ###
+[dlib](https://github.com/davisking/dlib/releases/tag/v18.18)
+opencv (>=2.4)
+[openface](https://github.com/cmusatyalab/openface/releases/tag/0.2.1)
+[gabriel](https://github.com/cmusatyalab/gabriel/releases/tag/mobisys2016submission)
+
+### Usage ###
+To start server, run server/start_demo.sh
 
 ## Licensing ##
 Unless otherwise stated, the source code are copyright Carnegie Mellon University and licensed under the Apache 2.0 License.
