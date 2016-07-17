@@ -38,7 +38,6 @@ from face_swap import FaceTransformation
 import pdb
 from PIL import Image, ImageOps
 import io, StringIO
-import base64
 import numpy as np
 import json
 #from scipy.ndimage import imread
@@ -46,8 +45,8 @@ import cProfile, pstats, StringIO
 from NetworkProtocol import *
 import cv2
 from demo_config import Config
-
-DEBUG = Config.DEBUG
+from datetime import datetime
+from gabriel.common.protocol import Protocol_measurement as Protocol_measurement
 
 prev_timestamp = time.time()*1000
 
@@ -65,66 +64,35 @@ class DummyVideoApp(AppProxyThread):
         
     
     def process(self, image):
-        # pr = cProfile.Profile()
-        # pr.enable()
-
         # preprocessing techqniues : resize?
 #        image = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
 
         face_snippets_list = transformer.swap_face(image)
         face_snippets_string = {}
         face_snippets_string['num'] = len(face_snippets_list)
-#        print 'length of resposne to android: {}'.format(len(face_snippets_list))
         for idx, face_snippet in enumerate(face_snippets_list):
             face_snippets_string[str(idx)] = face_snippet
 
         result = json.dumps(face_snippets_string)
         return result
-        
-        # pr.disable()
-        # s = StringIO.StringIO()
-        # sortby = 'cumulative'
-        # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        # ps.print_stats()
-        # print s.getvalue()
-
-        # processed_img = Image.fromarray(transformer.swap_face(image))            
-        # processed_output = StringIO.StringIO()
-        # processed_img.save(processed_output, 'JPEG')
-        # if DEBUG:
-        #     processed_img.save('test.jpg')
-
-        # jpeg_image = processed_output.getvalue()
-        # result = base64.b64encode(jpeg_image)
-        # processed_output.close()
-
-
-#        print result
-
 
     def handle(self, header, data):
         # pr = cProfile.Profile()
         # pr.enable()
-
         
         global prev_timestamp
-        global DEBUG
         
         # locking to make sure tracker update thread is not interrupting
         transformer.tracking_thread_idle_event.clear()
         
-        # PERFORM Cognitive Assistant Processing
-        # header is a dict
-        # sys.stdout.write("processing: ")
-        # sys.stdout.write("%.50s\n" % header)
-
-        if DEBUG:
+        if Config.DEBUG:
             cur_timestamp = time.time()*1000
             interval = cur_timestamp - prev_timestamp
             sys.stdout.write("packet interval: %d\n"%interval)
             start = time.time()
-#            sys.stdout.flush()
-        
+
+        sys.stdout.write('received {}:{}'.format(header['id'], header[Protocol_measurement.JSON_KEY_APP_RECV_TIME]))
+
         header_dict = header
 
         if 'reset' in header_dict:
@@ -262,7 +230,7 @@ class DummyVideoApp(AppProxyThread):
             snippets = self.process(image)
             resp= self.gen_response(AppDataProtocol.TYPE_detect, snippets)
 
-        if DEBUG:
+        if Config.DEBUG:
             end = time.time()
             print('total processing time: {}'.format((end-start)*1000))
             prev_timestamp = time.time()*1000

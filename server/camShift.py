@@ -9,7 +9,7 @@ Camshift tracker
 import numpy as np
 import cv2
 import dlib
-import MyUtils
+import vision
 import sys
 
 class camshiftTracker(object):
@@ -20,7 +20,7 @@ class camshiftTracker(object):
         self.track_box = None
 
     def start_track(self, frame, droi):
-        self.selection=MyUtils.drectangle_to_tuple(droi)
+        self.selection=vision.drectangle_to_tuple(droi)
         hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
         mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))
         x0, y0, x1, y1 = self.selection
@@ -62,7 +62,7 @@ class meanshiftTracker(object):
         self.track_box = None
 
     def start_track(self, frame, droi):
-        self.selection=MyUtils.drectangle_to_tuple(droi)
+        self.selection=vision.drectangle_to_tuple(droi)
         hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
         mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))
         x0, y0, x1, y1 = self.selection
