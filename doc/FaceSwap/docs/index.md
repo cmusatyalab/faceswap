@@ -22,7 +22,7 @@ The FaceSwap server is wrapped into a virtual machine disk image. You can downlo
 ### Cloud Setup
 
 FaceSwap Android server disk image is available on Amazon EC2. The AMI name is "FaceSwap-server-release". The AMI ID in EC2 Oregon is ami-31c43351.
-The source code is available [here](https://github.com/cmusatyalab/faceswap).
+The source code is available [here](https://github.com/cmusatyalab/faceswap/releases/tag/v1.0).
 
 ## Hardware Requirements
 
