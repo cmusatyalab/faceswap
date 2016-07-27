@@ -2,13 +2,18 @@
     "docs": [
         {
             "location": "/", 
-            "text": "FaceSwap Documentation\n\n\nFaceSwap is used to demonstrate the critical role cloudlets play in shortening end-to-end latency for computation offloading mobile applications. \n\n\nFaceSwap demo consists of a front-end Android client and a back-end server performing.\n\n\nFaceSwap Android Client\n\n\nFaceSwap Android client is available on Google Play:\n\n\n\n\nFaceSwap Server\n\n\nCloudlet Setup\n\n\nThe FaceSwap server is wrapped into a virtual machine disk image. You can download it \nhere\n. The best way to construct a faceswap server is to simply create and boot a virtual machine using provided faceswap server disk image.\n\n\nCloud Setup\n\n\nFaceSwap Android server disk image is available on Amazon EC2. The AMI name is \"FaceSwap-server-release\". The AMI ID in EC2 Oregon is ami-31c43351.\nThe source code is available \nhere\n.\n\n\nHardware Requirements\n\n\nThe recommended FaceSwap server should have 4 core and 8GM RAM. Similar EC2 instances are m4.xlarge and m4.large.", 
+            "text": "FaceSwap Documentation\n\n\nFaceSwap is used to demonstrate the critical role cloudlets play in shortening end-to-end latency for computation offloading mobile applications. \n\n\nFaceSwap demo consists of a front-end Android client and a back-end server performing.\n\n\nDemo Video\n\n\n\n\nFaceSwap Android Client\n\n\nFaceSwap Android client is available on Google Play:\n\n\n\n\nFaceSwap Server\n\n\nCloudlet Setup\n\n\nThe FaceSwap server is wrapped into a virtual machine disk image. You can download it \nhere\n. The best way to construct a faceswap server is to simply create and boot a virtual machine using provided faceswap server disk image.\n\n\nCloud Setup\n\n\nFaceSwap Android server disk image is available on Amazon EC2. The AMI name is \"FaceSwap-server-release\". The AMI ID in EC2 Oregon is ami-31c43351.\nThe source code is available \nhere\n.\n\n\nHardware Requirements\n\n\nThe recommended FaceSwap server should have 4 core and 8GM RAM. Similar EC2 instances are m4.xlarge and m4.large.", 
             "title": "Home"
         }, 
         {
             "location": "/#faceswap-documentation", 
             "text": "FaceSwap is used to demonstrate the critical role cloudlets play in shortening end-to-end latency for computation offloading mobile applications.   FaceSwap demo consists of a front-end Android client and a back-end server performing.", 
             "title": "FaceSwap Documentation"
+        }, 
+        {
+            "location": "/#demo-video", 
+            "text": "", 
+            "title": "Demo Video"
         }, 
         {
             "location": "/#faceswap-android-client", 
