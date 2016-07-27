@@ -110,6 +110,8 @@
         
             <li><a href="#faceswap-server">FaceSwap Server</a></li>
         
+            <li><a href="#source-code">Source Code</a></li>
+        
             <li><a href="#hardware-requirements">Hardware Requirements</a></li>
         
     
@@ -129,10 +131,16 @@
 <h3 id="cloudlet-setup">Cloudlet Setup</h3>
 <p>The FaceSwap server is wrapped into a virtual machine disk image. You can download it <a href="https://storage.cmusatyalab.org/faceswap/faceswap-server-release.qcow">here</a>. The best way to construct a faceswap server is to simply create and boot a virtual machine using provided faceswap server disk image.</p>
 <h3 id="cloud-setup">Cloud Setup</h3>
-<p>FaceSwap Android server disk image is available on Amazon EC2. The AMI name is "FaceSwap-server-release". The AMI ID in EC2 Oregon is ami-31c43351.
-The source code is available <a href="https://github.com/cmusatyalab/faceswap/releases/tag/v1.0">here</a>.</p>
+<ul>
+<li>Find FaceSwap Android server disk image on Amazon EC2 Oregon. The AMI ID in EC2 Oregon is <strong>ami-31c43351</strong>. The AMI name is <strong>FaceSwap-server-release</strong>. </li>
+<li>Create an instance from the AMI. The recommended EC2 instance types are m4.large, m4.xlarge, and more powerful ones.</li>
+<li>Configure security group associated with that instance to open port <strong>9097-9102</strong> for inbound TCP traffic. (If you want to change the image, though not recommended, you can open port 22 for ssh access. The default username:password is faceswap-admin:faceswap-admin. You're advised to change the password as soon as you open port 22 for debugging.)</li>
+<li>Launch that instance. After the instance has fully booted up, connect FaceSwap client to it for use (see <a href="https://cmusatyalab.github.io/faceswap/user-guide/">User Guide</a>).</li>
+</ul>
+<h2 id="source-code">Source Code</h2>
+<p>The source code is available <a href="https://github.com/cmusatyalab/faceswap/releases/tag/v1.0">here</a>.</p>
 <h2 id="hardware-requirements">Hardware Requirements</h2>
-<p>The recommended FaceSwap server should have 4 core and 8GM RAM. Similar EC2 instances are m4.xlarge and m4.large.</p></div>
+<p>The recommended FaceSwap server should have 4 core and 8GM RAM. </p></div>
             
         </div>
 
@@ -179,5 +187,5 @@ The source code is available <a href="https://github.com/cmusatyalab/faceswap/re
 
 <!--
 MkDocs version : 0.15.3
-Build Date UTC : 2016-07-27 15:35:58.851978
+Build Date UTC : 2016-07-27 18:44:12.030431
 -->
