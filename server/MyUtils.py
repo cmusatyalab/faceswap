@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from demo_config import Config
 import logging
 import sys
 from operator import itemgetter
@@ -7,6 +7,22 @@ from itertools import groupby
 import pdb
 import os
 import shutil
+
+# logging.basicConfig(
+#             format='%(asctime)s %(name)-12s %(levelname)-8s %(thread)d %(message)s',
+#             filename='faceswap-proxy.log',
+#             filemode='w+'                            
+# )
+
+custom_logger_level=logging.INFO        
+if Config.DEBUG:
+    custom_logger_level=logging.DEBUG
+formatter = logging.Formatter('%(asctime)-15s %(levelname)-8s %(processName)s %(message)s')  
+LOG=logging.getLogger(__name__)
+LOG.setLevel(custom_logger_level)
+ch = logging.StreamHandler(sys.stdout)
+ch.setFormatter(formatter)
+LOG.addHandler(ch)
 
 def getLogger(name):
     logger = logging.getLogger(name)
@@ -103,8 +119,8 @@ def getContinuousRange(sorted_list):
     return ranges
 
 
-gmail_user="cardboardtest123@gmail.com"
-gmail_pwd="cardboardtest321"
+gmail_user="*"
+gmail_pwd="*"
 def send_email(recipient, subject, body):
     import smtplib
     FROM = gmail_user
@@ -123,25 +139,22 @@ def send_email(recipient, subject, body):
         server_ssl.sendmail(FROM, TO, message)
         server_ssl.close()
         print 'successfully sent the mail'
-
-        # server = smtplib.SMTP("smtp.gmail.com", 587)
-        # server.ehlo()
-        # server.starttls()
-        # server.login(gmail_user, gmail_pwd)
-        # server.sendmail(FROM, TO, message)
-        # server.close()
-        # print 'successfully sent the mail'
     except:
         print "failed to send mail"
 
 
-def drectangle_to_tuple(drectangle):
-    cur_roi = (int(drectangle.left()),
-                     int(drectangle.top()),
-                     int(drectangle.right()),
-                     int(drectangle.bottom()))
-    return cur_roi
-
+import time                                                
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+ 
+        LOG.debug('%r (%r, %r) %.1f ms' % \
+                  (method.__name__, args, kw, (te-ts)*1000))
+        return result
+    return timed
+        
 class Tee(object):
     def __init__(self, name, mode):
         self.file = open(name, mode)
