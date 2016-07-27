@@ -122,8 +122,11 @@
 <p>FaceSwap Android client is available on Google Play:</p>
 <p><a href="https://play.google.com/store/apps/details?id=edu.cmu.cs.faceswap"><img alt="Get it on Google Play" src="./img/google-play-badge-small.png" /></a></p>
 <h2 id="faceswap-android-server">FaceSwap Android Server</h2>
-<p>FaceSwap Android server is available on Amazon EC2. The AMI name is "FaceSwap-server-release". The AMI ID in EC2 Oregon is ami-31c43351.</p>
-<p>The source code is available <a href="https://github.com/Jamesjue/FaceSwap-server">here</a>.</p>
+<h3 id="cloudlet-setup">Cloudlet Setup</h3>
+<p>The FaceSwap server is wrapped into a virtual machine disk image. You can download it <a href="https://storage.cmusatyalab.org/faceswap/faceswap-server-release.qcow">here</a>. The best way to construct a faceswap server is to simply create and boot a virtual machine using provided faceswap server disk image.</p>
+<h3 id="cloud-setup">Cloud Setup</h3>
+<p>FaceSwap Android server disk image is available on Amazon EC2. The AMI name is "FaceSwap-server-release". The AMI ID in EC2 Oregon is ami-31c43351.
+The source code is available <a href="https://github.com/cmusatyalab/faceswap">here</a>.</p>
 <h2 id="hardware-requirements">Hardware Requirements</h2>
 <p>The recommended FaceSwap server should have 4 core and 8GM RAM. Similar EC2 instances are m4.xlarge and m4.large.</p></div>
             
@@ -172,5 +175,5 @@
 
 <!--
 MkDocs version : 0.15.3
-Build Date UTC : 2016-07-12 20:35:43.572493
+Build Date UTC : 2016-07-27 15:29:06.388020
 -->
