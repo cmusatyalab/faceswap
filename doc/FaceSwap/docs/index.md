@@ -4,6 +4,9 @@ FaceSwap is used to demonstrate the critical role cloudlets play in shortening e
 
 FaceSwap demo consists of a front-end Android client and a back-end server performing.
 
+## Demo Video
+[![Demo Video](http://img.youtube.com/vi/YSC-04jxS90/0.jpg)](http://www.youtube.com/watch?v=YSC-04jxS90)
+
 ## FaceSwap Android Client
 
 FaceSwap Android client is available on Google Play:
@@ -24,3 +27,4 @@ The source code is available [here](https://github.com/cmusatyalab/faceswap).
 ## Hardware Requirements
 
 The recommended FaceSwap server should have 4 core and 8GM RAM. Similar EC2 instances are m4.xlarge and m4.large.
+
