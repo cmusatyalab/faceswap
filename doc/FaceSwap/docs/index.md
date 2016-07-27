@@ -10,7 +10,7 @@ FaceSwap Android client is available on Google Play:
 
 [![Get it on Google Play](img/google-play-badge-small.png)](https://play.google.com/store/apps/details?id=edu.cmu.cs.faceswap)
 
-## FaceSwap Android Server
+## FaceSwap Server
 
 ### Cloudlet Setup
 
