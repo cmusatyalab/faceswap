@@ -70,6 +70,12 @@
                     </li>
                 
                 
+                
+                    <li >
+                        <a href="faq/">FAQ</a>
+                    </li>
+                
+                
                 </ul>
             
 
@@ -108,7 +114,7 @@
         
             <li><a href="#faceswap-android-client">FaceSwap Android Client</a></li>
         
-            <li><a href="#faceswap-server">FaceSwap Server</a></li>
+            <li><a href="#faceswap-server-setup">FaceSwap Server Setup</a></li>
         
             <li><a href="#source-code">Source Code</a></li>
         
@@ -127,14 +133,45 @@
 <h2 id="faceswap-android-client">FaceSwap Android Client</h2>
 <p>FaceSwap Android client is available on Google Play:</p>
 <p><a href="https://play.google.com/store/apps/details?id=edu.cmu.cs.faceswap"><img alt="Get it on Google Play" src="./img/google-play-badge-small.png" /></a></p>
-<h2 id="faceswap-server">FaceSwap Server</h2>
+<h2 id="faceswap-server-setup">FaceSwap Server Setup</h2>
 <h3 id="cloudlet-setup">Cloudlet Setup</h3>
-<p>The FaceSwap server is wrapped into a virtual machine disk image. You can download it <a href="https://storage.cmusatyalab.org/faceswap/faceswap-server-release.qcow">here</a>. The best way to construct a faceswap server is to simply create and boot a virtual machine using provided faceswap server disk image.</p>
+<p>The FaceSwap server is wrapped into a qcow2 virtual machine disk image. You can download it <a href="https://storage.cmusatyalab.org/faceswap/faceswap-server-release.qcow">here</a>. </p>
+<h4 id="method-1-openstack">Method 1 OpenStack:</h4>
+<ol>
+<li>Import the qcow2 image into a running OpenStack following this <a href="http://docs.openstack.org/user-guide/dashboard_manage_images.html">guide</a>.</li>
+<li>Launch that instance. FaceSwap server will automatically launch at start-up time.</li>
+<li>After the instance has fully booted up, connect FaceSwap client to it for use. (see <a href="https://cmusatyalab.github.io/faceswap/user-guide/">User Guide</a>)</li>
+</ol>
+<h4 id="method-2-kvmqemu">Method 2 KVM/QEMU</h4>
+<p>You can also directly create a virtual machine from the qcow2 image using KVM/QEMU. </p>
+<ol>
+<li>For ubuntu, you can install KVM/QEMU following <a href="http://www.howtogeek.com/117635/how-to-install-kvm-and-create-virtual-machines-on-ubuntu/">here</a>. </li>
+<li>
+<p>Modify this <a href="https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/faceswap-server.xml">faceswap-server.xml</a> to point to the downloaded path of your image. For instance, if the downloaded faceswap-server-release.qcow is at /home/junjuew/faceswap-server-release.qcow. Then the xml file should be modified into:</p>
+<pre><code>  ...
+  &lt;disk type='file' device='disk'&gt;
+   &lt;driver name='qemu' type='qcow2'/&gt;
+   &lt;source file='/home/junjuew/faceswap-setup/faceswap-server-release.qcow'/&gt;
+   &lt;target dev='vda' bus='virtio'/&gt;
+  &lt;/disk&gt;
+  ...
+</code></pre>
+</li>
+<li>
+<p>Launch the virtual machine:</p>
+<pre><code>sudo virsh create faceswap-server.xml
+</code></pre>
+</li>
+<li>
+<p>The cloudlet image takes a bit longer to be fully booted up and initialized. You can monitor whether the virtual machine has fully booted up by checking whether you've arrived at log-in shell through virt-manager console.</p>
+</li>
+<li>Connect FaceSwap client to it for use. (see <a href="https://cmusatyalab.github.io/faceswap/user-guide/">User Guide</a>). </li>
+</ol>
 <h3 id="cloud-setup">Cloud Setup</h3>
 <ol>
 <li>Find FaceSwap Android server disk image on Amazon EC2 Oregon. The AMI ID in EC2 Oregon is <strong>ami-31c43351</strong>. The AMI name is <strong>FaceSwap-server-release</strong>. </li>
 <li>Create an instance from the AMI. The recommended EC2 instance types are m4.large, m4.xlarge, and more powerful ones.</li>
-<li>Configure security group associated with that instance to open port <strong>9097-9102</strong> for inbound TCP traffic. (If you want to customize the content of the image, though not recommended, you can open port 22 for ssh access. The default username:password is faceswap-admin:faceswap-admin. You're advised to change the password as soon as you open port 22 for debugging.)</li>
+<li>Configure security group associated with that instance to open port <strong>9098, 9101</strong> for inbound TCP traffic. (If you want to customize the content of the image, though not recommended, you can open port 22 for ssh access. The default username:password is faceswap-admin:faceswap-admin. You're advised to change the password as soon as you open port 22 for debugging.)</li>
 <li>Launch that instance. FaceSwap server will automatically launch at start-up time.</li>
 <li>After the instance has fully booted up, connect FaceSwap client to it for use. (see <a href="https://cmusatyalab.github.io/faceswap/user-guide/">User Guide</a>)</li>
 </ol>
@@ -188,5 +225,5 @@
 
 <!--
 MkDocs version : 0.15.3
-Build Date UTC : 2016-07-27 20:19:06.092249
+Build Date UTC : 2016-07-28 01:35:26.282485
 -->
