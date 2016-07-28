@@ -181,26 +181,32 @@
 <p>If you want to customize the content of the image, the default username:password is <strong>faceswap-admin:faceswap-admin</strong>. You're advised to change the password as soon as you gain access.</p>
 <p>The log file of FaceSwap is at /var/log/FaceSwap.log</p>
 <h3 id="by-hand">By Hand</h3>
-<p>These instructions are based on ubuntu 14.04. 
-1. Install OpenFace and its dependency by hand. See <a href="https://cmusatyalab.github.io/openface/setup/">guide</a>
-2. Download this Gabriel <a href="https://github.com/cmusatyalab/gabriel/archive/mobisys2016submission.zip">release</a>. Install its dependency and gabriel:</p>
-<pre><code>        sudo apt-get install -y gcc python-dev default-jre python-pip pssh python-psutil &amp;&amp;
-        sudo pip install \
-                Flask==0.9 \
-                Flask-RESTful \
-                Jinja2==2.8 \
-                MarkupSafe==0.23 \
-                pycrypto \
-                six \
-                Werkzeug==0.11.10 &amp;&amp;
-        wget https://github.com/cmusatyalab/gabriel/archive/mobisys2016submission.zip &amp;&amp;
-        sudo apt-get install -y unzip &amp;&amp;
-        unzip mobisys2016submission.zip &amp;&amp;
-        cd gabriel-mobisys2016submission &amp;&amp;
-        sudo python setup.py install
-</code></pre>
+<p>These instructions are based on ubuntu 14.04. </p>
 <ol>
-<li>Download FaceSwap <a href="https://github.com/cmusatyalab/faceswap/archive/v1.0.zip">source code</a>. Start to run it by invoking start<pre><code>    mkdir faceswap &amp;&amp;
+<li>
+<p>Install OpenFace and its dependency by hand. See <a href="https://cmusatyalab.github.io/openface/setup/">guide</a></p>
+</li>
+<li>
+<p>Download this Gabriel <a href="https://github.com/cmusatyalab/gabriel/archive/mobisys2016submission.zip">release</a>. Install its dependency and gabriel:</p>
+<pre><code>    sudo apt-get install -y gcc python-dev default-jre python-pip pssh python-psutil &amp;&amp;
+    sudo pip install \
+            Flask==0.9 \
+            Flask-RESTful \
+            Jinja2==2.8 \
+            MarkupSafe==0.23 \
+            pycrypto \
+            six \
+            Werkzeug==0.11.10 &amp;&amp;
+    wget https://github.com/cmusatyalab/gabriel/archive/mobisys2016submission.zip &amp;&amp;
+    sudo apt-get install -y unzip &amp;&amp;
+    unzip mobisys2016submission.zip &amp;&amp;
+    cd gabriel-mobisys2016submission &amp;&amp;
+    sudo python setup.py install
+</code></pre>
+</li>
+<li>
+<p>Download FaceSwap <a href="https://github.com/cmusatyalab/faceswap/archive/v1.0.zip">source code</a>. Start to run it by invoking start</p>
+<pre><code>    mkdir faceswap &amp;&amp;
     cd faceswap &amp;&amp;
     wget https://github.com/cmusatyalab/faceswap/archive/v1.0.zip &amp;&amp;
     unzip v1.0.zip &amp;&amp;
@@ -217,8 +223,10 @@
 </code></pre>
 </li>
 </ol>
-<p>If you didn't install Torch at ~/torch, please edit server/start_demo.sh to source torch-activate at your installed location at line 6.
-4. To stop demo use server/kill_demo.sh</p>
+<p>If you didn't install Torch at ~/torch, please edit server/start_demo.sh to source torch-activate at your installed location at line 6.</p>
+<ol>
+<li>To stop demo use server/kill_demo.sh</li>
+</ol>
 <h2 id="source-code">Source Code</h2>
 <p>The source code is available <a href="https://github.com/cmusatyalab/faceswap/releases/tag/v1.0">here</a>.</p>
 <h2 id="hardware-requirements">Hardware Requirements</h2>
@@ -269,5 +277,5 @@
 
 <!--
 MkDocs version : 0.15.3
-Build Date UTC : 2016-07-28 22:19:56.037570
+Build Date UTC : 2016-07-28 22:20:50.096647
 -->
