@@ -205,7 +205,7 @@
 </code></pre>
 </li>
 <li>
-<p>Download FaceSwap <a href="https://github.com/cmusatyalab/faceswap/archive/v1.0.zip">source code</a>. Start to run it by invoking start</p>
+<p>Download FaceSwap <a href="https://github.com/cmusatyalab/faceswap/archive/v1.0.zip">source code</a>. Install its dependency and start it by invoking server/start_demo</p>
 <pre><code>    mkdir faceswap &amp;&amp;
     cd faceswap &amp;&amp;
     wget https://github.com/cmusatyalab/faceswap/archive/v1.0.zip &amp;&amp;
@@ -219,13 +219,13 @@
       scipy==0.14 \
       scikit-learn==0.17 \
       protobuf==2.5 
-    ./start_demo.sh
+    ./start_demo
 </code></pre>
-</li>
-</ol>
 <p>If you didn't install Torch at ~/torch, please edit server/start_demo.sh to source torch-activate at your installed location at line 6.</p>
-<ol>
-<li>To stop demo use server/kill_demo.sh</li>
+</li>
+<li>
+<p>To stop demo use server/kill_demo.sh</p>
+</li>
 </ol>
 <h2 id="source-code">Source Code</h2>
 <p>The source code is available <a href="https://github.com/cmusatyalab/faceswap/releases/tag/v1.0">here</a>.</p>
@@ -277,5 +277,5 @@
 
 <!--
 MkDocs version : 0.15.3
-Build Date UTC : 2016-07-28 22:20:50.096647
+Build Date UTC : 2016-07-28 22:22:05.179779
 -->
