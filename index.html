@@ -170,12 +170,14 @@
 </ol>
 <h3 id="cloud-setup">Cloud Setup</h3>
 <ol>
-<li>Find FaceSwap Android server disk image on Amazon EC2 Oregon. The AMI ID in EC2 Oregon is <strong>ami-31c43351</strong>. The AMI name is <strong>FaceSwap-server-release</strong>. </li>
+<li>Find FaceSwap Android server disk image on Amazon EC2 Oregon/Ireland. The AMI ID in EC2 Oregon is <strong>ami-31c43351</strong>. The AMI ID in EC2 Ireland is <strong>ami-b0abc7c3</strong>. The AMI name is <strong>FaceSwap-server-release</strong>. </li>
 <li>Create an instance from the AMI. The recommended EC2 instance types are m4.large, m4.xlarge, and more powerful ones.</li>
-<li>Configure security group associated with that instance to open port <strong>9098, 9101</strong> for inbound TCP traffic. (If you want to customize the content of the image, though not recommended, you can open port 22 for ssh access. The default username:password is faceswap-admin:faceswap-admin. You're advised to change the password as soon as you open port 22 for debugging.)</li>
+<li>Configure security group associated with that instance to open port <strong>9098, 9101</strong> for inbound TCP traffic. </li>
 <li>Launch that instance. FaceSwap server will automatically launch at start-up time.</li>
 <li>After the instance has fully booted up, connect FaceSwap client to it for use. (see <a href="https://cmusatyalab.github.io/faceswap/user-guide/">User Guide</a>)</li>
 </ol>
+<h3 id="access-image">Access Image</h3>
+<p>If you want to customize the content of the image, the default username:password is faceswap-admin:faceswap-admin. You're advised to change the password as soon as you open ssh password-based access for debugging.</p>
 <h2 id="source-code">Source Code</h2>
 <p>The source code is available <a href="https://github.com/cmusatyalab/faceswap/releases/tag/v1.0">here</a>.</p>
 <h2 id="hardware-requirements">Hardware Requirements</h2>
@@ -226,5 +228,5 @@
 
 <!--
 MkDocs version : 0.15.3
-Build Date UTC : 2016-07-28 12:32:16.135946
+Build Date UTC : 2016-07-28 18:42:59.643516
 -->
