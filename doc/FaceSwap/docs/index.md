@@ -13,6 +13,8 @@ FaceSwap Android client is available on Google Play:
 
 [![Get it on Google Play](img/google-play-badge-small.png)](https://play.google.com/store/apps/details?id=edu.cmu.cs.faceswap)
 
+You can also directly download the apk [here](https://github.com/cmusatyalab/faceswap/blob/master/apk/app-release.apk?raw=true). To install this apk directly through adb, follow this [guide](https://developer.vuforia.com/library/articles/Solution/How-To-install-an-APK-using-ADB).
+
 ## FaceSwap Server Setup
 
 ### Cloudlet Setup
