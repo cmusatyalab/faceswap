@@ -110,9 +110,9 @@
     
         <li class="main active"><a href="#im-getting-illegal-instruction-core-dumped-in-my-log-file">I'm getting "Illegal instruction (core dumped)" in my log file</a></li>
         
-            <li><a href="#method-1-use-an-avx-enabled-machine">Method 1. Use an AVX enabled machine</a></li>
+            <li><a href="#method-1">Method 1.</a></li>
         
-            <li><a href="#method-2-if-you-are-using-the-pre-packaged-image-uninstall-dlib-first-using">Method 2. If you are using the pre-packaged image, uninstall dlib first using</a></li>
+            <li><a href="#method-2">Method 2.</a></li>
         
     
     </ul>
@@ -124,8 +124,10 @@
 <pre><code>       grep avx /proc/cpuinfo
 </code></pre>
 <p>To resolve this problem:</p>
-<h3 id="method-1-use-an-avx-enabled-machine">Method 1. Use an AVX enabled machine</h3>
-<h3 id="method-2-if-you-are-using-the-pre-packaged-image-uninstall-dlib-first-using">Method 2. If you are using the pre-packaged image, uninstall dlib first using</h3>
+<h3 id="method-1">Method 1.</h3>
+<p>Use an AVX enabled machine</p>
+<h3 id="method-2">Method 2.</h3>
+<p>If you are using the pre-packaged image, uninstall dlib first using</p>
 <pre><code>         sudo rm /usr/local/lib/python2.7/dist-packages/dlib.so
 </code></pre>
 <p>Then install dlib using pip:</p>
