@@ -110,9 +110,11 @@
     
         <li class="main active"><a href="#im-getting-illegal-instruction-core-dumped-in-my-log-file">I'm getting "Illegal instruction (core dumped)" in my log file</a></li>
         
-            <li><a href="#method-1">Method 1</a></li>
+    
+        <li class="main "><a href="#method-1">Method 1</a></li>
         
-            <li><a href="#method-2">Method 2</a></li>
+    
+        <li class="main "><a href="#method-2">Method 2</a></li>
         
     
         <li class="main "><a href="#im-getting-following-ferror-when-using-serverstart_demosh">I'm getting following ferror when using server/start_demo.sh</a></li>
@@ -122,7 +124,7 @@
 </div></div>
                 <div class="col-md-9" role="main">
 
-<h2 id="im-getting-illegal-instruction-core-dumped-in-my-log-file">I'm getting "Illegal instruction (core dumped)" in my log file</h2>
+<h3 id="im-getting-illegal-instruction-core-dumped-in-my-log-file">I'm getting "Illegal instruction (core dumped)" in my log file</h3>
 <p>It's likely that your cpu doesn't support AVX instruction. dlib uses AVX to make face detection faster. To check if AVX instruction is available on your machine, use</p>
 <pre><code>       grep avx /proc/cpuinfo
 </code></pre>
@@ -136,16 +138,16 @@
 <p>Then install dlib using pip:</p>
 <pre><code>         sudo pip install dlib
 </code></pre>
-<h2 id="im-getting-following-ferror-when-using-serverstart_demosh">I'm getting following ferror when using server/start_demo.sh</h2>
+<h3 id="im-getting-following-ferror-when-using-serverstart_demosh">I'm getting following ferror when using server/start_demo.sh</h3>
 <blockquote>
 <pre><code>    "&lt;urlopen error [Errno 111] Connection refused&gt;"
 
     "failed to register UCOMM to control"
 </code></pre>
 </blockquote>
-<p>To resolve this problem:
-Edit line 29 "sleep 5" in server/start_demo.sh to a sleep longer time, for example, "sleep 15". 
-Changing the sleep time to a larger value gives one of gabriel server more time to boot up. The original sleep time may not be enough if you are running the server on a slow virtual machine.</p></div>
+<p>To resolve this problem:</p>
+<p>Edit line 29 "sleep 5" in server/start_demo.sh to a sleep longer time, for example, "sleep 15". </p>
+<p>Changing the sleep time to a larger value gives one of gabriel server more time to boot up. The original sleep time may not be enough if you are running the server on a slow virtual machine.</p></div>
             
         </div>
 
