@@ -132,7 +132,7 @@
         }, 
         {
             "location": "/faq/", 
-            "text": "I'm getting \"Illegal instruction (core dumped)\" in my log file\n\n\nIt's likely that your cpu doesn't support AVX instruction. dlib uses AVX to make face detection faster. To check if AVX instruction is available on your machine, use\n\n\n       grep avx /proc/cpuinfo\n\n\n\nTo resolve this problem:\n\n\nMethod 1.\n\n\nUse an AVX enabled machine\n\n\nMethod 2.\n\n\nIf you are using the pre-packaged image, uninstall dlib first using\n\n\n         sudo rm /usr/local/lib/python2.7/dist-packages/dlib.so\n\n\n\nThen install dlib using pip:\n\n\n         sudo pip install dlib", 
+            "text": "I'm getting \"Illegal instruction (core dumped)\" in my log file\n\n\nIt's likely that your cpu doesn't support AVX instruction. dlib uses AVX to make face detection faster. To check if AVX instruction is available on your machine, use\n\n\n       grep avx /proc/cpuinfo\n\n\n\nTo resolve this problem:\n\n\nMethod 1\n\n\nUse an AVX enabled machine\n\n\nMethod 2\n\n\nIf you are using the pre-packaged image, uninstall dlib first using\n\n\n         sudo rm /usr/local/lib/python2.7/dist-packages/dlib.so\n\n\n\nThen install dlib using pip:\n\n\n         sudo pip install dlib", 
             "title": "FAQ"
         }, 
         {
@@ -143,12 +143,12 @@
         {
             "location": "/faq/#method-1", 
             "text": "Use an AVX enabled machine", 
-            "title": "Method 1."
+            "title": "Method 1"
         }, 
         {
             "location": "/faq/#method-2", 
             "text": "If you are using the pre-packaged image, uninstall dlib first using           sudo rm /usr/local/lib/python2.7/dist-packages/dlib.so  Then install dlib using pip:           sudo pip install dlib", 
-            "title": "Method 2."
+            "title": "Method 2"
         }
     ]
 }
