@@ -115,6 +115,9 @@
             <li><a href="#method-2">Method 2</a></li>
         
     
+        <li class="main "><a href="#im-getting-following-ferror-when-using-serverstart_demosh">I'm getting following ferror when using server/start_demo.sh</a></li>
+        
+    
     </ul>
 </div></div>
                 <div class="col-md-9" role="main">
@@ -132,7 +135,17 @@
 </code></pre>
 <p>Then install dlib using pip:</p>
 <pre><code>         sudo pip install dlib
-</code></pre></div>
+</code></pre>
+<h2 id="im-getting-following-ferror-when-using-serverstart_demosh">I'm getting following ferror when using server/start_demo.sh</h2>
+<blockquote>
+<pre><code>    "&lt;urlopen error [Errno 111] Connection refused&gt;"
+
+    "failed to register UCOMM to control"
+</code></pre>
+</blockquote>
+<p>To resolve this problem:
+Edit line 29 "sleep 5" in server/start_demo.sh to a sleep longer time, for example, "sleep 15". 
+Changing the sleep time to a larger value gives one of gabriel server more time to boot up. The original sleep time may not be enough if you are running the server on a slow virtual machine.</p></div>
             
         </div>
 
