@@ -115,9 +115,17 @@
 </div></div>
                 <div class="col-md-9" role="main">
 
-<h3 id="1-im-getting-illegal-instruction-core-dumped-in-my-log-file">1. I'm getting "Illegal instruction (core dumped)" in my log file</h3>
-<p>Please use a machine with an AVX instruction enabled CPU. To check if AVX instruction is available on your machine, use</p>
+<h1 id="1-im-getting-illegal-instruction-core-dumped-in-my-log-file">1. I'm getting "Illegal instruction (core dumped)" in my log file</h1>
+<p>This is likely to your cpu doesn't support AVX instruction. dlib utiliazes AVX to make face detection faster. To check if AVX instruction is available on your machine, use</p>
 <pre><code>       grep avx /proc/cpuinfo
+</code></pre>
+<p>To resolve this problem:</p>
+<p>Method 1. Use an AVX enabled machine
+Method 2. If you are using the pre-packaged image, uninstall dlib first using</p>
+<pre><code>         sudo rm /usr/local/lib/python2.7/dist-packages/dlib.so
+</code></pre>
+<p>Then install dlib using pip:</p>
+<pre><code>         sudo pip install dlib
 </code></pre></div>
             
         </div>
