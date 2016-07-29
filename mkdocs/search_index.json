@@ -132,13 +132,23 @@
         }, 
         {
             "location": "/faq/", 
-            "text": "1. I'm getting \"Illegal instruction (core dumped)\" in my log file\n\n\nThis is likely to your cpu doesn't support AVX instruction. dlib utiliazes AVX to make face detection faster. To check if AVX instruction is available on your machine, use\n\n\n       grep avx /proc/cpuinfo\n\n\n\nTo resolve this problem:\n\n\nMethod 1. Use an AVX enabled machine\nMethod 2. If you are using the pre-packaged image, uninstall dlib first using\n\n\n         sudo rm /usr/local/lib/python2.7/dist-packages/dlib.so\n\n\n\nThen install dlib using pip:\n\n\n         sudo pip install dlib", 
+            "text": "I'm getting \"Illegal instruction (core dumped)\" in my log file\n\n\nIt's likely that your cpu doesn't support AVX instruction. dlib uses AVX to make face detection faster. To check if AVX instruction is available on your machine, use\n\n\n       grep avx /proc/cpuinfo\n\n\n\nTo resolve this problem:\n\n\nMethod 1. Use an AVX enabled machine\n\n\nMethod 2. If you are using the pre-packaged image, uninstall dlib first using\n\n\n         sudo rm /usr/local/lib/python2.7/dist-packages/dlib.so\n\n\n\nThen install dlib using pip:\n\n\n         sudo pip install dlib", 
             "title": "FAQ"
         }, 
         {
-            "location": "/faq/#1-im-getting-illegal-instruction-core-dumped-in-my-log-file", 
-            "text": "This is likely to your cpu doesn't support AVX instruction. dlib utiliazes AVX to make face detection faster. To check if AVX instruction is available on your machine, use         grep avx /proc/cpuinfo  To resolve this problem:  Method 1. Use an AVX enabled machine\nMethod 2. If you are using the pre-packaged image, uninstall dlib first using           sudo rm /usr/local/lib/python2.7/dist-packages/dlib.so  Then install dlib using pip:           sudo pip install dlib", 
-            "title": "1. I'm getting \"Illegal instruction (core dumped)\" in my log file"
+            "location": "/faq/#im-getting-illegal-instruction-core-dumped-in-my-log-file", 
+            "text": "It's likely that your cpu doesn't support AVX instruction. dlib uses AVX to make face detection faster. To check if AVX instruction is available on your machine, use         grep avx /proc/cpuinfo  To resolve this problem:", 
+            "title": "I'm getting \"Illegal instruction (core dumped)\" in my log file"
+        }, 
+        {
+            "location": "/faq/#method-1-use-an-avx-enabled-machine", 
+            "text": "", 
+            "title": "Method 1. Use an AVX enabled machine"
+        }, 
+        {
+            "location": "/faq/#method-2-if-you-are-using-the-pre-packaged-image-uninstall-dlib-first-using", 
+            "text": "sudo rm /usr/local/lib/python2.7/dist-packages/dlib.so  Then install dlib using pip:           sudo pip install dlib", 
+            "title": "Method 2. If you are using the pre-packaged image, uninstall dlib first using"
         }
     ]
 }
