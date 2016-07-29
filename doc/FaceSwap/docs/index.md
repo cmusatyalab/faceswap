@@ -17,17 +17,19 @@ You can also directly download the apk [here](https://github.com/cmusatyalab/fac
 
 ## FaceSwap Server Setup
 
-### Cloudlet Setup
+### Use Pre-Packaged Images
+
+#### Cloudlet Setup
 
 The FaceSwap server is wrapped into a qcow2 virtual machine disk image. You can download it [here](https://storage.cmusatyalab.org/faceswap/faceswap-server-release.qcow). 
 
-#### Method 1 OpenStack:
+##### Method 1 OpenStack:
 
 1. Import the qcow2 image into a running OpenStack following this [guide](http://docs.openstack.org/user-guide/dashboard_manage_images.html).
 2. Launch that instance. FaceSwap server will automatically launch at start-up time.
 5. After the instance has fully booted up, connect FaceSwap client to it for use. (see [User Guide](https://cmusatyalab.github.io/faceswap/user-guide/))
 
-#### Method 2 KVM/QEMU
+##### Method 2 KVM/QEMU
 
 You can also directly create a virtual machine from the qcow2 image using KVM/QEMU. 
 
@@ -49,13 +51,64 @@ You can also directly create a virtual machine from the qcow2 image using KVM/QE
 4. The cloudlet image takes a bit longer to be fully booted up and initialized. You can monitor whether the virtual machine has fully booted up by checking whether you've arrived at log-in shell through virt-manager console.
 5. Connect FaceSwap client to it for use. (see [User Guide](https://cmusatyalab.github.io/faceswap/user-guide/)). 
 
-### Cloud Setup
+#### Cloud Setup
 
-1. Find FaceSwap Android server disk image on Amazon EC2 Oregon. The AMI ID in EC2 Oregon is **ami-31c43351**. The AMI name is **FaceSwap-server-release**. 
+1. Find FaceSwap Android server disk image on Amazon EC2 Oregon/Ireland. The AMI ID in EC2 Oregon is **ami-31c43351**. The AMI ID in EC2 Ireland is **ami-b0abc7c3**. The AMI name is **FaceSwap-server-release**. 
 2. Create an instance from the AMI. The recommended EC2 instance types are m4.large, m4.xlarge, and more powerful ones.
-3. Configure security group associated with that instance to open port **9098, 9101** for inbound TCP traffic. (If you want to customize the content of the image, though not recommended, you can open port 22 for ssh access. The default username:password is faceswap-admin:faceswap-admin. You're advised to change the password as soon as you open port 22 for debugging.)
+3. Configure security group associated with that instance to open port **9098, 9101** for inbound TCP traffic. 
 4. Launch that instance. FaceSwap server will automatically launch at start-up time.
 5. After the instance has fully booted up, connect FaceSwap client to it for use. (see [User Guide](https://cmusatyalab.github.io/faceswap/user-guide/))
+
+#### Access Disk Image Content
+
+If you want to customize the content of the image, the default username:password is **faceswap-admin:faceswap-admin**. You're advised to change the password as soon as you gain access.
+
+The log file of FaceSwap is at /var/log/FaceSwap.log
+
+### By Hand
+
+These instructions are based on ubuntu 14.04. 
+
+1. Install OpenFace and its dependency by hand. See [guide](https://cmusatyalab.github.io/openface/setup/)
+
+2. Download this Gabriel [release](https://github.com/cmusatyalab/gabriel/archive/mobisys2016submission.zip). Install its dependency and gabriel:
+
+            sudo apt-get install -y gcc python-dev default-jre python-pip pssh python-psutil &&
+            sudo pip install \
+                    Flask==0.9 \
+                    Flask-RESTful \
+                    Jinja2==2.8 \
+                    MarkupSafe==0.23 \
+                    pycrypto \
+                    six \
+                    Werkzeug==0.11.10 &&
+            wget https://github.com/cmusatyalab/gabriel/archive/mobisys2016submission.zip &&
+            sudo apt-get install -y unzip &&
+            unzip mobisys2016submission.zip &&
+            cd gabriel-mobisys2016submission &&
+            sudo python setup.py install            
+   
+        
+3. Download FaceSwap [source code](https://github.com/cmusatyalab/faceswap/archive/v1.0.zip). Install its dependency and start it by invoking server/start_demo
+
+            mkdir faceswap &&
+            cd faceswap &&
+            wget https://github.com/cmusatyalab/faceswap/archive/v1.0.zip &&
+            unzip v1.0.zip &&
+            cd ./faceswap-1.0/server/ &&
+            sudo pip install \
+              websocket-client==0.35.0 \
+              autobahn==0.10.4 \
+              imagehash==1.0 \
+              twisted==15.2.1 \
+              scipy==0.14 \
+              scikit-learn==0.17 \
+              protobuf==2.5 
+            ./start_demo
+If you didn't install Torch at ~/torch, please edit server/start_demo.sh to source torch-activate at your installed location at line 6.
+
+4. To stop demo use server/kill_demo.sh
+           
 
 ## Source Code
 The source code is available [here](https://github.com/cmusatyalab/faceswap/releases/tag/v1.0).
