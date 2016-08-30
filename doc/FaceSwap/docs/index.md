@@ -21,7 +21,16 @@ You can also directly download the apk [here](https://github.com/cmusatyalab/fac
 
 #### Cloudlet Setup
 
-The FaceSwap server is wrapped into a qcow2 virtual machine disk image. You can download it [here](https://storage.cmusatyalab.org/faceswap/faceswap-server-release.qcow). 
+The FaceSwap server is wrapped into a qcow2 virtual machine disk image.
+
+* If your virtual machine has AVX instruction support, use [this image](https://storage.cmusatyalab.org/faceswap/faceswap-server-release.qcow). 
+* If your virtual machine doesn't have AVX instruction support, use [this image](https://storage.cmusatyalab.org/faceswap/faceswap-server-release-core2duo.qcow). 
+
+Intel microarchitecture SandyBridge and newer microarchitectures have support for AVX. If you are not sure, run following command in your vm
+
+      cat /proc/cpuinfo | grep avx
+
+If you see outputs with highlighted avx, your machine has AVX support. Otherwise, it doesn't.
 
 ##### Method 1 OpenStack:
 
@@ -34,7 +43,7 @@ The FaceSwap server is wrapped into a qcow2 virtual machine disk image. You can 
 You can also directly create a virtual machine from the qcow2 image using KVM/QEMU. 
 
 1. For ubuntu, you can install KVM/QEMU following [here](http://www.howtogeek.com/117635/how-to-install-kvm-and-create-virtual-machines-on-ubuntu/). 
-2. Modify this [faceswap-server.xml](https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/faceswap-server.xml) to point to the downloaded path of your image. For instance, if the downloaded faceswap-server-release.qcow is at /home/junjuew/faceswap-server-release.qcow. Then the xml file should be modified into:
+2. Modify correct domain XML file below to point to the downloaded path of your image. For instance, if the downloaded faceswap-server-release.qcow is at /home/junjuew/faceswap-server-release.qcow. Then the xml file should be modified into:
 
           ...
           <disk type='file' device='disk'>
@@ -43,6 +52,9 @@ You can also directly create a virtual machine from the qcow2 image using KVM/QE
            <target dev='vda' bus='virtio'/>
           </disk>
           ...
+
+     * for host with AVX: [faceswap-server.xml](https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/faceswap-server.xml)
+     * for host without AVX: [faceswap-server-core2duo.xml](https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/faceswap-server-core2duo.xml) 
 
 3. Launch the virtual machine:
 
@@ -103,7 +115,7 @@ These instructions are based on ubuntu 14.04.
               twisted==15.2.1 \
               scipy==0.14 \
               scikit-learn==0.17 \
-              protobuf==2.5 
+              protobuf==2.5 &&
             ./start_demo
 If you didn't install Torch at ~/torch, please edit server/start_demo.sh to source torch-activate at your installed location at line 6.
 

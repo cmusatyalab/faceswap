@@ -3,7 +3,8 @@
   <uuid>c7a5fdbd-cdaf-9455-926a-d65c16db1802</uuid>
   <memory>4194304</memory>
   <currentMemory>4194304</currentMemory>
-  <cpu mode='host-model'>
+  <cpu mode='custom' match='exact'>
+    <model fallback='forbid'>SandyBridge</model>
     <topology sockets='1' cores='4' threads='1'/>
   </cpu>
   <vcpu>4</vcpu>
@@ -29,5 +30,7 @@
     <qemu:arg value='tcp:9098::9098' />
     <qemu:arg value='-redir'/>
     <qemu:arg value='tcp:9101::9101' />
+    <qemu:arg value='-redir'/>
+    <qemu:arg value='tcp:20022::22' />
   </qemu:commandline>
 </domain>
