@@ -53,8 +53,8 @@ You can also directly create a virtual machine from the qcow2 image using KVM/QE
           </disk>
           ...
 
-     * for host with AVX: [faceswap-server.xml](https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/faceswap-server.xml)
-     * for host without AVX: [faceswap-server-core2duo.xml](https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/faceswap-server-core2duo.xml) 
+     * for host with AVX: [faceswap-server.xml](https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/kvm/faceswap-server.xml)
+     * for host without AVX: [faceswap-server-core2duo.xml](https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/kvm/faceswap-server-core2duo.xml) 
 
 3. Launch the virtual machine:
 
@@ -73,7 +73,7 @@ You can also directly create a virtual machine from the qcow2 image using KVM/QE
 
 #### Access Disk Image Content
 
-If you want to customize the content of the image, the default username:password is **faceswap-admin:faceswap-admin**. You're advised to change the password as soon as you gain access.
+If you want to customize the content of the image, the default username:password is **faceswap-admin:faceswap-admin**. Password-based ssh in Cloudlet images are by default turned on. You're advised to change the password as soon as you gain access.
 
 The log file of FaceSwap is at /var/log/FaceSwap.log
 
