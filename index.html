@@ -137,7 +137,15 @@
 <h2 id="faceswap-server-setup">FaceSwap Server Setup</h2>
 <h3 id="use-pre-packaged-images">Use Pre-Packaged Images</h3>
 <h4 id="cloudlet-setup">Cloudlet Setup</h4>
-<p>The FaceSwap server is wrapped into a qcow2 virtual machine disk image. You can download it <a href="https://storage.cmusatyalab.org/faceswap/faceswap-server-release.qcow">here</a>. </p>
+<p>The FaceSwap server is wrapped into a qcow2 virtual machine disk image.</p>
+<ul>
+<li>If your virtual machine has AVX instruction support, use <a href="https://storage.cmusatyalab.org/faceswap/faceswap-server-release.qcow">this image</a>. </li>
+<li>If your virtual machine doesn't have AVX instruction support, use <a href="https://storage.cmusatyalab.org/faceswap/faceswap-server-release-core2duo.qcow">this image</a>. </li>
+</ul>
+<p>Intel microarchitecture SandyBridge and newer microarchitectures have support for AVX. If you are not sure, run following command in your vm</p>
+<pre><code>  cat /proc/cpuinfo | grep avx
+</code></pre>
+<p>If you see outputs with highlighted avx, your machine has AVX support. Otherwise, it doesn't.</p>
 <h5 id="method-1-openstack">Method 1 OpenStack:</h5>
 <ol>
 <li>Import the qcow2 image into a running OpenStack following this <a href="http://docs.openstack.org/user-guide/dashboard_manage_images.html">guide</a>.</li>
@@ -149,7 +157,7 @@
 <ol>
 <li>For ubuntu, you can install KVM/QEMU following <a href="http://www.howtogeek.com/117635/how-to-install-kvm-and-create-virtual-machines-on-ubuntu/">here</a>. </li>
 <li>
-<p>Modify this <a href="https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/faceswap-server.xml">faceswap-server.xml</a> to point to the downloaded path of your image. For instance, if the downloaded faceswap-server-release.qcow is at /home/junjuew/faceswap-server-release.qcow. Then the xml file should be modified into:</p>
+<p>Modify correct domain XML file below to point to the downloaded path of your image. For instance, if the downloaded faceswap-server-release.qcow is at /home/junjuew/faceswap-server-release.qcow. Then the xml file should be modified into:</p>
 <pre><code>  ...
   &lt;disk type='file' device='disk'&gt;
    &lt;driver name='qemu' type='qcow2'/&gt;
@@ -158,6 +166,10 @@
   &lt;/disk&gt;
   ...
 </code></pre>
+<ul>
+<li>for host with AVX: <a href="https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/faceswap-server.xml">faceswap-server.xml</a></li>
+<li>for host without AVX: <a href="https://raw.githubusercontent.com/cmusatyalab/faceswap/master/server/faceswap-server-core2duo.xml">faceswap-server-core2duo.xml</a> </li>
+</ul>
 </li>
 <li>
 <p>Launch the virtual machine:</p>
@@ -277,5 +289,5 @@
 
 <!--
 MkDocs version : 0.15.3
-Build Date UTC : 2016-08-01 20:05:47.990941
+Build Date UTC : 2016-08-30 14:37:02.425499
 -->
