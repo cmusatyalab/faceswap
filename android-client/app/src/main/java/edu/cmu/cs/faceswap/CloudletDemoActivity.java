@@ -1,12 +1,17 @@
 package edu.cmu.cs.faceswap;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -34,8 +39,10 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import edu.cmu.cs.IO.RetrieveDriveFileContentsAsyncTask;
@@ -52,7 +59,13 @@ import static edu.cmu.cs.utils.UIUtils.prepareForResultIntentForFilePickerActivi
 
 public class CloudletDemoActivity extends AppCompatActivity implements
         GabrielConfigurationAsyncTask.AsyncResponse, GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener{
+        GoogleApiClient.OnConnectionFailedListener {
+
+
+
+    private static final int MY_PERMISSIONS_REQUEST_CAMERA = 23;
+    private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 24;
+    private static final int MY_PERMISSIONS_REQUEST_ALL = 25;
 
 
     private Toolbar toolbar;
@@ -66,16 +79,16 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     private CloudletFragment childFragment;
     private EditText dialogInputTextEdit;
 
-    public SharedPreferences mSharedPreferences= null;
+    public SharedPreferences mSharedPreferences = null;
 
-    private byte[] asyncResponseExtra=null;
-    public String currentServerIp=null;
-    private Activity mActivity=null;
+    private byte[] asyncResponseExtra = null;
+    public String currentServerIp = null;
+    private Activity mActivity = null;
 
     //fix the bug for load_state, and onresume race for sending
-    public boolean onResumeFromLoadState=false;
+    public boolean onResumeFromLoadState = false;
     private GoogleApiClient mGoogleApiClient;
-    public static final int GDRIVE_RESOLVE_CONNECTION_REQUEST_CODE =32891;
+    public static final int GDRIVE_RESOLVE_CONNECTION_REQUEST_CODE = 32891;
     private static final int GDRIVE_REQUEST_CODE_OPENER = 23091;
     private static final int GDRIVE_REQUEST_CODE_CREATOR = 20391;
 
@@ -83,34 +96,92 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     // open when onconnected
     // or no solution for failed connection
     // or solution result comes back
-    private int pendingGDriveAction=-1;
-    private static final int GDRIVE_ACTION_LOAD=12;
-    private static final int GDRIVE_ACTION_SAVE=13;
+    private int pendingGDriveAction = -1;
+    private static final int GDRIVE_ACTION_LOAD = 12;
+    private static final int GDRIVE_ACTION_SAVE = 13;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (!isOnline(this)){
+
+        requestPersmission();
+
+
+        if (!isOnline(this)) {
             notifyError(Const.CONNECTIVITY_NOT_AVAILABLE, true, this);
         } else {
             setContentView(R.layout.activity_cloudlet_demo);
 
             toolbar = (Toolbar) findViewById(R.id.toolbar);
             setSupportActionBar(toolbar);
-            childFragment=
+            childFragment =
                     (CloudletFragment) getSupportFragmentManager().findFragmentById(R.id.demofragment);
-            mSharedPreferences=getSharedPreferences(getString(R.string.shared_preference_file_key),
+            mSharedPreferences = getSharedPreferences(getString(R.string.shared_preference_file_key),
                     MODE_PRIVATE);
         }
-        Log.d(TAG,"on create");
+        Log.d(TAG, "on create");
 //        mGoogleApiClient = new GoogleApiClient.Builder(this)
 //                .addApi(Drive.API)
 //                .addScope(Drive.SCOPE_FILE)
 //                .addConnectionCallbacks(this)
 //                .addOnConnectionFailedListener(this)
 //                .build();
+        mActivity = this;
+    }
 
-        mActivity=this;
+    private void requestPersmission() {
+        Log.d(TAG, "request permission");
+        String permissions[] = {Manifest.permission.CAMERA,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+        };
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            ActivityCompat.requestPermissions(this,
+                    permissions,
+                    MY_PERMISSIONS_REQUEST_ALL);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_CAMERA: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "camera permission approved");
+                } else {
+                    Log.d(TAG, "camera permission denied");
+                }
+                break;
+            }
+            case MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Log.d(TAG, "write external storage permission approved");
+                } else {
+                    Log.d(TAG, "write external storage permission denied");
+                }
+                break;
+            }
+            case MY_PERMISSIONS_REQUEST_ALL: {
+                Map<String, Integer> perms = new HashMap<>();
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0){
+                    for (int i = 0; i < permissions.length; i++)
+                        perms.put(permissions[i], grantResults[i]);
+                    if (perms.get(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                            && perms.get(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+                            ) {
+                        Log.d(TAG, "all needed permission granted");
+                    } else {
+                        notifyError("Please give FaceSwap all permission it needs for proper running", true, this);
+                    }
+                }
+                break;
+            }
+        }
     }
 
     @Override

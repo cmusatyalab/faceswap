@@ -2,7 +2,7 @@
 
 ---
 
-+ Website: https://cmusatyalab.github.io/faceswap
++ Website/Documentation: https://cmusatyalab.github.io/faceswap
 + Join the
   [gitter chat](https://gitter.im/cmusatyalab/faceswap)
   for discussions and installation issues.
