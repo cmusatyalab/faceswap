@@ -150,8 +150,8 @@ def timeit(method):
         result = method(*args, **kw)
         te = time.time()
  
-        LOG.debug('%r (%r, %r) %.1f ms' % \
-                  (method.__name__, args, kw, (te-ts)*1000))
+        LOG.debug('%r %.1f ms' % \
+                  (method.__name__, (te-ts)*1000))
         return result
     return timed
         

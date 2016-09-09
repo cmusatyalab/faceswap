@@ -7,6 +7,7 @@ import base64
 import numpy as np
 import json
 from camShift import camshiftTracker, meanshiftTracker
+from demo_config import Config
 
 # Tracking
 class TrackerInitializer(object):
@@ -22,31 +23,28 @@ def create_dlib_tracker(frame, roi):
                         dlib.rectangle(roi_x1, roi_y1, roi_x2, roi_y2))
     return tracker
 
-def create_tracker(frame, roi):
-#    tracker = camshiftTracker()
-    # using mean shift for now
-    tracker = meanshiftTracker() # 
+@timeit    
+def create_tracker(frame, roi, use_dlib=False):
+    if use_dlib:
+        tracker = dlib.correlation_tracker()        
+    else:
+        tracker = meanshiftTracker() 
     (roi_x1, roi_y1, roi_x2, roi_y2) = roi
+    LOG.debug('create tracker received: {}'.format(roi))
     tracker.start_track(frame,
                         dlib.rectangle(roi_x1, roi_y1, roi_x2, roi_y2))
     return tracker
 
-def create_trackers(frame, rois, dlib=False):
+def create_trackers(frame, rois, use_dlib=False):
     trackers = []
     for roi in rois:
-        if (dlib):
-            tracker = create_dlib_tracker(frame,roi)             
+        if use_dlib:
+            tracker = create_tracker(frame,roi, use_dlib=True)             
         else:
             tracker = create_tracker(frame,roi)
         trackers.append(tracker)
     return trackers
 
-def update_trackers(trackers, frame, rgb_to_hsv=True):
-    if rgb_to_hsv:
-        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
-    for idx, tracker in enumerate(trackers):
-        tracker.update(hsv_frame, is_hsv=True)
-    
 # dlib wrappers    
 def drectangle_to_tuple(drectangle):
     cur_roi = (int(drectangle.left()),
@@ -83,13 +81,15 @@ def np_array_to_jpeg_data_url(frame):
 # cv2 helpers    
 def imwrite_rgb(path, frame):
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-    sys.stdout.write('writing img to {}'.format(path))
+    sys.stdout.write('writing img to {}\n'.format(path))
     sys.stdout.flush()
     cv2.imwrite(path,frame)
 
-def draw_rois(img,rois):
+def draw_rois(img,rois, hint=None):
     for roi in rois:
-        (x1,y1,x2,y2) = tuple(roi) 
+        (x1,y1,x2,y2) = tuple(roi)
+        if hint:
+            cv2.putText(img, hint, (x1, y1), cv2.FONT_HERSHEY_PLAIN, 1, (255,0,0))
         cv2.rectangle(img, (x1,y1), (x2, y2), (255,0,0))
 
 # face detection
@@ -126,10 +126,75 @@ def detect_faces(frame, detector, largest_only=False, upsample_num_times=0, adju
 
     dets=map(lambda d: (int(d.left()), int(d.top()), int(d.right()), int(d.bottom())), dets)
     rois=filter_small_faces(dets)
-    LOG.debug('# detected : {}'.format(len(rois)))        
+    LOG.debug('# face detected : {}'.format(len(rois)))        
     rois=sorted(rois)
     return rois
 
+
+def is_gray_scale(img):
+    if len(img.shape) == 2:
+        return True
+    else:
+        return False
+
+# flip is used to set whether an image should be flipped
+# in addition to detect profile faces in original images
+# lbp cascade detector xml are trained only to detect
+# face rotated to one direction. Need to flip
+# images to detect faces rotated to another direction
+# return value (x1, y1, x2, y2)
+if Config.DETECT_PROFILE_FACE:
+    opencv_profile_face_cascade = cv2.CascadeClassifier(Config.OPENCV_PROFILE_FACE_CASCADE_PATH)
+
+# img should be in rgb as well    
+@timeit
+def detect_profile_faces(img, flip):
+    if not is_gray_scale(img):
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+    h, w = img.shape
+    min_face_size=10
+    max_face_size=min(w,h)    
+    faces = opencv_profile_face_cascade.detectMultiScale(img, minSize=(min_face_size,min_face_size), maxSize=(max_face_size, max_face_size))
+    faces=list(faces)
+
+    if flip:
+        # flip horizontally
+        flipped=cv2.flip(img, 1)
+        flipped_faces = opencv_profile_face_cascade.detectMultiScale(flipped, minSize=(min_face_size,min_face_size), maxSize=(max_face_size, max_face_size))
+
+        for (x,y,fw,fh) in flipped_faces:
+            faces.append( (w-x-fw, y, fw,fh) )
+
+    results=[]
+    for (x,y,fw,fh) in faces:
+        results.append( (int(x),int(y), int(x+fw-1), int(y+fh-1)) )
+    # usage: for (x,y,w,h) in faces:
+    return results
+    
+
+# merge old facerois with new face rois    
+def merge_faceROIs(old_faceROIs, new_faceROIs):
+    pass
+    
+
+# the lower the number is, the higher of blurness    
+def variance_of_laplacian(bgr_img):
+    # compute the Laplacian of the image and then return the focus
+    # measure, which is simply the variance of the Laplacian
+    if len(bgr_img.shape) == 3:
+        grey_img=cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
+    else:
+        grey_img=bgr_img
+    return cv2.Laplacian(grey_img, cv2.CV_64F).var()
+    
+# detect if an image is blurry
+# a higher threshold, meaning a higher demand for image being clearer
+def is_clear(bgr_img, threshold=40):
+    if variance_of_laplacian(bgr_img) < threshold:
+        return False
+    return True
+    
     
 class FaceROI(object):
     def __init__(self, roi, data=None, name=None, tracker=None):

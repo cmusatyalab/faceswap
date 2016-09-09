@@ -140,7 +140,7 @@ class AsyncOpenFaceClientProcess(OpenFaceClient):
     def __init__(self, server_ip=u"ws://localhost", server_port=9000,
                  call_back=None,
                  queue=None,
-                 busy_event=None   ):
+                 recognition_busy_event=None   ):
         super(AsyncOpenFaceClientProcess, self).__init__(server_ip, server_port)
         self.call_back_fun = call_back
         self.shared_queue=queue
@@ -149,7 +149,7 @@ class AsyncOpenFaceClientProcess(OpenFaceClient):
                                                 args=(self.ws.sock,
                                                       call_back,
                                                       queue,
-                                                      busy_event,
+                                                      recognition_busy_event,
                                                   ))
         self.receive_process_running = multiprocessing.Event()
         self.receive_process_running.set()
@@ -159,7 +159,7 @@ class AsyncOpenFaceClientProcess(OpenFaceClient):
                          sock,
                          call_back,
                          queue,
-                         busy_event):
+                         recognition_busy_event):
         input = [sock]
         while True:
             inputready,outputready,exceptready = select.select(input,[],[])
@@ -169,7 +169,7 @@ class AsyncOpenFaceClientProcess(OpenFaceClient):
                         resp = self.ws.recv()
 #                        self.logger.debug('server said: {}'.format(resp[:50]))
                         if call_back is not None:
-                            call_back(resp, queue=queue, busy_event=busy_event)
+                            call_back(resp, queue=queue, recognition_busy_event=recognition_busy_event)
                     except WebSocketException as e:
                         self.logger.debug("web socket error: {0}".format(e))
 

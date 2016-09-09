@@ -11,9 +11,29 @@ import cv2
 import dlib
 import vision
 import sys
+import time
+import pdb
 
-class camshiftTracker(object):
+class Tracker(object):
     def __init__(self):
+        self.stale = 0
+
+    def get_stale(self):
+        return self.stale
+
+    def inc_stale(self):
+        self.stale+=1
+
+    def dec_stale(self):
+        self.stale-=1
+
+    def clr_stale(self):
+        self.stale=0
+
+# obsolete need double-check correctness
+class camshiftTracker(Tracker):
+    def __init__(self):
+        super(self.__class__, self).__init__()
         self.selection = None
         self.hist = None
         self.track_window=None
@@ -34,7 +54,7 @@ class camshiftTracker(object):
     def update(self, frame, is_hsv=False, suggested_roi=None):
         try:
             if not is_hsv:
-                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
             else:
                 hsv = frame
             mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))        
@@ -54,35 +74,35 @@ class camshiftTracker(object):
         ret = dlib.rectangle(roi_x1, roi_y1, roi_x2, roi_y2)
         return ret
 
-class meanshiftTracker(object):
+class meanshiftTracker(Tracker):
     def __init__(self):
-        self.selection = None
+        super(self.__class__, self).__init__()        
         self.hist = None
         self.track_window=None
         self.track_box = None
 
     def start_track(self, frame, droi):
-        self.selection=vision.drectangle_to_tuple(droi)
+        # calculate mask
         hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
         mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))
-        x0, y0, x1, y1 = self.selection
+        (x0, y0, x1, y1)=vision.drectangle_to_tuple(droi)
         self.track_window = (x0, y0, x1-x0, y1-y0)
-        hsv_roi = hsv[y0:y1, x0:x1]
+        hsv_roi=hsv[y0:y1, x0:x1]
         mask_roi = mask[y0:y1, x0:x1]
-        hist = cv2.calcHist( [hsv_roi], [0], mask_roi, [16], [0, 180] )
-        cv2.normalize(hist, hist, 0, 255, cv2.NORM_MINMAX)
-        self.hist = hist.reshape(-1)
+        self.hist = cv2.calcHist( [hsv_roi], [0], mask_roi, [16], [0, 180] )
+        cv2.normalize(self.hist, self.hist, 0, 255, cv2.NORM_MINMAX)
+        self.hist = self.hist.reshape(-1)
         
     def update(self, frame, is_hsv=False, suggested_roi=None):
         try:
             if not is_hsv:
-                hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+                hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
             else:
                 hsv = frame
-            mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))        
+            mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))      
             prob = cv2.calcBackProject([hsv], [0], self.hist, [0, 180], 1)
             prob &= mask
-            term_crit = ( cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1 )
+            term_crit = ( cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1 )            
             retval, self.track_window = cv2.meanShift(prob, self.track_window, term_crit)
         except cv2.error as e:
             sys.stdout.write('cv2 error in tracking')
@@ -91,25 +111,32 @@ class meanshiftTracker(object):
     def get_position(self):
         track_rect = self.track_window
         roi_x1, roi_y1 = track_rect[0], track_rect[1]
-        roi_x2 = track_rect[0] + track_rect[2]
-        roi_y2 = track_rect[1] + track_rect[3]        
+        roi_x2 = track_rect[0] + track_rect[2] -1
+        roi_y2 = track_rect[1] + track_rect[3] -1     
         ret = dlib.rectangle(roi_x1, roi_y1, roi_x2, roi_y2)
         return ret
         
 
 class App(object):
-    def __init__(self, video_src):
-        self.cam = video.create_capture(video_src)
+    def __init__(self, video_src, bx=None):
+#        self.cam = video.create_capture(video_src)
+        self.cam = cv2.VideoCapture(video_src)        
         ret, self.frame = self.cam.read()
-        cv2.namedWindow('camshift')
-        cv2.setMouseCallback('camshift', self.onmouse)
 
-        self.tracking_state = 0
-        self.drag_start= None
+#        self.tracker = camshiftTracker()
+        self.tracker = meanshiftTracker()
+
+        cv2.namedWindow(self.tracker.__class__.__name__)
+        cv2.setMouseCallback(self.tracker.__class__.__name__, self.onmouse)
+        self.show_backproj = False
+
+        if bx:
+            self.tracking_state = 1
+            self.selection = bx
+        else:
+            self.tracking_state = 0        
+            self.selection = None
         
-        self.tracker = camshiftTracker()
-        self.selection = None
-
 
     def onmouse(self, event, x, y, flags, param):
         x, y = np.int16([x, y]) # BUG
@@ -145,14 +172,17 @@ class App(object):
         while True:
             ret, self.frame = self.cam.read()
             vis = self.frame.copy()
-            hsv = cv2.cvtColor(self.frame, cv2.COLOR_BGR2HSV)
-            mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))
-
+            self.frame=cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
             if self.selection:
+                print('selection: {}'.format(self.selection))
                 x0, y0, x1, y1 = self.selection                
                 self.tracker.start_track(self.frame,
                                          dlib.rectangle(int(x0),int(y0),int(x1),int(y1)))
-
+                print('track_window: {}'.format(self.tracker.track_window))        
+                
+                vis_roi = vis[y0:y1, x0:x1]
+                cv2.bitwise_not(vis_roi, vis_roi)
+                
             if self.tracking_state == 1:
                 self.selection = None
                 self.tracker.update(self.frame)
@@ -160,9 +190,9 @@ class App(object):
 
                 pt1 = (track_box.left(), track_box.top())
                 pt2 = (track_box.right(), track_box.bottom())
+                print(self.tracker.track_window)                
                 cv2.rectangle(vis, pt1, pt2, (0, 255, 0), 2)
-
-            cv2.imshow('camshift', vis)
+#            cv2.imshow(self.tracker.__class__.__name__, vis)
 
             ch = 0xFF & cv2.waitKey(5)
             if ch == 27:
@@ -178,6 +208,8 @@ if __name__ == '__main__':
         video_src = sys.argv[1]
     except:
         video_src = 0
-    print(__doc__)
-    App(video_src).run()
+#    print(__doc__)
+#    r,h,c,w = 250,90,400,125  # simply hardcoded the values
+#    selection = (c,r,c+w-1,r+h-1)
+    App(video_src, bx=(288, 98, 516, 350) ).run()    
         

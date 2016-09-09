@@ -20,7 +20,7 @@ import sys
 import time
 
 fileDir = os.path.dirname(os.path.realpath(__file__))
-#sys.path.append(os.path.join(fileDir, "..", ".."))
+sys.path.append(os.path.join(fileDir, ".."))
 import pdb
 import txaio
 txaio.use_twisted()
@@ -47,13 +47,11 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.manifold import TSNE
 from sklearn.svm import SVC
 
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 from NetworkProtocol import *
 from threading import Lock
 import openface
+from demo_config import Config
+
 DEBUG = False
 STORE_IMG_DEBUG = False
 EXPERIMENT = 'e3'
@@ -109,6 +107,9 @@ training = False
 people = []
 svm = None
 svm_lock = Lock()
+mean_features=None
+# an arbitrary distance threashold for distinguish between one person and unknown
+SINGLE_PERSON_RECOG_THRESHOLD=0.8
 
 #TODO: non debug mode is not correct right now..
 class OpenFaceServerProtocol(WebSocketServerProtocol):
@@ -120,7 +121,7 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             global svm
             global training
             global svm_lock
-            if len(people) > 0:
+            if len(people) > 1:
                 self.trainSVM()                
         else:
             self.images = {}
@@ -389,21 +390,26 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
         global svm
         global training
         global svm_lock
+        global mean_features
 
         print("+ Training SVM on {} labeled images.".format(len(images)))
-#        print("+ labeled images {}".format(images))
+        print("+ labeled images {}".format(images))
 
         # clean images first
 
         d = self.getData()
+        print("+ data d: {}".format(d))        
         if d is None:
             svm = None
             return
         else:
             (X, y) = d
-#            numIdentities = len(set(y + [-1]))
             numIdentities = len(set(y))            
-            if numIdentities <= 1:
+            if numIdentities < 1:
+                return
+            elif numIdentities == 1:
+                # calculate the mean of training set
+                mean_features=np.mean(X, axis=0)
                 return
 
             param_grid = [
@@ -413,10 +419,19 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                  'gamma': [0.001, 0.0001],
                  'kernel': ['rbf']}
             ]
+            print("trying to get svm lock")
             svm_lock.acquire()
-            svm = GridSearchCV(SVC(C=1), param_grid, cv=5).fit(X, y)
+            print("got svm lock")
+            # with probability
+            svm = GridSearchCV(SVC(C=1, probability=True), param_grid, cv=5, refit=True).fit(X, y)
+            # without probability
+#            svm = GridSearchCV(SVC(C=1), param_grid, cv=5).fit(X, y)
+            # without parameter search
+#            svm = SVC(C=1, kernel='linear', probability=True).fit(X, y)
+            print("finished svm training")                        
             svm_lock.release()
-            print("successfully trained svm {}".format(svm))                    
+            print("released svm lock")                                    
+            print("successfully trained svm {} people:{}".format(svm, people))                    
 
     def processFrame(self, dataURL, name):
         global images
@@ -507,10 +522,24 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
                 if len(people) == 0:
                     identity = -1
                 elif len(people) == 1:
-                    identity = 0
+                    # use feature mean to distinguish between the person and the unkown
+                    identity = -1
+                    if mean_features != None:
+                        dist=np.linalg.norm(rep-mean_features)
+                        if dist < SINGLE_PERSON_RECOG_THRESHOLD:
+                            identity=0
+                        print 'dist {} identity {}'.format(dist, identity)
                 elif svm:
                     svm_lock.acquire()
-                    identity = svm.predict(rep)[0]
+#                    identity = svm.predict(rep)[0]
+                    predictions = svm.predict_proba(rep)[0]
+                    maxI = np.argmax(predictions)
+                    confidence = predictions[maxI]
+                    identity=maxI
+                    # if confidence is too low
+                    if confidence < Config.RECOG_PROB_THRESHOLD:
+                        identity=-1
+                    print 'svm predict {} with {}'.format(identity, confidence)
                     svm_lock.release()
                 else:
                     print "No SVM trained"
@@ -518,11 +547,8 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
 
         if not training:
             if identity == -1:
-                if len(people) == 1:
-                    name = people[0]
-                else:
-                    print "svm detect result unknown!"
-                    name = ""
+                print "svm detect result unknown!"
+                name = ""
             else:
                 name = people[identity]
 
@@ -534,89 +560,19 @@ class OpenFaceServerProtocol(WebSocketServerProtocol):
             resp=msg
 
             global test_idx
-            print "svm result {0}: {1}".format(test_idx, name)
+            print "svm result: {1}".format(test_idx, name)
             if STORE_IMG_DEBUG:
                 output_file = str(EXPERIMENT+'/test') +'/'+ str(test_idx) + '.jpg'
                 img.save(output_file)
                 test_idx +=1
         return resp
 
-                # bl = (bb.left(), bb.bottom())
-                # tr = (bb.right(), bb.top())
-                # cv2.rectangle(annotatedFrame, bl, tr, color=(153, 255, 204),
-                #               thickness=3)
-                
-                # for p in openface.AlignDlib.OUTER_EYES_AND_NOSE:
-                #     cv2.circle(annotatedFrame, center=landmarks[p], radius=3,
-                #                color=(102, 204, 255), thickness=-1)
-                    
-                    
-                # cv2.putText(annotatedFrame, name, (bb.left(), bb.top() - 10),
-                #             cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.75,
-                #             color=(152, 255, 204), thickness=2)
-
-        # no need to send frames back
-        # need to send boundingbox and name/id back
-        
-        # if not self.training:
-        #     msg = {
-        #         "type": "IDENTITIES",
-        #         "identities": identities
-        #     }
-        #     self.sendMessage(json.dumps(msg))
-
-        #     plt.figure()
-        #     plt.imshow(annotatedFrame)
-        #     plt.xticks([])
-        #     plt.yticks([])
-
-        #     imgdata = StringIO.StringIO()
-        #     plt.savefig(imgdata, format='png')
-        #     imgdata.seek(0)
-        #     content = 'data:image/png;base64,' + \
-        #         urllib.quote(base64.b64encode(imgdata.buf))
-        #     msg = {
-        #         "type": "ANNOTATED",
-        #         "content": content
-        #     }
-        #     plt.close()
-        #     self.sendMessage(json.dumps(msg))
 
 if __name__ == '__main__':
     log.startLogging(sys.stdout)
-
-    # factory = WebSocketServerFactory("ws://localhost:{}".format(args.port),
-    #                                  debug=False)
-    
     factory = WebSocketServerFactory()
     
     factory.protocol = OpenFaceServerProtocol
 
     reactor.listenTCP(args.port, factory)
     reactor.run()
-
-
-        # buf = np.fliplr(np.asarray(img))
-        # rgbFrame = np.zeros((img_height, img_width, 3), dtype=np.uint8)
-        # rgbFrame[:, :, 0] = buf[:, :, 2]
-        # rgbFrame[:, :, 1] = buf[:, :, 1]
-        # rgbFrame[:, :, 2] = buf[:, :, 0]
-
-#        if STORE_IMG_DEBUG:
-#            img.save('test.jpg')
-#            cv2.imwrite('cv_test.jpg', rgbFrame)            
-#            cv2.imshow('frame', rgbFrame)
-#            if cv2.waitKey(1) & 0xFF == ord('q'):
-#                return
-
-        # bbs = align.getAllFaceBoundingBoxes(rgbFrame)
-#        bb = align.getLargestFaceBoundingBox(rgbFrame)
-
-    
-        # print(len(bbs))
-        # landmarks = align.findLandmarks(rgbFrame, bb)
-
-        # alignedFace = align.align(args.imgDim, rgbFrame, bb,
-        #                           landmarks=landmarks,
-        #                           landmarkIndices=openface.AlignDlib.OUTER_EYES_AND_NOSE)
-

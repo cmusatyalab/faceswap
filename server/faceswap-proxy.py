@@ -63,11 +63,11 @@ class DummyVideoApp(AppProxyThread):
         return json.dumps(msg)
         
     
-    def process(self, image):
+    def process(self, rgb_img, bgr_img):
         # preprocessing techqniues : resize?
 #        image = cv2.resize(nxt_face, dim, interpolation = cv2.INTER_AREA)
 
-        face_snippets_list = transformer.swap_face(image)
+        face_snippets_list = transformer.swap_face(rgb_img, bgr_img=bgr_img)
         face_snippets_string = {}
         face_snippets_string['num'] = len(face_snippets_list)
         for idx, face_snippet in enumerate(face_snippets_list):
@@ -227,7 +227,7 @@ class DummyVideoApp(AppProxyThread):
             resp= self.gen_response(AppDataProtocol.TYPE_train, msg)
         else:
             # swap faces
-            snippets = self.process(image)
+            snippets = self.process(image, bgr_img=bgr_img)
             resp= self.gen_response(AppDataProtocol.TYPE_detect, snippets)
 
         if Config.DEBUG:
