@@ -27,7 +27,8 @@
             android:name="edu.cmu.cs.faceswap.CloudletDemoActivity"
             android:label="@string/title_activity_cloudlet_demo"
             android:screenOrientation="portrait"
-            android:theme="@style/MyGabrielMaterialTheme">
+            android:theme="@style/MyGabrielMaterialTheme"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
