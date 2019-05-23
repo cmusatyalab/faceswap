@@ -81,6 +81,6 @@ sudo apt-get update
 sudo apt-get install -y build-essential gcc g++ curl \
     cmake libreadline-dev git-core 
 sudo apt-get install -y libopenblas-dev liblapack-dev 
-sudo apt-get python-numpy
+sudo apt-get install python-numpy
 install_dlib || true
 }
