@@ -2,7 +2,7 @@ package edu.cmu.cs.CustomExceptions;
 
 import android.app.Activity;
 import android.content.DialogInterface;
-import android.support.v7.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
 
 /**
  * Created by junjuew on 3/3/16.

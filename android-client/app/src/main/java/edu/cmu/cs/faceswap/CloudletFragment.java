@@ -7,8 +7,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v7.app.AlertDialog;
+import androidx.fragment.app.Fragment;
+import androidx.appcompat.app.AlertDialog;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -57,6 +57,7 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
     protected RadioButton cloudletRadioButton;
     protected RadioButton cloudRadioButton;
     protected Spinner selectServerSpinner;
+    protected Button backtomanagesrever;
 
     protected View view;
     protected List<String> spinnerList;
@@ -143,7 +144,14 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
                 populateSelectServerSpinner();
             }
         });
-
+       if(trainedPeople.size()==0)
+       {
+           cloudletRunDemoButton.setVisibility(View.INVISIBLE);
+       }
+       else
+       {
+           cloudletRunDemoButton.setVisibility(View.VISIBLE);
+       }
         cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -163,12 +171,12 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
             }
         });
 
-        uploadStateFromFileButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getMyAcitivty().actionUploadStateFromLocalFile();
-            }
-        });
+//        uploadStateFromFileButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                getMyAcitivty().actionUploadStateFromLocalFile();
+//            }
+//        });
 
         uploadStateFromGoogleDriveButton.setOnClickListener(new View.OnClickListener() {
             @Override

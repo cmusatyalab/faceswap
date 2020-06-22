@@ -1,10 +1,11 @@
 package edu.cmu.cs.faceswap;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -26,7 +27,7 @@ public class IPSettingActivity extends AppCompatActivity {
 
     private Toolbar toolbar;
     private SharedPreferences mSharedPreferences;
-    private Button addIpButton, changeDefaultButton;
+    private Button addIpButton, changeDefaultButton,nextButton;
     private EditText ipNameEditText,ipEditText;
     private Spinner placeSpinner;
     private Activity mActivity;
@@ -44,6 +45,7 @@ public class IPSettingActivity extends AppCompatActivity {
         mSharedPreferences=getSharedPreferences(getString(R.string.shared_preference_file_key),
                 MODE_PRIVATE);
         addIpButton=(Button)findViewById(R.id.add_ip_button);
+nextButton=(Button)findViewById(R.id.add_next_button);
         ipNameEditText=(EditText)findViewById(R.id.add_ip_name_edittext);
         ipEditText=(EditText)findViewById(R.id.add_ip_ip_edittext);
         placeSpinner=(Spinner)findViewById(R.id.add_ip_place_spinner);
@@ -54,6 +56,16 @@ public class IPSettingActivity extends AppCompatActivity {
 
         //TODO: read off sharedpreferences about current cloudlet ip and cloudip
         mActivity=this;
+        nextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent i = new Intent(IPSettingActivity.this,
+                        CloudletDemoActivity.class);
+                //Intent is used to switch from one activity to another.
+
+                startActivity(i);
+            }
+        });
         addIpButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

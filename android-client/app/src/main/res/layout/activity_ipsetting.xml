@@ -10,27 +10,28 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="edu.cmu.cs.cloudletdemo.IPSettingActivity">
 -->
-<android.support.design.widget.CoordinatorLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <android.support.design.widget.AppBarLayout
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-        <android.support.v7.widget.Toolbar
+        <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
+            android:layout_height="wrap_content"
             android:background="?attr/colorPrimary"
             app:layout_scrollFlags="scroll|enterAlways"
             app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
-    </android.support.design.widget.AppBarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
-    <android.support.v4.widget.NestedScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
@@ -48,18 +49,31 @@
         android:isScrollContainer="true">
 
         <TextView
+            android:id="@+id/add_ip_header_text"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="41dp"
+            android:text="Select type of server"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="Fill Below To Add New IP:"
-            android:id="@+id/add_ip_header_text" />
+            android:textColor="#0E0000"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/add_ip_place_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/add_ip_places_spinner_array"
+            android:spinnerMode="dialog" />
 
         <TextView
+            android:id="@+id/add_ip_name_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Add new IP Address"
+            android:textAllCaps="true"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="Name"
-            android:id="@+id/add_ip_name_header" />
+            android:textColor="#1B0303"
+            android:textStyle="bold" />
 
         <EditText
             android:layout_width="match_parent"
@@ -68,30 +82,18 @@
             />
 
         <TextView
+            android:id="@+id/add_ip_ip_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="Name of Server"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="IP Address"
-            android:id="@+id/add_ip_ip_header" />
+            android:textColor="#100101"
+            android:textStyle="bold" />
 
         <EditText
+            android:id="@+id/add_ip_ip_edittext"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/add_ip_ip_edittext" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="Type"
-            android:id="@+id/add_ip_place_text" />
-
-        <Spinner
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/add_ip_place_spinner"
-            android:spinnerMode="dialog"
-            android:entries="@array/add_ip_places_spinner_array"/>
+            android:layout_height="wrap_content" />
 
         <Button
             android:layout_width="match_parent"
@@ -103,16 +105,18 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:layout_marginTop="20dp"
             android:text="\nCurrent Servers"
-            />
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/cloudlet_ip_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:layout_marginTop="10dp"
             android:text="Cloudlet"
-            android:id="@+id/cloudlet_ip_text" />
+            android:textAppearance="?android:attr/textAppearanceMedium" />
 
         <TableLayout
             android:layout_width="match_parent"
@@ -138,11 +142,12 @@
         </TableLayout>
 
         <TextView
+            android:id="@+id/cloud_ip_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:layout_marginTop="10dp"
             android:text="Cloud"
-            android:id="@+id/cloud_ip_text" />
+            android:textAppearance="?android:attr/textAppearanceMedium" />
 
         <TableLayout
             android:layout_width="match_parent"
@@ -166,7 +171,14 @@
                     android:layout_column="2" />
             </TableRow>
         </TableLayout>
+        <Button
+            android:id="@+id/add_next_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/next"
+            android:textColor="#2196F3" />
     </LinearLayout>
 
-    </android.support.v4.widget.NestedScrollView>
-</android.support.design.widget.CoordinatorLayout>
+
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

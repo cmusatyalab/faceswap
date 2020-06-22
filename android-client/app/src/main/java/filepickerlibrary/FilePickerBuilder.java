@@ -3,7 +3,7 @@ package filepickerlibrary;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.support.annotation.ColorRes;
+import androidx.annotation.ColorRes;
 
 import filepickerlibrary.enums.MimeType;
 import filepickerlibrary.enums.Request;

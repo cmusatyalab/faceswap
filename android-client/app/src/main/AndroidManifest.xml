@@ -4,9 +4,7 @@
     android:versionCode="3"
     android:versionName="1.2">
 
-    <uses-sdk
-        android:minSdkVersion="16"
-        android:targetSdkVersion="23" />
+    <uses-sdk android:targetSdkVersion="29" />
 
     <uses-feature android:name="android.hardware.camera" />
 
@@ -23,15 +21,19 @@
         android:label="@string/app_name"
         android:largeHeap="true"
         android:theme="@style/MyGabrielMaterialTheme">
+        <activity android:name=".SplashScreen">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
-            android:name="edu.cmu.cs.faceswap.CloudletDemoActivity"
+            android:name=".CloudletDemoActivity"
             android:label="@string/title_activity_cloudlet_demo"
             android:screenOrientation="portrait"
             android:theme="@style/MyGabrielMaterialTheme">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+
         </activity>
         <activity
             android:name="filepickerlibrary.FilePickerActivity"
@@ -45,12 +47,11 @@
             android:name="edu.cmu.cs.gabriel.GabrielClientActivity"
             android:label="@string/title_activity_main"
             android:screenOrientation="landscape" />
-
-        <activity android:name="edu.cmu.cs.faceswap.SettingActivity"></activity>
-        <activity android:name="edu.cmu.cs.faceswap.IPSettingActivity"
-            android:theme="@style/MyGabrielMaterialTheme"
-            android:parentActivityName="edu.cmu.cs.faceswap.CloudletDemoActivity">
-        </activity>
+        <activity android:name=".SettingActivity" />
+        <activity
+            android:name=".IPSettingActivity"
+            android:parentActivityName=".CloudletDemoActivity"
+            android:theme="@style/MyGabrielMaterialTheme"></activity>
     </application>
 
 </manifest>

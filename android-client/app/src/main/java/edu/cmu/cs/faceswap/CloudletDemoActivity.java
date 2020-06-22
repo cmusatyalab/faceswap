@@ -9,12 +9,11 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.TabLayout;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import com.google.android.material.tabs.TabLayout;
+import androidx.core.app.ActivityCompat;
+import androidx.viewpager.widget.ViewPager;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -66,8 +65,6 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     private static final int MY_PERMISSIONS_REQUEST_CAMERA = 23;
     private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE = 24;
     private static final int MY_PERMISSIONS_REQUEST_ALL = 25;
-
-
     private Toolbar toolbar;
     private TabLayout tabLayout;
     private ViewPager viewPager;
@@ -100,6 +97,10 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     private static final int GDRIVE_ACTION_LOAD = 12;
     private static final int GDRIVE_ACTION_SAVE = 13;
 
+@Override
+    public void onBackPressed(){
+
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -286,23 +287,25 @@ public class CloudletDemoActivity extends AppCompatActivity implements
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        switch (requestCode){
+        super.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
             case FilePickerActivity.REQUEST_FILE:
-                if (resultCode==RESULT_OK){
+                if (resultCode == RESULT_OK) {
                     Bundle extras = data.getExtras();
                     String path = (String) extras.get(FilePickerActivity.FILE_EXTRA_DATA_PATH);
                     Log.d(TAG, "path: " + path);
-                    boolean isLoad=(boolean)extras.get(FilePickerActivity.INTENT_EXTRA_ACTION_READ);
-                    File file=new File(path);
-                    if (isLoad){
-                        byte[] stateData= UIUtils.loadFromFile(file);
-                        if (stateData!=null){
+                    boolean isLoad = (boolean) extras.get(FilePickerActivity.INTENT_EXTRA_ACTION_READ);
+                    File file = new File(path);
+                    if (isLoad) {
+                        byte[] stateData = UIUtils.loadFromFile(file);
+                        if (stateData != null) {
                             actionUploadStateByteArray(stateData);
                         } else {
-                            Toast.makeText(this, "Invalid File",Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, "Invalid File", Toast.LENGTH_SHORT).show();
                         }
                     } else {
-                        if (this.asyncResponseExtra!=null){
+                        if (this.asyncResponseExtra != null) {
                             UIUtils.saveToFile(file, this.asyncResponseExtra);
                         }
                     }
@@ -314,16 +317,16 @@ public class CloudletDemoActivity extends AppCompatActivity implements
                     mGoogleApiClient.connect();
                 } else {
                     //if not okay, then give up
-                    pendingGDriveAction=-1;
+                    pendingGDriveAction = -1;
                     Log.i(TAG, "drive connection resolution failed");
-                    Toast.makeText(this,"Failed to Connect Google Drive", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Failed to Connect Google Drive", Toast.LENGTH_LONG).show();
                 }
                 break;
             case GDRIVE_REQUEST_CODE_OPENER:
                 if (resultCode == RESULT_OK) {
                     DriveId fileId = (DriveId) data.getParcelableExtra(
                             OpenFileActivityBuilder.EXTRA_RESPONSE_DRIVE_ID);
-                    Log.i(TAG, "user select drive file id: "+fileId);
+                    Log.i(TAG, "user select drive file id: " + fileId);
                     openDriveFile(fileId);
                 }
                 break;
@@ -446,65 +449,65 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         }
     };
 */
+//
+//    public boolean actionUploadStateFromLocalFile(){
+//        //check online
+//        if (!checkOnline(this)) {
+//            return false;
+//        }
+//        //launch activity result to readin states
+//        Intent intent = prepareForResultIntentForFilePickerActivity(this, true);
+//
+//        startActivityForResult(intent, FilePickerActivity.REQUEST_FILE);
+//        return true;
+//    }
 
-    public boolean actionUploadStateFromLocalFile(){
-        //check online
-        if (!checkOnline(this)) {
-            return false;
-        }
-        //launch activity result to readin states
-        Intent intent = prepareForResultIntentForFilePickerActivity(this, true);
-
-        startActivityForResult(intent, FilePickerActivity.REQUEST_FILE);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        switch (id) {
-            case R.id.manage_servers:
-                Intent i = new Intent(this, IPSettingActivity.class);
-                startActivity(i);
-                return true;
-            case R.id.setting_reset_openface_server:
-                //check wifi state
-                if (checkOnline(this)) {
-                    sendOpenFaceResetRequest(currentServerIp);
-                    return true;
-                }
-                return false;
-            case R.id.setting_save_state:
-                if (!checkOnline(this)) {
-                    return false;
-                }
-                //fire off download state async task
-                //return value will be called into onGabrielConfigurationAsyncTaskFinish
-                new GabrielConfigurationAsyncTask(this,
-                        currentServerIp,
-                        GabrielClientActivity.VIDEO_STREAM_PORT,
-                        GabrielClientActivity.RESULT_RECEIVING_PORT,
-                        Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE,
-                        this).execute();
-                return true;
-            case R.id.setting_save_state_to_gdrive:
-                if (!checkOnline(this)) {
-                    return false;
-                }
-                new GabrielConfigurationAsyncTask(this,
-                        currentServerIp,
-                        GabrielClientActivity.VIDEO_STREAM_PORT,
-                        GabrielClientActivity.RESULT_RECEIVING_PORT,
-                        Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE_TO_GDRIVE,
-                        this).execute();
-                return true;
-            default:
-                return false;
-        }
-    }
+    //@Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        // Handle action bar item clicks here. The action bar will
+//        // automatically handle clicks on the Home/Up button, so long
+//        // as you specify a parent activity in AndroidManifest.xml.
+//        int id = item.getItemId();
+//        switch (id) {
+////            case R.id.manage_servers:
+////                Intent i = new Intent(this, IPSettingActivity.class);
+////                startActivity(i);
+////                return true;
+//            case R.id.setting_reset_openface_server:
+//                //check wifi state
+//                if (checkOnline(this)) {
+//                    sendOpenFaceResetRequest(currentServerIp);
+//                    return true;
+//                }
+//                return false;
+//            case R.id.setting_save_state:
+//                if (!checkOnline(this)) {
+//                    return false;
+//                }
+//                //fire off download state async task
+//                //return value will be called into onGabrielConfigurationAsyncTaskFinish
+//                new GabrielConfigurationAsyncTask(this,
+//                        currentServerIp,
+//                        GabrielClientActivity.VIDEO_STREAM_PORT,
+//                        GabrielClientActivity.RESULT_RECEIVING_PORT,
+//                        Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE,
+//                        this).execute();
+//                return true;
+//            case R.id.setting_save_state_to_gdrive:
+//                if (!checkOnline(this)) {
+//                    return false;
+//                }
+//                new GabrielConfigurationAsyncTask(this,
+//                        currentServerIp,
+//                        GabrielClientActivity.VIDEO_STREAM_PORT,
+//                        GabrielClientActivity.RESULT_RECEIVING_PORT,
+//                        Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE_TO_GDRIVE,
+//                        this).execute();
+//                return true;
+//            default:
+//                return false;
+//        }
+//    }
 
 //            case R.id.setting_copy_server_state:
 //                //TODO: alertdialog let user select which server to copy from

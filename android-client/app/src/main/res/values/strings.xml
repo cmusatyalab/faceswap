@@ -47,7 +47,6 @@
     <string name="type_cloud">cloud</string>
 
 
-
     <!-- Example General settings -->
     <string name="pref_header_general">General</string>
 
@@ -61,6 +60,7 @@
 
     <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
     <string name="manage_servers_text">manage servers</string>
+    <string name="next">Next</string>
     <string-array name="pref_example_list_titles">
         <item>Always</item>
         <item>When possible</item>
