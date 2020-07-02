@@ -71,6 +71,15 @@ dependencies {
     implementation 'com.github.DeveloperPaul123:MaterialLibrary:1.0.5'
     implementation 'com.google.android.gms:play-services-drive:17.0.0'
     implementation project(':openCVLibrary310')
+
+        //noinspection GradleCompatible
+        implementation 'com.android.support:cardview-v7:28.0.0'
+    implementation 'androidx.vectordrawable:vectordrawable:1.1.0'
+    implementation 'androidx.navigation:navigation-fragment:2.1.0'
+    implementation 'androidx.navigation:navigation-ui:2.1.0'
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0'
+
+
 }
 
 android {

@@ -4,23 +4,16 @@
     android:versionCode="3"
     android:versionName="1.2">
 
-    <uses-sdk android:targetSdkVersion="29" />
-
-    <uses-feature android:name="android.hardware.camera" />
-
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
     <application
         android:allowBackup="true"
         android:icon="@drawable/icon_comedy_masks"
         android:label="@string/app_name"
         android:largeHeap="true"
         android:theme="@style/MyGabrielMaterialTheme">
+        <activity android:name=".MainActivity2"></activity>
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main" />
         <activity android:name=".SplashScreen">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,9 +25,7 @@
             android:name=".CloudletDemoActivity"
             android:label="@string/title_activity_cloudlet_demo"
             android:screenOrientation="portrait"
-            android:theme="@style/MyGabrielMaterialTheme">
-
-        </activity>
+            android:theme="@style/MyGabrielMaterialTheme" />
         <activity
             android:name="filepickerlibrary.FilePickerActivity"
             android:configChanges="screenSize|screenLayout|keyboardHidden"
@@ -51,7 +42,18 @@
         <activity
             android:name=".IPSettingActivity"
             android:parentActivityName=".CloudletDemoActivity"
-            android:theme="@style/MyGabrielMaterialTheme"></activity>
+            android:theme="@style/MyGabrielMaterialTheme" />
     </application>
+
+    <uses-feature android:name="android.hardware.camera" />
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <uses-sdk android:targetSdkVersion="29" />
 
 </manifest>

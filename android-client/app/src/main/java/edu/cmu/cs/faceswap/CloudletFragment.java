@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import static edu.cmu.cs.utils.NetworkUtils.isOnline;
+import static edu.cmu.cs.utils.NetworkUtils.checkOnline;
 
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
@@ -48,11 +50,11 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
     private static final String TAG = "FaceSwapFragment";
 
     private List<PersonUIRow> personUIList = new ArrayList<PersonUIRow>();
-
+    public String currentServerIp = null;
     protected Button cloudletRunDemoButton;
     protected Button addPersonButton;
-    protected Button uploadStateFromFileButton;
-    protected Button uploadStateFromGoogleDriveButton;
+    protected Button uploadStateFromFileButton,nextButton;
+    protected Button uploadStateFromGoogleDriveButton,setting_save_state_local,reset,setting_save_state_googleDrive;
     protected RadioGroup typeRadioGroup;
     protected RadioButton cloudletRadioButton;
     protected RadioButton cloudRadioButton;
@@ -82,6 +84,7 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
         trainedPeople = new ArrayList<String>();
     }
 
+
     Spinner.OnItemSelectedListener spinnerSelectedListener = new Spinner.OnItemSelectedListener(){
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -102,9 +105,9 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
         //update PersonUIRow
         clearPersonTable();
         Log.d(TAG, "current ip changed to: " + getMyAcitivty().currentServerIp);
-//        Toast.makeText(getContext(),
-//                "current ip: "+getMyAcitivty().currentServerIp,
-//                Toast.LENGTH_SHORT).show();
+        Toast.makeText(getContext(),
+                "current ip: "+getMyAcitivty().currentServerIp,
+                Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -130,12 +133,14 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
         cloudRadioButton=(RadioButton)view.findViewById(R.id.radio_cloud);
         typeRadioGroup.check(R.id.radio_cloudlet);
 
+
+//nextButton=(Button)view.findViewById(R.id.n);
         selectServerSpinner=(Spinner) view.findViewById(R.id.select_server_spinner);
         cloudletRunDemoButton =(Button)view.findViewById(R.id.cloudletRunDemoButton);
         addPersonButton = (Button)view.findViewById(R.id.addPersonButton);
-        uploadStateFromFileButton = (Button)view.findViewById(R.id.uploadFromFileButton);
-        uploadStateFromGoogleDriveButton = (Button)
-                view.findViewById(R.id.uploadFromGoogleDriveButton);
+      //  uploadStateFromFileButton = (Button)view.findViewById(R.id.uploadFromFileButton);
+//        uploadStateFromGoogleDriveButton = (Button)
+    //   view.findViewById(R.id.uploadFromGoogleDriveButton);
 
         tb = (TableLayout)view.findViewById(R.id.trainedTable);
         typeRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -144,15 +149,18 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
                 populateSelectServerSpinner();
             }
         });
-       if(trainedPeople.size()==0)
-       {
-           cloudletRunDemoButton.setVisibility(View.INVISIBLE);
-       }
-       else
-       {
-           cloudletRunDemoButton.setVisibility(View.VISIBLE);
-       }
-        cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
+//       if(trainedPeople.size()==0)
+//       {
+//           cloudletRunDemoButton.setVisibility(View.INVISIBLE);
+//       }
+//       else
+//       {
+//           cloudletRunDemoButton.setVisibility(View.VISIBLE);
+//       }
+
+
+
+cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Const.GABRIEL_IP = getMyAcitivty().currentServerIp;
@@ -162,6 +170,7 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
                 Toast.makeText(getContext(), "initializing demo", Toast.LENGTH_SHORT).show();
             }
         });
+
 
         addPersonButton.setOnClickListener(new Button.OnClickListener() {
             @Override
@@ -178,12 +187,12 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
 //            }
 //        });
 
-        uploadStateFromGoogleDriveButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getMyAcitivty().actionReadStateFileFromGoogleDrive();
-            }
-        });
+//        uploadStateFromGoogleDriveButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                getMyAcitivty().actionReadStateFileFromGoogleDrive();
+//            }
+//        });
 
         return view;
     }
@@ -333,7 +342,7 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
 
 
     private String stripQuote(String input){
-        String output = input.replaceAll("^\"|\"$", "");
+        String  output = input.replaceAll("^\"|\"$", "");
         return output;
     }
 

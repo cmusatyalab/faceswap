@@ -46,16 +46,39 @@
         android:layout_alignParentBottom="true"
         android:focusable="true"
         android:focusableInTouchMode="true"
-        android:isScrollContainer="true">
+        android:isScrollContainer="true"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp">
+
+        <TextView
+            android:id="@+id/add_ip_name_header"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Name of Server"
+            android:textAllCaps="false"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#1B0303"
+            android:textStyle="bold" />
+
+        <EditText
+
+            android:id="@+id/add_ip_name_edittext"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+             />
 
         <TextView
             android:id="@+id/add_ip_header_text"
             android:layout_width="wrap_content"
-            android:layout_height="41dp"
-            android:text="Select type of server"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:textColor="#0E0000"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:text="Select type of the Server"
+            android:textAllCaps="false"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#1B0303"
             android:textStyle="bold" />
+
 
         <Spinner
             android:id="@+id/add_ip_place_spinner"
@@ -65,49 +88,43 @@
             android:spinnerMode="dialog" />
 
         <TextView
-            android:id="@+id/add_ip_name_header"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Add new IP Address"
-            android:textAllCaps="true"
-            android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#1B0303"
-            android:textStyle="bold" />
-
-        <EditText
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:id="@+id/add_ip_name_edittext"
-            />
-
-        <TextView
             android:id="@+id/add_ip_ip_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Name of Server"
+            android:layout_marginTop="5dp"
+            android:text="Add IP Address"
+            android:textAllCaps="false"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:textColor="#100101"
+            android:textColor="#1B0303"
             android:textStyle="bold" />
-
         <EditText
-            android:id="@+id/add_ip_ip_edittext"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
 
-        <Button
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Add IP"
+            android:id="@+id/add_ip_ip_edittext"
+           />
+
+
+        <Button
             android:id="@+id/add_ip_button"
+            style="@style/Widget.AppCompat.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+           android:background="@drawable/mybutton"
+            android:layout_marginTop="10dp"
+            android:text="Add IP"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
             />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="10dp"
             android:text="\nCurrent Servers"
-            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textAllCaps="false"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#1B0303"
             android:textStyle="bold" />
 
         <TextView
@@ -115,7 +132,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:text="Cloudlet"
+            android:text="Edge VM"
             android:textAppearance="?android:attr/textAppearanceMedium" />
 
         <TableLayout
@@ -132,9 +149,10 @@
                     android:text="Name"
                     android:textSize="15dp"
                     android:layout_column="0"/>
+
                 <TextView
-                    android:text="IP"
-                    android:layout_column="1" />
+                    android:layout_column="1"
+                    android:text="IP Address" />
                 <TextView
                     android:text="Delete"
                     android:layout_column="2" />
@@ -163,20 +181,26 @@
                     android:text="Name"
                     android:textSize="15dp"
                     android:layout_column="0"/>
+
                 <TextView
-                    android:text="IP"
-                    android:layout_column="1" />
+                    android:layout_column="1"
+                    android:text="IP Address" />
                 <TextView
                     android:text="Delete"
                     android:layout_column="2" />
             </TableRow>
         </TableLayout>
+
         <Button
             android:id="@+id/add_next_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:background="@drawable/mybutton"
+
             android:text="@string/next"
-            android:textColor="#2196F3" />
+            android:textColor="#FFFFFF"
+            android:textStyle="bold" />
     </LinearLayout>
 
 

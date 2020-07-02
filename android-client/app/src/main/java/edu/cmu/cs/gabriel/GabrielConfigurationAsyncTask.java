@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.ProgressDialog;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import org.json.JSONException;
@@ -46,6 +47,9 @@ public class GabrielConfigurationAsyncTask extends AsyncTask<Object, Integer, Bo
     private static int id=0;
 
     private byte[] extra=null;
+
+    public GabrielConfigurationAsyncTask(View.OnClickListener onClickListener, String currentServerIp, int videoStreamPort, int resultReceivingPort, String gabrielConfigurationDownloadStateToGdrive, View.OnClickListener onClickListener1) {
+    }
 
     // you may separate this or combined to caller class.
     public interface AsyncResponse {

@@ -1,6 +1,7 @@
 package edu.cmu.cs.faceswap;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -14,10 +15,12 @@ import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.HashSet;
 import java.util.Set;
 
+import androidx.cardview.widget.CardView;
 import edu.cmu.cs.utils.NetworkUtils;
 
 import static edu.cmu.cs.CustomExceptions.CustomExceptions.notifyError;
@@ -46,8 +49,9 @@ public class IPSettingActivity extends AppCompatActivity {
                 MODE_PRIVATE);
         addIpButton=(Button)findViewById(R.id.add_ip_button);
 nextButton=(Button)findViewById(R.id.add_next_button);
-        ipNameEditText=(EditText)findViewById(R.id.add_ip_name_edittext);
-        ipEditText=(EditText)findViewById(R.id.add_ip_ip_edittext);
+//       // ipNameEditText= (EditText) findViewById(R.id.add_ip_ip_cardview);
+     ipNameEditText=(EditText)findViewById(R.id.add_ip_ip_edittext);
+      ipEditText=(EditText)findViewById(R.id.add_ip_ip_edittext);
         placeSpinner=(Spinner)findViewById(R.id.add_ip_place_spinner);
         TableLayout cloudletTb = (TableLayout)findViewById(R.id.add_ip_cloudlet_table);
         TableLayout cloudTb = (TableLayout)findViewById(R.id.add_ip_cloud_table);
@@ -69,6 +73,7 @@ nextButton=(Button)findViewById(R.id.add_next_button);
         addIpButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 String name = ipNameEditText.getText().toString();
                 String ip = ipEditText.getText().toString();
                 //assume type 0 is cloudlet
@@ -92,17 +97,20 @@ nextButton=(Button)findViewById(R.id.add_next_button);
                     // the same name
                     notifyError("Duplicate Name", false, mActivity);
                     return;
-                }
-                if (!NetworkUtils.isIpAddress(ip)){
+                } else if (!NetworkUtils.isIpAddress(ip)){
                     notifyError("Invalid IP Address", false, mActivity);
                     return;
+                }
+                else
+                {
+                    Toast.makeText(getApplicationContext(),"IP SUCCESFULLY ADDED",Toast.LENGTH_LONG).show();
                 }
                 //add new ip in
                 SharedPreferences.Editor editor = mSharedPreferences.edit();
                 editor.putString(name,ip);
                 existingNames.add(name);
                 editor.putStringSet(sharedPreferenceIpDictName, existingNames);
-                editor.commit();
+                editor.apply();
                 //update UI
                 addPersonUIRow(mSharedPreferences, type, name, ip);
                 ipEditText.setText("");

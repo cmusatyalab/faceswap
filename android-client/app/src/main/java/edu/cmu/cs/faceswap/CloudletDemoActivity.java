@@ -17,6 +17,8 @@ import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -43,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import edu.cmu.cs.IO.RetrieveDriveFileContentsAsyncTask;
 import edu.cmu.cs.gabriel.Const;
@@ -55,6 +58,7 @@ import static edu.cmu.cs.CustomExceptions.CustomExceptions.notifyError;
 import static edu.cmu.cs.utils.NetworkUtils.checkOnline;
 import static edu.cmu.cs.utils.NetworkUtils.isOnline;
 import static edu.cmu.cs.utils.UIUtils.prepareForResultIntentForFilePickerActivity;
+import static java.util.concurrent.TimeUnit.*;
 
 public class CloudletDemoActivity extends AppCompatActivity implements
         GabrielConfigurationAsyncTask.AsyncResponse, GoogleApiClient.ConnectionCallbacks,
@@ -97,10 +101,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     private static final int GDRIVE_ACTION_LOAD = 12;
     private static final int GDRIVE_ACTION_SAVE = 13;
 
-@Override
-    public void onBackPressed(){
 
-    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -247,7 +248,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             Log.d(TAG, "download state to google drive finished. success? " + success);
             if (success) {
                 asyncResponseExtra = extra;
-                actionSaveStateFileToGoogleDrive();
+                //actionSaveStateFileToGoogleDrive();
             }
         } else if (action.equals(Const.GABRIEL_CONFIGURATION_GET_PERSON)){
             Log.d(TAG, "download person finished. success? " + success);
@@ -423,7 +424,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
         return result;
     }
 
-/*
+
     DialogInterface.OnClickListener launchCopyStateAsyncTaskAction=
             new DialogInterface.OnClickListener() {
         @Override
@@ -448,7 +449,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             return;
         }
     };
-*/
+
 //
 //    public boolean actionUploadStateFromLocalFile(){
 //        //check online
@@ -462,52 +463,53 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 //        return true;
 //    }
 
-    //@Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        // Handle action bar item clicks here. The action bar will
-//        // automatically handle clicks on the Home/Up button, so long
-//        // as you specify a parent activity in AndroidManifest.xml.
-//        int id = item.getItemId();
-//        switch (id) {
-////            case R.id.manage_servers:
-////                Intent i = new Intent(this, IPSettingActivity.class);
-////                startActivity(i);
-////                return true;
-//            case R.id.setting_reset_openface_server:
-//                //check wifi state
-//                if (checkOnline(this)) {
-//                    sendOpenFaceResetRequest(currentServerIp);
-//                    return true;
-//                }
-//                return false;
-//            case R.id.setting_save_state:
-//                if (!checkOnline(this)) {
-//                    return false;
-//                }
-//                //fire off download state async task
-//                //return value will be called into onGabrielConfigurationAsyncTaskFinish
-//                new GabrielConfigurationAsyncTask(this,
-//                        currentServerIp,
-//                        GabrielClientActivity.VIDEO_STREAM_PORT,
-//                        GabrielClientActivity.RESULT_RECEIVING_PORT,
-//                        Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE,
-//                        this).execute();
-//                return true;
-//            case R.id.setting_save_state_to_gdrive:
-//                if (!checkOnline(this)) {
-//                    return false;
-//                }
-//                new GabrielConfigurationAsyncTask(this,
-//                        currentServerIp,
-//                        GabrielClientActivity.VIDEO_STREAM_PORT,
-//                        GabrielClientActivity.RESULT_RECEIVING_PORT,
-//                        Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE_TO_GDRIVE,
-//                        this).execute();
-//                return true;
-//            default:
-//                return false;
-//        }
-//    }
+@Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+
+       int id =item.getItemId();
+        switch (id) {
+            case R.id.manage_servers:
+                Intent i = new Intent(this, IPSettingActivity.class);
+                startActivity(i);
+                return true;
+            case R.id.setting_reset_openface_server:
+                //check wifi state
+                if (checkOnline(this)) {
+                    sendOpenFaceResetRequest(currentServerIp);
+                    return true;
+                }
+                return false;
+            case R.id.setting_save_state:
+                if (!checkOnline(this)) {
+                    return false;
+                }
+                //fire off download state async task
+                //return value will be called into onGabrielConfigurationAsyncTaskFinish
+                new GabrielConfigurationAsyncTask(this,
+                        currentServerIp,
+                        GabrielClientActivity.VIDEO_STREAM_PORT,
+                        GabrielClientActivity.RESULT_RECEIVING_PORT,
+                        Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE,
+                        this).execute();
+                return true;
+            case R.id.setting_save_state_to_gdrive:
+                if (!checkOnline(this)) {
+                    return false;
+                }
+                new GabrielConfigurationAsyncTask(this,
+                        currentServerIp,
+                        GabrielClientActivity.VIDEO_STREAM_PORT,
+                        GabrielClientActivity.RESULT_RECEIVING_PORT,
+                        Const.GABRIEL_CONFIGURATION_DOWNLOAD_STATE_TO_GDRIVE,
+                        this).execute();
+                return true;
+            default:
+                return false;
+        }
+    }
 
 //            case R.id.setting_copy_server_state:
 //                //TODO: alertdialog let user select which server to copy from
@@ -520,28 +522,28 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 //                        true);
 //                dg.show();
 //                return true;
-
+//
 //            case R.id.setting_load_state:
 //                return actionUploadStateFromLocalFile();
 
 
-    private boolean connectGoogleApiClient(){
-        if (mGoogleApiClient == null || (!mGoogleApiClient.isConnected())) {
-            // Create the API client and bind it to an instance variable.
-            // We use this instance as the callback for connection and connection
-            // failures.
-            // Since no account name is passed, the user is prompted to choose.
-            Log.d(TAG, "creating a new google api client");
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addApi(Drive.API)
-                    .addScope(Drive.SCOPE_FILE)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .build();
-            mGoogleApiClient.connect();
-        }
-        return true;
-//        ConnectionResult result=mGoogleApiClient.blockingConnect(2000, TimeUnit.MILLISECONDS);
+//    private boolean connectGoogleApiClient(){
+//        if (mGoogleApiClient == null || (!mGoogleApiClient.isConnected())) {
+//            // Create the API client and bind it to an instance variable.
+//            // We use this instance as the callback for connection and connection
+//            // failures.
+//            // Since no account name is passed, the user is prompted to choose.
+//            Log.d(TAG, "creating a new google api client");
+//            mGoogleApiClient = new GoogleApiClient.Builder(this)
+//                    .addApi(Drive.API)
+//                    .addScope(Drive.SCOPE_FILE)
+//                    .addConnectionCallbacks(this)
+//                    .addOnConnectionFailedListener(this)
+//                    .build();
+//            mGoogleApiClient.connect();
+//        }
+//        return true;
+//        ConnectionResult result=mGoogleApiClient.blockingConnect(2000, MILLISECONDS);
 //        if (result.isSuccess()){
 //            return true;
 //        } else {
@@ -562,7 +564,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 //            }
 //            return false;
 //        }
-    }
+//    }
 
     @Override
     protected void onResume() {
@@ -607,16 +609,16 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     }
 
     // connection with google drive
-    public void actionReadStateFileFromGoogleDrive() {
-        pendingGDriveAction=GDRIVE_ACTION_LOAD;
-        connectGoogleApiClient();
-    }
-
-    // connection with google drive
-    public void actionSaveStateFileToGoogleDrive() {
-        pendingGDriveAction=GDRIVE_ACTION_SAVE;
-        connectGoogleApiClient();
-    }
+//    public void actionReadStateFileFromGoogleDrive() {
+//        pendingGDriveAction=GDRIVE_ACTION_LOAD;
+//        connectGoogleApiClient();
+//    }
+//
+//    // connection with google drive
+//    public void actionSaveStateFileToGoogleDrive() {
+//        pendingGDriveAction=GDRIVE_ACTION_SAVE;
+//        connectGoogleApiClient();
+//    }
 
 
     private void openDriveFile(DriveId mSelectedFileDriveId) {
