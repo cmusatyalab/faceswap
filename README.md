@@ -3,10 +3,7 @@
 ---
 
 + Website/Documentation: https://cmusatyalab.github.io/faceswap
-+ Join the
-  [gitter chat](https://gitter.im/cmusatyalab/faceswap)
-  for discussions and installation issues.
-+ Development discussions and bugs reports are on the
++ Discussions, issues, and bug reports are on the
   [issue tracker](https://github.com/cmusatyalab/faceswap/issues)
 
 ---
