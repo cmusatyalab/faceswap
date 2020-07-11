@@ -188,7 +188,7 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
     }
 
 
-    private void populateSelectServerSpinner(){
+    protected void populateSelectServerSpinner(){
         //initilize spinner
         int checkedId=typeRadioGroup.getCheckedRadioButtonId();
         RadioButton rb= (RadioButton) view.findViewById(checkedId);

@@ -2,13 +2,20 @@ package edu.cmu.cs.faceswap;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.RemoteException;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -44,11 +51,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Timer;
 
 import edu.cmu.cs.IO.RetrieveDriveFileContentsAsyncTask;
+import edu.cmu.cs.elijah.cloudletlauncher.api.ICloudletService;
+import edu.cmu.cs.elijah.cloudletlauncher.api.ICloudletServiceCallback;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
+import edu.cmu.cs.gabriel.network.NetworkProtocol;
+import edu.cmu.cs.utils.NetworkUtils;
 import edu.cmu.cs.utils.UIUtils;
 import filepickerlibrary.FilePickerActivity;
 
@@ -100,6 +112,12 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     private static final int GDRIVE_ACTION_LOAD = 12;
     private static final int GDRIVE_ACTION_SAVE = 13;
 
+    // For cloudlet launcher
+    private ICloudletService mCloudletService = null;
+    private final String appId = "faceswap";
+    private static final int HANDLER_MSG_NEW_IP = 0;
+    private String displayedName = "discovered cloudlet";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -127,6 +145,11 @@ public class CloudletDemoActivity extends AppCompatActivity implements
 //                .addOnConnectionFailedListener(this)
 //                .build();
         mActivity = this;
+
+        // Bind to the Cloudlet service
+        Intent intentCloudletService = new Intent(ICloudletService.class.getName());
+        intentCloudletService.setPackage("edu.cmu.cs.elijah.cloudletlauncher");
+        bindService(intentCloudletService, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void requestPersmission() {
@@ -565,6 +588,7 @@ public class CloudletDemoActivity extends AppCompatActivity implements
     protected void onResume() {
         Log.i(TAG, "on resume");
         super.onResume();
+
     }
 
     @Override
@@ -574,6 +598,40 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             mGoogleApiClient.disconnect();
         }
         super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.i(TAG, "on destroy");
+
+        if (mCloudletService != null) {
+            try {
+                mCloudletService.disconnectCloudlet(appId);
+                mCloudletService.unregisterCallback(mCallback);
+            } catch (RemoteException e) {}
+            unbindService(mConnection);
+            mCloudletService = null;
+        }
+
+        String sharedPreferenceIpDictName=
+                getResources().getStringArray(R.array.shared_preference_ip_dict_names)[0];
+        // a deep copy is needed
+        //http://stackoverflow.com/questions/21396358/sharedpreferences-putstringset-doesnt-work
+        Set<String> existingNames =
+                new HashSet<String>(mSharedPreferences.getStringSet(sharedPreferenceIpDictName,
+                        new HashSet<String>()));
+
+        SharedPreferences.Editor editor = mSharedPreferences.edit();
+
+
+        if (existingNames.contains(displayedName) || mSharedPreferences.getAll().containsKey(displayedName)){
+            editor.remove(displayedName);
+            existingNames.remove(displayedName);
+            editor.putStringSet(sharedPreferenceIpDictName, existingNames);
+            editor.commit();
+        }
+
+        super.onDestroy();
     }
 
     private RetrieveDriveFileContentsAsyncTask.GdriveRetrieveFileContentCallBack gdriveCallBack=
@@ -725,6 +783,83 @@ public class CloudletDemoActivity extends AppCompatActivity implements
             Toast.makeText(this, "failed to connect to google drive", Toast.LENGTH_LONG).show();
         }
     }
+
+
+    /***** Begin handling connection to cloudlet service ******************************************/
+    private ICloudletServiceCallback mCallback = new ICloudletServiceCallback.Stub() {
+        public void message(String message) throws RemoteException {
+            // do nothing
+        }
+
+        public void newServerIP(String IP_addr) throws RemoteException {
+            Log.i(TAG, "Got new server IP");
+
+            Message msg = Message.obtain();
+            msg.what = HANDLER_MSG_NEW_IP;
+            msg.obj = IP_addr;
+            mHandler.sendMessage(msg);
+        }
+
+        public void amReady() throws RemoteException {
+            return;
+        }
+    };
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // This is called when the connection with the service has been established
+            Log.i("CloudletLauncher", "Connection to cloudlet service established");
+            mCloudletService = ICloudletService.Stub.asInterface(service);
+            try {
+                mCloudletService.registerCallback(mCallback);
+                mCloudletService.findCloudlet(appId);
+            } catch (RemoteException e) {
+                Log.e("CloudletLauncher", "Error in registering callback to cloudlet service");
+            }
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            // This is called when the connection with the service has been
+            // unexpectedly disconnected -- that is, its process crashed.
+            mCloudletService = null;
+        }
+    };
+
+    private Handler mHandler = new Handler() {
+        public void handleMessage(Message msg) {
+            if (msg.what == HANDLER_MSG_NEW_IP) {
+                String name = displayedName;
+                String ip = (String) msg.obj;
+                // type 0 is cloudlet
+                String sharedPreferenceIpDictName=
+                        getResources().getStringArray(R.array.shared_preference_ip_dict_names)[0];
+                // a deep copy is needed
+                //http://stackoverflow.com/questions/21396358/sharedpreferences-putstringset-doesnt-work
+                Set<String> existingNames =
+                        new HashSet<String>(mSharedPreferences.getStringSet(sharedPreferenceIpDictName,
+                                new HashSet<String>()));
+
+                SharedPreferences.Editor editor = mSharedPreferences.edit();
+
+
+                if (existingNames.contains(name) || mSharedPreferences.getAll().containsKey(name)){
+                    editor.remove(name);
+                    existingNames.remove(name);
+                    editor.putStringSet(sharedPreferenceIpDictName, existingNames);
+                    editor.commit();
+                }
+
+                //add new ip in
+                editor.putString(name,ip);
+                existingNames.add(name);
+                editor.putStringSet(sharedPreferenceIpDictName, existingNames);
+                editor.commit();
+                Log.i(TAG, "Added new server IP to server list");
+
+                childFragment.populateSelectServerSpinner();
+            }
+        }
+    };
+    /***** End handling connection to cloudlet service ********************************************/
+
 }
-
-
