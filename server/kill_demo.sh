@@ -2,7 +2,7 @@
 
 echo -e "killing gabriel..."
 # openface start_server process leaves dangling child...
-gabriel=( "start_demo" "openface-server/start_server.sh" "faceswap-proxy.py" "gabriel-upnp" "gabriel_upnp_server" "gabriel_REST_server" "gabriel-ucomm" "gabriel-control" "cloudlet-demo-openface-server" "openface")
+gabriel=("start_demo" "openface-server/start_server.sh" "faceswap-proxy.py" "gabriel-upnp" "gabriel_upnp_server" "gabriel_REST_server" "gabriel-ucomm" "gabriel-control" "cloudlet-demo-openface-server" "openface")
 #gabriel=( "start_demo")
 for i in "${gabriel[@]}"
 do
