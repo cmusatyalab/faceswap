@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/scroll_view"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingBottom="20dp"
+    android:scrollbars="vertical"
+    android:background="#FFFFFF"-->
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorPrimary"
+            app:layout_scrollFlags="scroll|enterAlways"
+            app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+    </com.google.android.material.appbar.AppBarLayout>
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+
+    <LinearLayout
+        android:id="@+id/fragmentRelativeLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
+        android:background="#FFFFFF">
+
+        <!--
+       tools:context="edu.cmu.cs.faceswap.CloudletFragment"
+       -->
+
+
+        <TextView
+            android:id="@+id/step_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Server Type"
+            android:textAllCaps="false"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#1B0303"
+            android:textStyle="bold" />
+
+        <RadioGroup
+            android:id="@+id/type_radiogroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingLeft="40dp">
+
+            <RadioButton
+                android:id="@+id/radio_cloudlet"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_weight="1"
+                android:buttonTint="@color/colorPrimary"
+                android:text="@string/type_cloudlet"
+                android:textStyle="italic" />
+
+            <RadioButton
+                android:id="@+id/radio_cloud"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_weight="1"
+                android:buttonTint="@color/colorPrimary"
+                android:text="@string/type_cloud"
+                android:textStyle="italic" />
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/step_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Choose a Specific Server"
+            android:textAllCaps="false"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#1B0303"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/step_2_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="(Use 'Server Setting' button to add server)"
+            android:textSize="15dp"
+            android:textStyle="italic" />
+
+        <Spinner
+            android:id="@+id/select_server_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
+            android:paddingBottom="10dp"
+            android:spinnerMode="dialog" />
+
+
+        <RelativeLayout
+            android:id="@+id/margin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/addPersonButton"
+                style="@style/CardView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_marginLeft="5dp"
+                android:background="@drawable/mybutton"
+                android:text="Train Images"
+                android:textColor="@color/card_background" />
+
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/step_4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Choose Who to Substitute"
+            android:textAllCaps="false"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:textColor="#1B0303"
+            android:textStyle="bold" />
+
+        <!--
+            <LinearLayout
+                android:id="@+id/personLinearLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="left"
+                android:orientation="horizontal"
+                android:layout_marginBottom="20dp">
+        -->
+        <TableLayout
+            android:id="@+id/trainedTable"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:stretchColumns="*">
+
+            <TableRow
+                android:id="@+id/tableRow1"
+                android:layout_width="0dp"
+                android:layout_height="52dp">
+
+                <TextView
+                    android:id="@+id/tableName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_column="0"
+                    android:text="Name"
+                    android:textSize="15dp"
+                    android:textStyle="italic" />
+
+                <TextView
+                    android:layout_column="1"
+                    android:layout_gravity="left"
+                    android:text="[ON/OFF]"
+                    android:textStyle="italic" />
+
+                <TextView
+                    android:layout_width="27dp"
+                    android:layout_column="2"
+                    android:text="Substitute"
+                    android:textStyle="italic" />
+
+                <TextView
+                    android:layout_column="3"
+                    android:text="Delete"
+                    android:textStyle="italic" />
+            </TableRow>
+        </TableLayout>
+
+        <Button
+            android:id="@+id/cloudletRunDemoButton"
+
+            android:layout_width="391dp"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="fill"
+
+            android:background="@drawable/mybutton"
+            android:text="Run Demo"
+            android:textAllCaps="false"
+            android:textColor="@color/card_background"
+            android:textStyle="bold" />
+
+        <!--Button
+            android:id="@+id/local"
+
+            android:layout_width="391dp"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="fill"
+            android:layout_margin="5dp"
+            android:layout_marginBottom="60dp"
+            android:background="@drawable/mybutton"
+            android:text="Save Server State to Local File"
+            android:textAllCaps="false"
+            android:textColor="@color/card_background"
+            android:textStyle="bold" />
+        <Button
+            android:id="@+id/setting_reset_openface_server"
+
+            android:layout_width="391dp"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="fill"
+            android:layout_margin="5dp"
+            android:layout_marginBottom="60dp"
+            android:background="@drawable/mybutton"
+            android:text="reset_openface_server"
+            android:textAllCaps="false"
+            android:textColor="@color/card_background"
+            android:textStyle="bold" />
+        <Button
+            android:id="@+id/setting_save_state_to_gdrive"
+
+            android:layout_width="391dp"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="fill"
+            android:layout_margin="5dp"
+            android:layout_marginBottom="60dp"
+            android:background="@drawable/mybutton"
+            android:text="Save Server State to Google Drive"
+            android:textAllCaps="false"
+            android:textColor="@color/card_background"
+            android:textStyle="bold" />
+-->
+        <!--Button
+            android:id="@+id/button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Button" />
+
+        <menu xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            tools:context="edu.cmu.cs.faceswap.CloudletDemoActivity">
+
+
+            <Button
+                android:id="@+id/manage_servers"
+                android:orderInCategory="100"
+                android:layout_width="391dp"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_gravity="fill"
+                android:layout_margin="5dp"
+                android:layout_marginBottom="60dp"
+                android:background="@drawable/mybutton"
+                android:title="@string/setting_reset_openface_server"              android:textAllCaps="false"
+                android:textColor="@color/card_background"
+                android:textStyle="bold" />
+
+            <item android:id="@+id/setting_reset_openface_server"
+                android:title="@string/setting_reset_openface_server"
+                android:orderInCategory="100"
+                />
+
+                <item android:id="@+id/setting_load_state"
+                    android:title="Load Server State from File"
+                    android:orderInCategory="100"
+                    />
+            -->
+
+        <!--
+        <Button
+            android:id="@+id/setting_save_state"
+            android:text="Save Server State to Local File"
+            android:orderInCategory="100" />
+
+        <Button
+            android:id="@+id/backtomanageserver"
+            android:layout_width="300dp"
+            android:layout_height="29dp"
+            android:layout_gravity="fill"
+            android:layout_margin="5dp"
+            android:layout_marginTop="0dp"
+            android:background="@drawable/mybutton"
+            android:text="Server Setting"
+            android:layout_centerHorizontal="true"
+            android:textColor="@color/card_background" />
+
+        <Button
+            android:id="@+id/backtomanageserver"
+            android:layout_width="300dp"
+            android:layout_height="27dp"
+            android:layout_gravity="fill"
+            android:layout_margin="5dp"
+            android:layout_marginTop="0dp"
+            android:background="@drawable/mybutton"
+            android:text="Server Setting"
+            android:layout_centerHorizontal="true"
+            android:textColor="@color/card_background" />
+-->
+    </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

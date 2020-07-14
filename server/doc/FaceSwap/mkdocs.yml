@@ -1,0 +1,7 @@
+site_name: FaceSwap Documentation
+pages:
+- Home: index.md
+- User Guide: user-guide.md
+- Architecture: dev-guide.md
+- FAQ: faq.md
+
