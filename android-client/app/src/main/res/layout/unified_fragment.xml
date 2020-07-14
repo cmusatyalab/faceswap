@@ -70,7 +70,7 @@
                 android:layout_marginTop="5dp"
                 android:layout_weight="1"
                 android:buttonTint="@color/colorPrimary"
-                android:text="Edge VM"
+                android:text="@string/type_cloudlet"
                 android:textStyle="italic" />
 
             <RadioButton
@@ -117,7 +117,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <Button
+            <!--Button
                 android:id="@+id/addPersonButton"
                 style="@style/CardView"
                 android:layout_width="wrap_content"
@@ -126,11 +126,11 @@
                 android:layout_marginLeft="5dp"
                 android:background="@drawable/mybutton"
                 android:text="Train Images"
-                android:textColor="@color/card_background" />
+                android:textColor="@color/card_background" /-->
 
         </RelativeLayout>
 
-        <TextView
+        <!--TextView
             android:id="@+id/step_4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -139,7 +139,7 @@
             android:textAllCaps="false"
             android:textAppearance="?android:attr/textAppearanceMedium"
             android:textColor="#1B0303"
-            android:textStyle="bold" />
+            android:textStyle="bold" /-->
 
         <!--
             <LinearLayout
@@ -150,7 +150,7 @@
                 android:orientation="horizontal"
                 android:layout_marginBottom="20dp">
         -->
-        <TableLayout
+        <!--TableLayout
             android:id="@+id/trainedTable"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -188,7 +188,7 @@
                     android:text="Delete"
                     android:textStyle="italic" />
             </TableRow>
-        </TableLayout>
+        </TableLayout-->
 
         <Button
             android:id="@+id/cloudletRunDemoButton"
@@ -197,7 +197,7 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_gravity="fill"
-            android:layout_margin="wrap_content"
+
             android:background="@drawable/mybutton"
             android:text="Run Demo"
             android:textAllCaps="false"

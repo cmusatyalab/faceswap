@@ -1,14 +1,15 @@
 package edu.cmu.cs.faceswap;
 
 import android.annotation.TargetApi;
+
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.fragment.app.Fragment;
-import androidx.appcompat.app.AlertDialog;
+//import android.support.v4.app.Fragment;
+//import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -35,14 +36,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import static edu.cmu.cs.utils.NetworkUtils.isOnline;
-import static edu.cmu.cs.utils.NetworkUtils.checkOnline;
 
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.Fragment;
 import edu.cmu.cs.gabriel.Const;
 import edu.cmu.cs.gabriel.GabrielClientActivity;
 import edu.cmu.cs.gabriel.GabrielConfigurationAsyncTask;
 
-public class CloudletFragment extends Fragment implements CompoundButton.OnCheckedChangeListener {
+public class CloudletFragment<name> extends Fragment implements CompoundButton.OnCheckedChangeListener {
     private final int LAUNCHCODE = 0;
     private static final int DLG_EXAMPLE1 = 0;
     private static final int TEXT_ID = 1000;
@@ -50,16 +51,15 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
     private static final String TAG = "FaceSwapFragment";
 
     private List<PersonUIRow> personUIList = new ArrayList<PersonUIRow>();
-    public String currentServerIp = null;
+
     protected Button cloudletRunDemoButton;
     protected Button addPersonButton;
-    protected Button uploadStateFromFileButton,nextButton;
-    protected Button uploadStateFromGoogleDriveButton,setting_save_state_local,reset,setting_save_state_googleDrive;
+    protected Button uploadStateFromFileButton;
+    protected Button uploadStateFromGoogleDriveButton;
     protected RadioGroup typeRadioGroup;
     protected RadioButton cloudletRadioButton;
     protected RadioButton cloudRadioButton;
     protected Spinner selectServerSpinner;
-    protected Button backtomanagesrever;
 
     protected View view;
     protected List<String> spinnerList;
@@ -84,7 +84,6 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
         trainedPeople = new ArrayList<String>();
     }
 
-
     Spinner.OnItemSelectedListener spinnerSelectedListener = new Spinner.OnItemSelectedListener(){
         @Override
         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -105,9 +104,9 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
         //update PersonUIRow
         clearPersonTable();
         Log.d(TAG, "current ip changed to: " + getMyAcitivty().currentServerIp);
-        Toast.makeText(getContext(),
-                "current ip: "+getMyAcitivty().currentServerIp,
-                Toast.LENGTH_SHORT).show();
+//        Toast.makeText(getContext(),
+//                "current ip: "+getMyAcitivty().currentServerIp,
+//                Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -133,14 +132,12 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
         cloudRadioButton=(RadioButton)view.findViewById(R.id.radio_cloud);
         typeRadioGroup.check(R.id.radio_cloudlet);
 
-
-//nextButton=(Button)view.findViewById(R.id.n);
         selectServerSpinner=(Spinner) view.findViewById(R.id.select_server_spinner);
         cloudletRunDemoButton =(Button)view.findViewById(R.id.cloudletRunDemoButton);
-        addPersonButton = (Button)view.findViewById(R.id.addPersonButton);
-      //  uploadStateFromFileButton = (Button)view.findViewById(R.id.uploadFromFileButton);
-//        uploadStateFromGoogleDriveButton = (Button)
-    //   view.findViewById(R.id.uploadFromGoogleDriveButton);
+     //   addPersonButton = (Button)view.findViewById(R.id.addPersonButton);
+//        uploadStateFromFileButton = (Button)view.findViewById(R.id.uploadFromFileButton);
+////        uploadStateFromGoogleDriveButton = (Button)
+////                view.findViewById(R.id.uploadFromGoogleDriveButton);
 
         tb = (TableLayout)view.findViewById(R.id.trainedTable);
         typeRadioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
@@ -149,18 +146,8 @@ public class CloudletFragment extends Fragment implements CompoundButton.OnCheck
                 populateSelectServerSpinner();
             }
         });
-//       if(trainedPeople.size()==0)
-//       {
-//           cloudletRunDemoButton.setVisibility(View.INVISIBLE);
-//       }
-//       else
-//       {
-//           cloudletRunDemoButton.setVisibility(View.VISIBLE);
-//       }
 
-
-
-cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
+        cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Const.GABRIEL_IP = getMyAcitivty().currentServerIp;
@@ -171,14 +158,13 @@ cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
             }
         });
 
-
-        addPersonButton.setOnClickListener(new Button.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Dialog dg = createAddPersonDialog("Train", "Enter Person's name:");
-                dg.show();
-            }
-        });
+//        addPersonButton.setOnClickListener(new Button.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Dialog dg = createAddPersonDialog("Train", "Enter Person's name:");
+//                dg.show();
+//            }
+//        });
 
 //        uploadStateFromFileButton.setOnClickListener(new View.OnClickListener() {
 //            @Override
@@ -186,7 +172,7 @@ cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
 //                getMyAcitivty().actionUploadStateFromLocalFile();
 //            }
 //        });
-
+//
 //        uploadStateFromGoogleDriveButton.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View v) {
@@ -280,6 +266,7 @@ cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
         return true;
     }
 
+
     private void launchTrainingActivity(){
         String name = inputDialogResult;
         if (checkName(name)) {
@@ -316,24 +303,24 @@ cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
         // Use an EditText view to get user input.
         final EditText input = new EditText(getMyAcitivty());
         input.setText("");
+        input.setVisibility(view.VISIBLE);
         builder.setView(input);
 
-        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+        builder.setNeutralButton("Ok", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int whichButton) {
                 String value = input.getText().toString();
                 Log.d(TAG, "user input: " + value);
                 inputDialogResult = value;
                 launchTrainingActivity();
-//                AlertDialog dg =
+//              AlertDialog dg =
 //                        SelectServerAlertDialog.createDialog(
 //                                getContext(),
 //                                "Pick a Server",
 //                                getAllIps(),
-//                                launchTrainingActivityAction,
-//                                cancelAction,
-//                                true);
-//                dg.show();
+//                                launchTrainingActivityAction, cancelAction,
+//                               true);
+//               dg.show();
             }
         });
         builder.setNegativeButton("Cancel", SelectServerAlertDialog.cancelAction);
@@ -342,7 +329,7 @@ cloudletRunDemoButton.setOnClickListener(new Button.OnClickListener() {
 
 
     private String stripQuote(String input){
-        String  output = input.replaceAll("^\"|\"$", "");
+        String output = input.replaceAll("^\"|\"$", "");
         return output;
     }
 
